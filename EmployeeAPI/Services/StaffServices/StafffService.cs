@@ -182,11 +182,28 @@ namespace EmployeeAPI.Services.StaffServices
             {
                 StaffId = p.Id,
                 Name = p.Name,
-                DateOfBirth = p.DateOfBirth,
-                PhoneNumber = p.PhoneNumber,
-                Address = p.Address,
-                DepartmentId = p.DepartmentId,
                 PositionId = p.PositionId,
+                BasicSalary = p.BasicSalary,
+                ImageUrl = p.ImageUrl
+            });
+        }
+
+        public async Task<IEnumerable<ResponseModel.StaffDto>> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex)
+        {
+            if (pageSize == null || pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+            if (pageIndex == null || pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
+            var result = await _repository.GetEmployeeByDepartment(SearchTerm, pageSize, pageIndex);
+            return result.Select(p => new ResponseModel.StaffDto
+            {
+                StaffId = p.Id,
+                Name = p.Name,
+                DepartmentId = p.DepartmentId,
                 BasicSalary = p.BasicSalary,
                 ImageUrl = p.ImageUrl
             });

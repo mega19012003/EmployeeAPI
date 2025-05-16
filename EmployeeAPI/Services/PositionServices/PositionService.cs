@@ -1,24 +1,27 @@
 ﻿using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Positions;
+using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
+using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Services.PositionServices
 {
     public class PositionService : IPositionService
     {
-        private readonly IPositionRepository _repository;
+        private readonly IPositionRepository _positionRepository;
+        private readonly IStaffRepository _staffRepository;
 
         public PositionService(IPositionRepository repository)
         {
-            _repository = repository;
+            _positionRepository = repository;
         }
 
         public async Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync()
         {
-            var positions = await _repository.GetAllAsync();
+            var positions = await _positionRepository.GetAllAsync();
             return positions.Select(p => new ResponseModel.PositionDTO
             {
                 Id = p.Id,
@@ -29,7 +32,7 @@ namespace EmployeeAPI.Services.PositionServices
 
         public async Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id)
         {
-            var position = await _repository.GetByIdAsync(id);
+            var position = await _positionRepository.GetByIdAsync(id);
             if (position == null) return null;
 
             return new ResponseModel.PositionDTO
@@ -48,7 +51,7 @@ namespace EmployeeAPI.Services.PositionServices
                 Name = name,
             };
 
-            var entity = await _repository.AddAsync(model);
+            var entity = await _positionRepository.AddAsync(model);
             return new ResponseModel.CreatePosition
             {
                 PositionId = entity.Id,
@@ -58,12 +61,12 @@ namespace EmployeeAPI.Services.PositionServices
 
         public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName)
         {
-            var entity = await _repository.GetByIdAsync(id);
+            var entity = await _positionRepository.GetByIdAsync(id);
             if (entity == null) return null;
 
             entity.Name = newName;
-            var updated = await _repository.UpdateAsync(entity);
-            if (updated == null) return null; 
+            var updated = await _positionRepository.UpdateAsync(entity);
+            if (updated == null) return null;
 
             return new ResponseModel.UpdatePosition
             {
@@ -75,7 +78,7 @@ namespace EmployeeAPI.Services.PositionServices
 
         public async Task<string> SoftDeleteAsync(Guid id)
         {
-            var entity = await _repository.SoftDeleteAsync(id);
+            var entity = await _positionRepository.SoftDeleteAsync(id);
             if (entity == null) return "Không tìm thấy vị trí";
 
             return "Đã xóa vị trí: " + id;
@@ -83,13 +86,29 @@ namespace EmployeeAPI.Services.PositionServices
 
         public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)
         {
-            var entity = await _repository.GetAllEmployee(name);
+            var entity = await _positionRepository.GetAllEmployee(name);
             if (entity == null) return null;
 
-            return new ResponseModel.PositionDTO{
-                Id = entity.Id, 
-                Name = entity.Name 
+            return new ResponseModel.PositionDTO
+            {
+                Id = entity.Id,
+                Name = entity.Name
             };
+        }
+
+        public async Task<IEnumerable<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
+        {
+            var staffs = await _positionRepository.GetStaffByPositionAsync(positionName, pageSize, pageIndex);
+
+            return staffs.SelectMany(pos => pos.Staffs
+            .Where(st => st.IsActive && !st.IsDeleted))
+            .Select(st => new StaffFilter
+            {
+                StaffId = st.Id,
+                Name = st.Name,
+                BasicSalary = st.BasicSalary,
+                ImageUrl = st.ImageUrl,
+            });
         }
     }
 }

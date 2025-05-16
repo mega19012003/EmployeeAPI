@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Models;
+using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Services.DepartmentServices
 {
@@ -10,6 +11,6 @@ namespace EmployeeAPI.Services.DepartmentServices
         public Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string Name);
         public Task<string> SoftDeleteAsync(Guid id);
         public Task<IEnumerable<ResponseModel.DepartmentDto>> GetDepartmentByName(string name);
-        public Task<ResponseModel.DepartmentDto> GetEmployeeByDepartment(string name);
+        public Task<IEnumerable<StaffFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex);
     }
 }

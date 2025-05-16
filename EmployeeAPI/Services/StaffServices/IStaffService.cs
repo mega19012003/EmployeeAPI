@@ -11,5 +11,6 @@ namespace EmployeeAPI.Services.StaffServices
         Task<string> SoftDeleteAsync(Guid staff);
         Task<IEnumerable<ResponseModel.StaffDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
         Task<IEnumerable<ResponseModel.StaffDto>> GetEmployeeByPosition(string SearchTerm, int? pageSize, int? pageIndex); // nhớ sửa
+        Task<IEnumerable<ResponseModel.StaffDto>> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex);
     }
 }

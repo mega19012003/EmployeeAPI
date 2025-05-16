@@ -2,6 +2,7 @@
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Staffs;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
+using static EmployeeAPI.Services.StaffServices.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.DepartmentServices
@@ -105,19 +106,19 @@ namespace EmployeeAPI.Services.DepartmentServices
             });
         }
 
-        public async Task<ResponseModel.DepartmentDto> GetEmployeeByDepartment(string name)
+        public async Task<IEnumerable<StaffFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
         {
-            var result = await _repository.GetDepartmentByName(name);
-            if (result == null)
-            {
-                return null;
-            }
-            /*return result.Select(d => new DepartmentDto
-            {
-               
-            }).FirstOrDefault();*/
+            var staffs = await _repository.GetStaffByDepartmentAsync(positionName, pageSize, pageIndex);
 
-            return null;
+            return staffs.SelectMany(pos => pos.Staffs
+            .Where(st => st.IsActive && !st.IsDeleted))
+            .Select(st => new StaffFilter
+            {
+                StaffId = st.Id,
+                Name = st.Name,
+                BasicSalary = st.BasicSalary,
+                ImageUrl = st.ImageUrl,
+            });
         }
     }
 }

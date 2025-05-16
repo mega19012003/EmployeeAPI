@@ -103,9 +103,26 @@ namespace EmployeeAPI.Repositories.Staffs
 
             if (!string.IsNullOrEmpty(SearchTerm))
             {
-                query = query.Where(f => f.Position.Name.ToLower().Contains(SearchTerm.ToLower()));
+                query = query.Where(f => f.Position.Name.ToLower().Contains(SearchTerm.ToLower()) && !f.Position.IsDeleted);
             }
 
+            return await query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value).ToListAsync();
+        }
+
+        public async Task<IEnumerable<Staff>> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex)
+        {
+            var query = _context.Staffs
+                .Include(s => s.Department)
+                .Where(s => !s.IsDeleted && !s.Department.isDeleted);
+            if (query == null)
+            {
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(SearchTerm))
+            {
+                query = query.Where(f => f.Department.Name.ToLower().Contains(SearchTerm.ToLower()));
+            }
             return await query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value).ToListAsync();
         }
     }

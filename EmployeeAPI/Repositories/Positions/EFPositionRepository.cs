@@ -61,5 +61,24 @@ namespace EmployeeAPI.Repositories.Positions
                 .Include(p => p.Staffs.Where(s => s.IsActive))
                 .FirstOrDefaultAsync(p => p.Name.ToLower().Equals(name.ToLower()));
         }
+        public async Task<IEnumerable<Position>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
+        {
+            var query = _context.Positions
+                .Include(s => s.Staffs)
+                .Where(s => !s.IsDeleted);
+
+            if (!string.IsNullOrEmpty(positionName))
+            {
+                query = query.Where(s => s.Name.ToLower().Contains(positionName.ToLower()));
+            }
+
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                query = query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+
+            return await query.ToListAsync();
+        }
+
     }
 }

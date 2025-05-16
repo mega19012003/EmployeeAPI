@@ -1,14 +1,16 @@
 ﻿using EmployeeAPI.Models;
-
+using EmployeeAPI.Services.PositionServices;
+using static EmployeeAPI.Services.StaffServices.ResponseModel;
 namespace EmployeeAPI.Services.PositionServices
 {
-    public interface IPositionService
-    {
-        public Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync();
-        public Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id);
-        public Task<ResponseModel.CreatePosition> AddAsync(string Name);
-        public Task<ResponseModel.UpdatePosition> UpdateAsync(Guid id, string Name);
-        public Task<string> SoftDeleteAsync(Guid id);
-        public Task<ResponseModel.PositionDTO> GetAllEmployee(string name);
+     public interface IPositionService
+     {
+        Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync();
+        Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id);
+        Task<ResponseModel.CreatePosition> AddAsync(string Name);
+        Task<ResponseModel.UpdatePosition> UpdateAsync(Guid id, string Name);
+        Task<string> SoftDeleteAsync(Guid id);
+        Task<ResponseModel.PositionDTO> GetAllEmployee(string name);
+        Task<IEnumerable<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex);
     }
 }

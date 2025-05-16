@@ -90,15 +90,14 @@ namespace EmployeeAPI.Controllers
             }
             return Ok(department);
         }
-        [HttpGet("employee-not-done")]
-        public async Task<IActionResult> GetEmployeeByDepartment(string name)
+        [HttpGet("Employee")]
+        public async Task<IActionResult> GetEmployeeByPosition(string searchTerm, int? pageSize, int? pageIndex)
         {
-            var department = await _departmentService.GetEmployeeByDepartment(name);
-            if (department == null)
-            {
-                return NotFound();
-            }
-            return Ok(department);
+            var positions = await _departmentService.GetStaffByDepartmentAsync(searchTerm, pageSize, pageIndex);
+            if (!positions.Any())
+                return NotFound("Không tìm thấy phòng ban hoặc nhân viên phù hợp.");
+
+            return Ok(positions);
         }
     }
 }

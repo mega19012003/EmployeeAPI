@@ -52,14 +52,20 @@ namespace EmployeeAPI.Services.StaffServices
             public List<IFormFile> ImageUrl { get; set; }
             public bool IsActive { get; set; }
         }
-
-        public record DeleteStaff
+        public record StaffFilter
+        {
+            public Guid StaffId { get; set; }
+            public string Name { get; set; }
+            public double BasicSalary { get; set; }
+            public List<string> ImageUrl { get; set; }
+        }
+        /*public record DeleteStaff
         {
 
             public Guid Id { get; set; }
             public string Name { get; set; }
             public bool IsDeleted { get; set; } = true;
 
-        }
+        }*/
     }
 }

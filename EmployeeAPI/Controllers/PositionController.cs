@@ -10,12 +10,10 @@ namespace EmployeeAPI.Controllers
     public class PositionController : ControllerBase
     {
         private readonly IPositionService _positionService;
-        //private readonly IStaffService _staffService; // Staff dùng service tương tự
 
-        public PositionController(IPositionService positionService /*IStaffService staffService*/)
+        public PositionController(IPositionService positionService)
         {
             _positionService = positionService;
-            /*_staffService = staffService;*/
         }
 
         [HttpGet]
@@ -60,6 +58,15 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
+        [HttpGet("Employee")]
+        public async Task<IActionResult> GetEmployeeByPosition(string searchTerm, int? pageSize, int? pageIndex)
+        {
+            var positions = await _positionService.GetStaffByPositionAsync(searchTerm, pageSize, pageIndex);
+            if (!positions.Any())
+                return NotFound("Không tìm thấy vị trí hoặc nhân viên phù hợp.");
+
+            return Ok(positions);
+        }
         /*[HttpGet("employee-not-done")]
         public async Task<IActionResult> GetEmployeesByPosition([FromQuery] string name, [FromQuery] int? pageIndex, [FromQuery] int? pageSize)
         {

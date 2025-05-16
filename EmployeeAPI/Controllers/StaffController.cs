@@ -81,5 +81,26 @@ namespace EmployeeAPI.Controllers
             }
             return Ok(result);
         }
+
+        /*[HttpGet("Position")]
+        public async Task<IActionResult> GetEmployeeByPosition(string SearchTerm, int? pageSize, int? pageIndex)
+        {
+            var result = await _staffService.GetEmployeeByPosition(SearchTerm, pageSize, pageIndex);
+            if (result == null)
+            {
+                return NotFound();
+            }
+            return Ok(result);
+        }
+        [HttpGet("Department")]
+        public async Task<IActionResult> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex)
+        {
+            var result = await _staffService.GetEmployeeByDepartment(SearchTerm, pageSize, pageIndex);
+            if (result == null)
+            {
+                return NotFound();
+            }
+            return Ok(result);
+        }*/
     }
 }

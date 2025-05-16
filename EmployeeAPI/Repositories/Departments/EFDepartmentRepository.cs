@@ -62,13 +62,23 @@ namespace EmployeeAPI.Repositories.Departments
             }
             return results;
         }
-
-        public async Task<Department> GetAllEmployee(string name)
+        public async Task<IEnumerable<Department>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
         {
-            var results = await _context.Departments
-                .Include(d => d.Staffs)
-                .FirstOrDefaultAsync(d => d.Name.ToLower() == name.ToLower() && !d.isDeleted);
-            return results;
+            var query = _context.Departments
+                .Include(s => s.Staffs)
+                .Where(s => !s.isDeleted);
+
+            if (!string.IsNullOrEmpty(positionName))
+            {
+                query = query.Where(s => s.Name.ToLower().Contains(positionName.ToLower()));
+            }
+
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                query = query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+
+            return await query.ToListAsync();
         }
     }
 }
