@@ -4,6 +4,7 @@ using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.FileServices;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Newtonsoft.Json;
 
 namespace EmployeeAPI.Services.StaffServices
 {
@@ -38,7 +39,6 @@ namespace EmployeeAPI.Services.StaffServices
             });
         }
 
-
         public async Task<ResponseModel.StaffDto> GetByIdAsync(Guid id)
         {
             var results = await _repository.GetByIdAsync(id);
@@ -56,10 +56,10 @@ namespace EmployeeAPI.Services.StaffServices
             };
         }
 
-        public async Task<ResponseModel.CreateStaff> AddAsync(ResponseModel.CreateStaff dto)
+        public async Task<ResponseModel.StaffDto> AddAsync(ResponseModel.CreateStaff dto)
         {
             string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-            var imagePaths = await _fileService.SaveFileAsync(dto.ImageUrl, uploadsFolder);
+            var imagePaths = await _fileService.SaveFilesAsync(dto.ImageUrl, uploadsFolder);
 
             var staff = new Staff
             {
@@ -71,64 +71,72 @@ namespace EmployeeAPI.Services.StaffServices
                 PhoneNumber = dto.PhoneNumber,
                 Address = dto.Address,
                 BasicSalary = dto.BasicSalary,
-                ImageUrl = imagePaths 
+                ImageUrl = imagePaths,
+                IsActive = true
             };
 
             var created = await _repository.AddAsync(staff);
 
-            return new ResponseModel.CreateStaff
+            // Map model sang DTO trả về
+            return new ResponseModel.StaffDto
             {
+                StaffId = created.Id,
                 Name = created.Name,
+                DateOfBirth = created.DateOfBirth,
                 PhoneNumber = created.PhoneNumber,
                 Address = created.Address,
                 DepartmentId = created.DepartmentId,
                 PositionId = created.PositionId,
-                DateOfBirth = created.DateOfBirth,
                 BasicSalary = created.BasicSalary,
+                ImageUrl = created.ImageUrl,
             };
         }
 
 
-        public async Task<ResponseModel.UpdateStaff> UpdateAsync(ResponseModel.UpdateStaff dto)
+        public async Task<ResponseModel.StaffDto> UpdateAsync(ResponseModel.UpdateStaff dto)
         {
             string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-            var imagePaths = await _fileService.SaveFileAsync(dto.ImageUrl, uploadsFolder);
+            var imagePaths = await _fileService.SaveFilesAsync(dto.ImageUrl, uploadsFolder);
 
             var existingStaff = await _repository.GetByIdAsync(dto.Id);
+
             existingStaff.Name = dto.Name;
             existingStaff.DepartmentId = dto.DepartmentId;
             existingStaff.PositionId = dto.PositionId;
             existingStaff.BasicSalary = dto.BasicSalary;
+
+            // Gán trực tiếp List<string> (nếu dùng EF converter)
             existingStaff.ImageUrl = imagePaths;
+
             existingStaff.IsActive = dto.IsActive;
 
             await _repository.UpdateAsync(existingStaff);
-            return new ResponseModel.UpdateStaff
+
+            return new ResponseModel.StaffDto
             {
-                Name = existingStaff.Name,
-                DepartmentId = existingStaff.DepartmentId,
-                PositionId = existingStaff.PositionId,
+                Address = existingStaff.Address,
                 BasicSalary = existingStaff.BasicSalary,
-                IsActive = existingStaff.IsActive,
-                ImageUrl = existingStaff.ImageUrl.Select(path => new FormFile(
-                    new MemoryStream(File.ReadAllBytes(path)), 0, new FileInfo(path).Length, null, Path.GetFileName(path))
-                ).ToList<IFormFile>()
+                DateOfBirth = existingStaff.DateOfBirth,
+                DepartmentId = existingStaff.DepartmentId,
+                ImageUrl = existingStaff.ImageUrl,
+                Name = existingStaff.Name,
+                PhoneNumber = existingStaff.PhoneNumber,
+                PositionId = existingStaff.PositionId,
+                StaffId = existingStaff.Id,
+                IsActive = existingStaff.IsActive
             };
         }
 
-        public async Task<ResponseModel.DeleteStaff> SoftDeleteAsync(Guid Id)
+
+
+        public async Task<string> SoftDeleteAsync(Guid Id)
         {
             var existingStaff = await _repository.SoftDeleteAsync(Id);
             if (existingStaff == null)
             {
                 return null;
             }
-            return new ResponseModel.DeleteStaff
-            {
-                Id = existingStaff.Id,
-                Name = existingStaff.Name,
-                IsDeleted = existingStaff.IsDeleted,
-            };
+            return "Đã xóa user: " + Id;
         }
 
 

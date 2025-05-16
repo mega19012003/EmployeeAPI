@@ -9,7 +9,6 @@ namespace EmployeeAPI.Models
 
         public DbSet<User> Users { get; set; }
         public DbSet<Staff> Staffs { get; set; }
-        public DbSet<Absent> Absents { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Duty> Duties { get; set; }
         public DbSet<Checkin> Checkins { get; set; }

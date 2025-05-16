@@ -2,48 +2,36 @@
 
 public class FileService : IFileService
 {
-    public async Task<List<string>> SaveFileAsync(List<IFormFile> files, string folderName)
+    public async Task<List<string>> SaveFilesAsync(List<IFormFile> files, string uploadsFolder)
     {
-        List<string> savedPaths = new();
+        var imagePaths = new List<string>();
 
-        // Đường dẫn tuyệt đối tới thư mục wwwroot/images (hoặc thư mục được chỉ định)
-        var rootPath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var folderPath = Path.Combine(rootPath, folderName);
-
-        if (!Directory.Exists(folderPath))
-        {
-            Directory.CreateDirectory(folderPath);
-        }
+        if (files == null || files.Count == 0)
+            return imagePaths;
 
         foreach (var file in files)
         {
-            var safeFileName = Path.GetFileName(file.FileName);
-            var fileName = $"{Guid.NewGuid()}_{safeFileName}";
-            var fullPath = Path.Combine(folderPath, fileName);
-
-            using (var stream = new FileStream(fullPath, FileMode.Create))
+            if (file.Length > 0)
             {
-                await file.CopyToAsync(stream);
-            }
+                // Tạo tên file duy nhất (ví dụ: GUID + tên gốc)
+                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
 
-            savedPaths.Add(Path.Combine(folderName, fileName).Replace("\\", "/"));
-        }
+                // Đường dẫn lưu file
+                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-        return savedPaths;
-    }
+                // Lưu file vào đĩa
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await file.CopyToAsync(stream);
+                }
 
-    public async Task<List<string>> GetImagePath(int id, string folderPath, List<string> files)
-    {
-        var filePaths = new List<string>();
-        foreach (var file in files)
-        {
-            var fullPath = Path.Combine(folderPath, file);
-            if (File.Exists(fullPath))
-            {
-                filePaths.Add(Path.Combine("images", file).Replace("\\", "/"));
+                // Thêm đường dẫn dạng "images/filename.ext" để lưu vào DB
+                var relativePath = Path.Combine("images", uniqueFileName).Replace("\\", "/");
+                imagePaths.Add(relativePath);
             }
         }
-        return filePaths;
+
+        return imagePaths;
     }
 
     /*public async Task<List<string>> UpdateFileAsync(List<IFormFile> files, string folderPath, List<String> oldFiles)

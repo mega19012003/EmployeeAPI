@@ -8,7 +8,7 @@ namespace EmployeeAPI.Services.PositionServices
         public Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id);
         public Task<ResponseModel.CreatePosition> AddAsync(string Name);
         public Task<ResponseModel.UpdatePosition> UpdateAsync(Guid id, string Name);
-        public Task<ResponseModel.DeletePosition> SoftDeleteAsync(Guid id);
+        public Task<string> SoftDeleteAsync(Guid id);
         public Task<ResponseModel.PositionDTO> GetAllEmployee(string name);
     }
 }

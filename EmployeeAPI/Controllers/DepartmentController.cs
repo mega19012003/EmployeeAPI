@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        [HttpPut("softDelete")]
+        [HttpDelete]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
             if (id == null)

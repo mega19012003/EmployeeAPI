@@ -73,16 +73,12 @@ namespace EmployeeAPI.Services.PositionServices
             };
         }
 
-        public async Task<ResponseModel.DeletePosition?> SoftDeleteAsync(Guid id)
+        public async Task<string> SoftDeleteAsync(Guid id)
         {
             var entity = await _repository.SoftDeleteAsync(id);
-            if (entity == null) return null;
+            if (entity == null) return "Không tìm thấy vị trí";
 
-             return new ResponseModel.DeletePosition
-             {
-                Id = entity.Id,
-                IsDeleted = entity.IsDeleted
-            };
+            return "Đã xóa vị trí: " + id;
         }
 
         public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)

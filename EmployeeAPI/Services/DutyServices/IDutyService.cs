@@ -9,7 +9,7 @@ namespace EmployeeAPI.Services.DutyServices
         Task<ResponseModel.DutyDto> GetByIdAsync(Guid id);
         Task<ResponseModel.CreateDuty> AddAsync(ResponseModel.CreateDuty dto);
         Task<ResponseModel.UpdateDuty> UpdateAsync(ResponseModel.UpdateDuty dto);
-        Task<ResponseModel.DeleteDuty> SoftDeleteAsync(Guid id);
+        Task<string> SoftDeleteAsync(Guid id);
         //WTask<ResponseModel.DutyDto> GetDutyByName(string name);
         //Task<ResponseModel.DutyDto> GetUnfinishedDuty(string status);
     }

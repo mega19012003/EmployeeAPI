@@ -52,7 +52,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPut("softDelete")]
+        [HttpDelete]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
             var result = await _positionService.SoftDeleteAsync(id);

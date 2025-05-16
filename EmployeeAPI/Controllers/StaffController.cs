@@ -59,7 +59,8 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPut("delete")]
+        //[HttpPut("delete")]
+        [HttpDelete]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
         {
             var result = await _staffService.SoftDeleteAsync(Id);

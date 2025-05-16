@@ -124,7 +124,7 @@ namespace EmployeeAPI.Services.DutyServices
             };
         }
 
-        public async Task<ResponseModel.DeleteDuty> SoftDeleteAsync(Guid Id)
+        public async Task<string> SoftDeleteAsync(Guid Id)
         {
             /*var existingDuty = await _dutyRepository.GetByIdAsync(Id); ///Get id ????
 
@@ -140,11 +140,7 @@ namespace EmployeeAPI.Services.DutyServices
             var entity = await _dutyRepository.SoftDeleteAsync(Id);
             if (entity == null) return null;
 
-            return new ResponseModel.DeleteDuty
-            {
-                Id = entity.Id,
-                IsDeleted = entity.IsDeleted
-            };
+            return "Đã xóa công việc" + Id;
         }
 
 

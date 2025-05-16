@@ -19,7 +19,8 @@ namespace EmployeeAPI.Models
         public List<string> ImageUrl { get; set; }
         //public ICollection<Fine> Fines { get; set; }
         public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
-
+        public List<Checkin> Checkins { get; set; } = new List<Checkin>();
+        public List<Payroll> Payrolls { get; set; } = new List<Payroll>();
         /*public ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
         public ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();*/
     }

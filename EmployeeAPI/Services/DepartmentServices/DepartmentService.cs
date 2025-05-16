@@ -74,7 +74,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 };
         }
 
-        public async Task<ResponseModel.DepartmentDto> SoftDeleteAsync(Guid id)
+        public async Task<string> SoftDeleteAsync(Guid id)
         {
             var result = await _repository.GetByIdAsync(id);
             if (result == null)
@@ -87,12 +87,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             {
                 return null;
             }
-            return new DepartmentDto
-            {
-                DepartmentId = update.Id,
-                Name = update.Name,
-                IsDeleted = update.isDeleted,
-            };
+            return "Đã xóa phòng ban: " + id;
          }
 
         public async Task<IEnumerable<ResponseModel.DepartmentDto>> GetDepartmentByName(string name)

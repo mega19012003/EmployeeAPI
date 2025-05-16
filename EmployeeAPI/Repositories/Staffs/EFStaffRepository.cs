@@ -71,6 +71,7 @@ namespace EmployeeAPI.Repositories.Staffs
                 return null;
 
             existingStaff.IsDeleted = true;
+            existingStaff.IsActive = false;
             _context.Staffs.Update(existingStaff);
             await _context.SaveChangesAsync();
             return existingStaff;
