@@ -43,7 +43,7 @@ namespace EmployeeAPI.Services.PositionServices
             };
         }
 
-        public async Task<ResponseModel.CreatePosition> AddAsync(string name)
+        public async Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string name)
         {
             var model = new Position
             {
@@ -52,14 +52,14 @@ namespace EmployeeAPI.Services.PositionServices
             };
 
             var entity = await _positionRepository.AddAsync(model);
-            return new ResponseModel.CreatePosition
+            return new ResponseModel.CreateAndUpdatePosition
             {
                 PositionId = entity.Id,
                 Name = entity.Name,
             };
         }
 
-        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName)
+        public async Task<ResponseModel.CreateAndUpdatePosition?> UpdateAsync(Guid id, string newName)
         {
             var entity = await _positionRepository.GetByIdAsync(id);
             if (entity == null) return null;
@@ -68,20 +68,23 @@ namespace EmployeeAPI.Services.PositionServices
             var updated = await _positionRepository.UpdateAsync(entity);
             if (updated == null) return null;
 
-            return new ResponseModel.UpdatePosition
+            return new ResponseModel.CreateAndUpdatePosition
             {
-                Id = updated.Id,
+                PositionId = updated.Id,
                 Name = updated.Name,
-                IsDeleted = updated.IsDeleted
             };
         }
 
         public async Task<string> SoftDeleteAsync(Guid id)
         {
-            var entity = await _positionRepository.SoftDeleteAsync(id);
-            if (entity == null) return "Không tìm thấy vị trí";
+            var result = await _positionRepository.GetByIdAsync(id);
+            if (result == null) return "Không tìm thấy vị trí";
 
-            return "Đã xóa vị trí: " + id;
+            result.IsDeleted = true;
+
+            await _positionRepository.SoftDeleteAsync(id);
+ 
+            return "Đã xóa vị trí: " + result.Name;
         }
 
         public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)

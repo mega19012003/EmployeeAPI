@@ -68,15 +68,11 @@ namespace EmployeeAPI.Controllers
         [HttpDelete]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
-            if (id == null)
-            {
-                return BadRequest("Invalid Department data");
-            }
+            if (id == null) return BadRequest("Id không hợp lệ hoặc tồn tại");
+
             var result = await _departmentService.SoftDeleteAsync(id);
-            if (result == null)
-            {
-                return NotFound();
-            }
+            if (result == null) return NotFound();
+
             return Ok(result);
         }
         

@@ -9,12 +9,12 @@ namespace EmployeeAPI.Models
         public Guid Id { get; set; }
         public Guid StaffId { get; set; }
         public Staff Staff { get; set; }
-        public Double Salary { get; set; }
+        public double Salary { get; set; }
+        public DateTime CreatedDate { get; set; } 
         public DateTime CheckoutDate { get; set; } //ngày trả lương
         public string Note { get; set; }
         public bool IsDeleted { get; set; } = false;
         public bool IsPaid { get; set; } = false; //đã trả lương
-        public bool IsAbsent { get; set; } = false; //vắng mặt
         //public List<Checkin> Checkins { get; set; } = new List<Checkin>();
         //public virtual ICollection<Fine> Fines { get; set; }
         /*public ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();

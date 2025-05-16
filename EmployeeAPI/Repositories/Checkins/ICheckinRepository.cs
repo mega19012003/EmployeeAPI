@@ -11,6 +11,6 @@ namespace EmployeeAPI.Repositories.Checkins
         Task UpdateAsync(Checkin checkin);
         Task<Checkin> SoftDeleteAsync(Guid id);
         Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-   
+        Task<IEnumerable<Checkin>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
     }
 }

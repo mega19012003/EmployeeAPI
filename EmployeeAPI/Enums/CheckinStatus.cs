@@ -2,11 +2,12 @@
 {
     public enum CheckinStatus
     {
-        Normal = 0,
+        OnTime = 0,
         Late = 1,
-        Early = 2,
+        LeaveEarly = 2,
         Overtime = 3,
-        Absent = 4,
-        AbsentWithPermission = 5,
+        OnHoliday = 4,
+        Absent = 5,
+        AbsentWithPermission = 6,
     }
 }

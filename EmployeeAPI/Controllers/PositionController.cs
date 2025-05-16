@@ -67,12 +67,5 @@ namespace EmployeeAPI.Controllers
 
             return Ok(positions);
         }
-        /*[HttpGet("employee-not-done")]
-        public async Task<IActionResult> GetEmployeesByPosition([FromQuery] string name, [FromQuery] int? pageIndex, [FromQuery] int? pageSize)
-        {
-            var employees = await _staffService.GetEmployeeByPosition(name, pageSize, pageIndex);
-            if (employees == null) return NotFound();
-            return Ok(employees);
-        }*/
     }
 }

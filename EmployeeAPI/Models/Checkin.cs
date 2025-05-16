@@ -9,7 +9,7 @@ namespace EmployeeAPI.Models
         public Guid StaffId { get; set; }
         public Staff Staff { get; set; }
         public DateTime CheckinDate { get; set; }
-        public CheckinStatus Status { get; set; } = CheckinStatus.Normal;
+        public CheckinStatus Status { get; set; } = CheckinStatus.OnTime;
         /*public Guid PayrollId { get; set; } //lương tháng này
         public Payroll Payroll { get; set; } */
         public bool IsDeleted { get; set; } = false;

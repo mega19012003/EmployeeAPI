@@ -45,50 +45,40 @@ namespace EmployeeAPI.Services.DepartmentServices
                 Name = name,
             };
 
-            var entity = await _repository.AddAsync(model);
+            /*var entity =*/ await _repository.AddAsync(model);
             return new ResponseModel.CreateDepartment
             {
-                DepartmentId = entity.Id,
-                Name = entity.Name,
+                DepartmentId = model.Id,
+                Name = model.Name,
             };
         }
         
-
         public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName)
-        {
-                var result = await _repository.GetByIdAsync(id);
-                if (result == null)
-                {
-                    return null;
-                }
-                result.Name = newName;
-                var update = await _repository.UpdateAsync(result);
-                if (update == null)
-                {
-                    return null;
-                }
-                return new UpdateDepartment
-                {
-                    DepartmentId = update.Id,
-                    Name = update.Name,
-                    IsDeleted = update.isDeleted,
-                };
-        }
-
-        public async Task<string> SoftDeleteAsync(Guid id)
         {
             var result = await _repository.GetByIdAsync(id);
             if (result == null)
             {
                 return null;
             }
-            result.isDeleted = true;
-            var update = await _repository.SoftDeleteAsync(result.Id);
-            if (update == null)
+            result.Name = newName;
+            await _repository.UpdateAsync(result);
+            return new UpdateDepartment
             {
-                return null;
-            }
-            return "Đã xóa phòng ban: " + id;
+                DepartmentId = result.Id,
+                Name = result.Name,
+            };
+        }
+
+        public async Task<string> SoftDeleteAsync(Guid id)
+        {
+            var result = await _repository.GetByIdAsync(id);
+            if (result == null) return null;
+
+            result.isDeleted = true;
+            await _repository.SoftDeleteAsync(result.Id);
+            //if (result == null) return null;
+
+            return "Đã xóa phòng ban: " + result.Name;
          }
 
         public async Task<IEnumerable<ResponseModel.DepartmentDto>> GetDepartmentByName(string name)

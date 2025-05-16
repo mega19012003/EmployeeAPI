@@ -4,12 +4,14 @@ using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Duties;
+using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.DepartmentServices;
 using EmployeeAPI.Services.DutyServices;
 using EmployeeAPI.Services.FileServices;
+using EmployeeAPI.Services.PayrollServices;
 using EmployeeAPI.Services.PositionServices;
 using EmployeeAPI.Services.StaffServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -33,13 +35,15 @@ builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
 builder.Services.AddScoped<IPositionRepository, EFPositionRepository>();
 builder.Services.AddScoped<IAuthRepository, EFAuthRepository>();
 builder.Services.AddScoped<ICheckinRepository, EFCheckinRepository>();
-builder.Services.AddScoped<IFileService, FileService>();
+builder.Services.AddScoped<IPayrollRepository, EFPayrollRepository>();
 
+builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IDutyService, DutyService>();
 builder.Services.AddScoped<IStaffService, StafffService>();
 builder.Services.AddScoped<ICheckinService, CheckinService>();
+builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Your API", Version = "v1" });

@@ -10,7 +10,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public Guid CheckinId { get; set; }
             public Guid StaffId { get; set; }
             public DateTime CheckinDate { get; set; }
-            public CheckinStatus Status { get; set; } = CheckinStatus.Normal;
+            public CheckinStatus Status { get; set; }
             //public Guid PayrollId { get; set; } //lương tháng này
         }
         public record CreateCheckin
@@ -18,7 +18,7 @@ namespace EmployeeAPI.Services.CheckinServices
             //public Guid Id { get; set; }
             public Guid StaffId { get; set; }
             public DateTime CheckinDate { get; set; }
-            public CheckinStatus Status { get; set; } = CheckinStatus.Normal;
+            public CheckinStatus Status { get; set; } 
             //public Guid PayrollId { get; set; } 
         }
 
@@ -27,7 +27,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public Guid Id { get; set; }
             public Guid StaffId { get; set; }
             public DateTime CheckinDate { get; set; }
-            public CheckinStatus Status { get; set; } = CheckinStatus.Normal;
+            public CheckinStatus Status { get; set; }
             //public Guid PayrollId { get; set; } //lương tháng này
         }
 

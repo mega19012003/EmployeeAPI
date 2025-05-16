@@ -34,8 +34,6 @@ namespace EmployeeAPI.Repositories.Positions
         public async Task<Position?> UpdateAsync(Position position)
         {
             var entity = await _context.Positions.FirstOrDefaultAsync(p => p.Id == position.Id && !p.IsDeleted);
-            //_context.Positions.Update(position);
-
             if (entity == null) return null;
 
             entity.Name = position.Name;
@@ -44,15 +42,13 @@ namespace EmployeeAPI.Repositories.Positions
             return entity;
         }
 
-        public async Task<Position?> SoftDeleteAsync(Guid id)
+        public async Task SoftDeleteAsync(Guid id)
         {
             var entity = await _context.Positions.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
-            if (entity == null) return null;
+            if (entity == null) return;
 
-            entity.IsDeleted = true;
             _context.Positions.Update(entity);
             await _context.SaveChangesAsync();
-            return entity;
         }
 
         public async Task<Position?> GetAllEmployee(string name)
