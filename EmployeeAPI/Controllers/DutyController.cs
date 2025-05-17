@@ -1,5 +1,6 @@
 ﻿using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Services.DutyServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeAPI.Controllers
@@ -15,7 +16,7 @@ namespace EmployeeAPI.Controllers
             _dutyService = dutyService;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize]
         public async Task<IActionResult> GetAll(int? pageSize, int? pageIndex, string? SearchTerm)
         {
             var result = await _dutyService.GetAllAsync(pageSize, pageIndex, SearchTerm);
@@ -30,7 +31,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet("Id")]
+        [HttpGet("Id"), Authorize]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             var duty = await _dutyService.GetByIdAsync(id);
@@ -41,7 +42,7 @@ namespace EmployeeAPI.Controllers
             return Ok(duty);
         }
 
-        [HttpPost]
+        [HttpPost, Authorize]
         public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDuty dto)
         {
             var result = await _dutyService.AddAsync(dto);
@@ -53,7 +54,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
+        [HttpPut, Authorize]
         public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDuty dto)
         {
             if (dto == null)
@@ -64,7 +65,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpDelete]
+        [HttpDelete, Authorize]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid id)
         {
             var result = await _dutyService.SoftDeleteAsync(id);

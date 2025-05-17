@@ -9,11 +9,11 @@ namespace EmployeeAPI.Services.PayrollServices
     {
         Task<ResponseModel.PayrollDto> GetPayrollById(Guid id);
         Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls();
-        Task<ResponseModel.CreatePayroll> CreatePayroll(ResponseModel.CreatePayroll dto);
         Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto);
         Task<string> SoftDeletePayroll(Guid id);
-        Task<IEnumerable<ResponseModel.PayrollDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
+        //Task<IEnumerable<ResponseModel.PayrollDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
         ///////////////////////////////
         Task<PaidPayroll> CalculatePayrollAsync(Guid staffId);
+        Task<IEnumerable<PayrollDto>> GetPayrollByStaff(Guid staffId);
     }
 }

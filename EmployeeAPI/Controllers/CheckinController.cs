@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Services.CheckinServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeAPI.Controllers
@@ -14,7 +15,7 @@ namespace EmployeeAPI.Controllers
             _service = service;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize]
         public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
 
         /*[HttpGet("{id}")]
@@ -25,7 +26,7 @@ namespace EmployeeAPI.Controllers
             return Ok(checkin);
         }*/
 
-        [HttpPost]
+        [HttpPost, Authorize]
         public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)
         {
             var created = await _service.CreateAsync(dto);
@@ -33,7 +34,7 @@ namespace EmployeeAPI.Controllers
             return Ok(created);
         }
 
-        [HttpPut]
+        [HttpPut, Authorize]
         public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckin dto)
         {
             if (!ModelState.IsValid) return BadRequest(ModelState);
@@ -41,13 +42,21 @@ namespace EmployeeAPI.Controllers
             return updated != null ? Ok(updated) : NotFound();
         }
 
-        [HttpDelete]
+        [HttpDelete, Authorize]
         public async Task<IActionResult> SoftDeleteAsync(Guid id)
         {
             var result = await _service.DeleteAsync(id);
             if (result == null) return NotFound();
 
             return Ok(result);
+        }
+
+        [HttpGet("employee"), Authorize]
+        public async Task<IActionResult> GetCheckinsByStaff(Guid staffId)
+        {
+            var checkins = await _service.GetCheckinByStaffAsync(staffId);
+            if (checkins == null) return NotFound();
+            return Ok(checkins);
         }
     }
 }

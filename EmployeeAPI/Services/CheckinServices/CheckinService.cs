@@ -5,6 +5,7 @@ using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Staffs;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 
 namespace EmployeeAPI.Services.CheckinServices
 {
@@ -102,6 +103,18 @@ namespace EmployeeAPI.Services.CheckinServices
             if (deleted == null) return null;
 
             return "Đã xóa checkin: " + id;
+        }
+
+        public async Task<IEnumerable<CheckinDto>> GetCheckinByStaffAsync(Guid staffId)
+        {
+            var checkins = await _checkinRepository.GetCheckinByStaffAsync(staffId);
+            return checkins.Select(p => new CheckinDto
+            {
+                CheckinId = p.Id,
+                CheckinDate = p.CheckinDate,
+                Status = p.Status,
+                StaffId = p.StaffId,
+            });
         }
     }
 }

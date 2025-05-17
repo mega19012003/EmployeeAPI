@@ -10,7 +10,5 @@ namespace EmployeeAPI.Repositories.Staffs
         Task<Staff> UpdateAsync(Staff staff);
         Task<Staff> SoftDeleteAsync(Guid staff);
         Task<IEnumerable<Staff>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
-        Task<IEnumerable<Staff>> GetEmployeeByPosition(string SearchTerm, int? pageSize, int? pageIndex);
-        Task<IEnumerable<Staff>> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex);
     }
 }

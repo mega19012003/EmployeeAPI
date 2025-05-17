@@ -1,5 +1,6 @@
 ﻿using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.StaffServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -16,14 +17,14 @@ namespace EmployeeAPI.Controllers
             _staffService = staffService;
         }
 
-        [HttpGet]
-        public async Task<IActionResult> GetAllAsync([FromQuery] Guid id, int? pageSize, int? pageIndex, string? SearchTerm)
+        [HttpGet, Authorize]
+        public async Task<IActionResult> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
         {
             var staff = await _staffService.GetAllAsync(pageSize, pageIndex, SearchTerm);
             return Ok(staff);
         }
 
-        [HttpGet("Id")]
+        [HttpGet("Id"), Authorize]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             var staff = await _staffService.GetByIdAsync(id);
@@ -35,7 +36,7 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpPost]
-        [Consumes("multipart/form-data")]
+        [Consumes("multipart/form-data"), Authorize]
         public async Task<IActionResult> AddAsync([FromForm] ResponseModel.CreateStaff dto)
         {
             if (dto == null)
@@ -60,7 +61,7 @@ namespace EmployeeAPI.Controllers
         }
 
         //[HttpPut("delete")]
-        [HttpDelete]
+        [HttpDelete, Authorize]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
         {
             var result = await _staffService.SoftDeleteAsync(Id);
@@ -71,7 +72,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet("name")]
+        [HttpGet("name"), Authorize]
         public async Task<IActionResult> GetByNameAsync(string name, int? pageSize, int? pageIndex)
         {
             var result = await _staffService.GetByNameAsync(name, pageSize, pageIndex);
@@ -81,26 +82,5 @@ namespace EmployeeAPI.Controllers
             }
             return Ok(result);
         }
-
-        /*[HttpGet("Position")]
-        public async Task<IActionResult> GetEmployeeByPosition(string SearchTerm, int? pageSize, int? pageIndex)
-        {
-            var result = await _staffService.GetEmployeeByPosition(SearchTerm, pageSize, pageIndex);
-            if (result == null)
-            {
-                return NotFound();
-            }
-            return Ok(result);
-        }
-        [HttpGet("Department")]
-        public async Task<IActionResult> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex)
-        {
-            var result = await _staffService.GetEmployeeByDepartment(SearchTerm, pageSize, pageIndex);
-            if (result == null)
-            {
-                return NotFound();
-            }
-            return Ok(result);
-        }*/
     }
 }

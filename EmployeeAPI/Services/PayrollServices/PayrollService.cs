@@ -50,28 +50,6 @@ namespace EmployeeAPI.Services.PayrollServices
 
         }
 
-        public async Task<ResponseModel.CreatePayroll> CreatePayroll(ResponseModel.CreatePayroll dto)
-        {
-            var result = await _payrollRepository.GetAllPayrolls();
-            if (result == null) return null;
-
-            var payroll = new Payroll
-            {
-                Id = Guid.NewGuid(),
-                CreatedDate = DateTime.UtcNow,
-                StaffId = dto.StaffId,
-                Note = dto.Note,
-            };
-
-            await _payrollRepository.CreatePayroll(payroll);
-            return new ResponseModel.CreatePayroll
-            {
-                StaffId = payroll.StaffId,
-                Note = payroll.Note,
-                CreatedDate = payroll.CreatedDate,
-            };
-        }
-
         public async Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto)
         {
             var exsistingPayroll = await _payrollRepository.GetPayrollById(dto.Id);
@@ -102,24 +80,19 @@ namespace EmployeeAPI.Services.PayrollServices
             return "Đã xóa payroll";
         }
 
-        public async Task<IEnumerable<ResponseModel.PayrollDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month)
+        public async Task<IEnumerable<ResponseModel.PayrollDto>> GetPayrollByStaff(Guid staffId)
         {
-            var checkins = await _checkinRepository.GetCheckinsByStaffAndMonthAsync(staffId, year, month);
-            if (checkins == null || !checkins.Any())
+            var result = await _payrollRepository.GetPayrollByStaffAsync(staffId);
+            return result.Select(c => new PayrollDto
             {
-                return null;
-            }
-            var payrolls = new List<ResponseModel.PayrollDto>();
-            foreach (var checkin in checkins)
-            {
-                var payroll = new ResponseModel.PayrollDto
-                {
-                    Id = Guid.NewGuid(),
-                    StaffId = checkin.StaffId,
-                };
-                payrolls.Add(payroll);
-            }
-            return payrolls;
+                Id = c.Id,
+                StaffId = c.StaffId,
+                StaffName = c.Staff.Name,
+                Salary = c.Salary,
+                CreatedDate = c.CreatedDate,
+                Note = c.Note,
+                IsDeleted = c.IsDeleted,
+            });
         }
 
         ////////////////////////////////////////////////////////

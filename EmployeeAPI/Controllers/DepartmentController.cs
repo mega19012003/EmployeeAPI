@@ -2,6 +2,7 @@
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.DepartmentServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeAPI.Controllers
@@ -19,7 +20,7 @@ namespace EmployeeAPI.Controllers
             _staffRepository = staffRepository;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize]
         public async Task<IActionResult> GetAll()
         {
             var result = await _departmentService.GetAllAsync();
@@ -37,7 +38,7 @@ namespace EmployeeAPI.Controllers
             return Ok(department);
         }*/
 
-        [HttpPost]
+        [HttpPost, Authorize]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
             if (Name == null)
@@ -48,7 +49,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpPut]
+        [HttpPut, Authorize]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
             if (id == null || newName == null)
@@ -65,7 +66,7 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        [HttpDelete]
+        [HttpDelete, Authorize]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
             if (id == null) return BadRequest("Id không hợp lệ hoặc tồn tại");
@@ -76,7 +77,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
         
-        [HttpGet("name")]
+        /*[HttpGet("name"), Authorize]
         public async Task<IActionResult> GetDepartmentByName(string name)
         {
             var department = await _departmentService.GetDepartmentByName(name);
@@ -85,8 +86,8 @@ namespace EmployeeAPI.Controllers
                 return NotFound();
             }
             return Ok(department);
-        }
-        [HttpGet("Employee")]
+        }*/
+        [HttpGet("Employee"), Authorize]
         public async Task<IActionResult> GetEmployeeByPosition(string searchTerm, int? pageSize, int? pageIndex)
         {
             var positions = await _departmentService.GetStaffByDepartmentAsync(searchTerm, pageSize, pageIndex);

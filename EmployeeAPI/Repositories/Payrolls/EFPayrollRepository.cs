@@ -29,11 +29,11 @@ namespace EmployeeAPI.Repositories.Payrolls
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
-        public async Task CreatePayroll(Payroll payroll)
+        /*public async Task CreatePayroll(Payroll payroll)
         {
             var result = _context.Payrolls.Add(payroll);
             await _context.SaveChangesAsync();
-        }
+        }*/
 
         public async Task UpdatePayroll(Payroll payroll)
         {
@@ -54,27 +54,15 @@ namespace EmployeeAPI.Repositories.Payrolls
             return entity;
         }
 
-        public Task<IEnumerable<Payroll>> GetCheckinsByStaffAndMonth(Guid staffId)
+        public async Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid id)
         {
-            int year = DateOnly.FromDateTime(DateTime.UtcNow).Year;
-            int month = DateOnly.FromDateTime(DateTime.UtcNow).Month;
-            // Lấy danh sách checkin của nhân viên theo tháng
-            var checkins = _context.Checkins.Where(c => c.StaffId == staffId && c.Staff.IsDeleted == false && c.CheckinDate.Year == year && c.CheckinDate.Month == month).ToListAsync();
-            if (checkins == null)
-                return null;
-
-            int workDays = checkins.Result.Count();
-            int totalDaysInMonth = DateTime.DaysInMonth(year, month);
-            double baseSalary = 10_000_000;
-            double calculatedSalary = baseSalary * workDays / totalDaysInMonth;
-            var payroll = new Payroll
-            {
-                Id = Guid.NewGuid(),
-                StaffId = staffId,
-                Salary = calculatedSalary,
-            };
-            return null;
+            var result = await _context.Payrolls
+                .Include(p => p.Staff)
+                .Where(p => p.StaffId == id && p.IsDeleted == false)
+                .ToListAsync();
+            return result;
         }
+
         /// <summary>
         /// ////////////////////////////////////////////////
         /// </summary>

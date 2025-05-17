@@ -58,11 +58,6 @@ namespace EmployeeAPI.Services.DutyServices
 
         public async Task<ResponseModel.CreateDuty> AddAsync(ResponseModel.CreateDuty dto)
         {
-            /*var result = await _dutyRepository.AddAsync(dto);
-            if (result == null)
-            {
-                return null;
-            }*/
             var duty = new Duty
             {
                 Id = Guid.NewGuid(),
@@ -75,7 +70,6 @@ namespace EmployeeAPI.Services.DutyServices
             };
 
             var created = await _dutyRepository.AddAsync(duty);
-            //await _dutyRepository.SaveChangesAsync();
             return new ResponseModel.CreateDuty
             {
                 Name = created.Name,
@@ -126,41 +120,10 @@ namespace EmployeeAPI.Services.DutyServices
 
         public async Task<string> SoftDeleteAsync(Guid Id)
         {
-            /*var existingDuty = await _dutyRepository.GetByIdAsync(Id); ///Get id ????
-
-            if (existingDuty == null)
-                return null;
-            return new ResponseModel.DeleteDuty
-            {
-                Id = existingDuty.Id,
-                Name = existingDuty.Name,
-                IsDeleted = existingDuty.IsDeleted,
-            };*/
-
             var entity = await _dutyRepository.SoftDeleteAsync(Id);
             if (entity == null) return null;
 
             return "Đã xóa công việc" + Id;
         }
-
-
-        /*public async Task<IEnumerable<Staff>> GetDutyByName(string name, int? pageSize, int? pageIndex)
-        {
-            var query = _dutyRepository.Where(p => p.IsActive == true && !p.IsDeleted);
-
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
-            }
-
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                int skip = (pageIndex.Value - 1) * pageSize.Value;
-                query = query.Skip(skip).Take(pageSize.Value);
-            }
-            return await query.ToListAsync();
-        }*/
-
-        
     }
 }

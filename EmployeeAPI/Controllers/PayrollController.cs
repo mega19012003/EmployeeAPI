@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Services.PayrollServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,7 +15,7 @@ namespace EmployeeAPI.Controllers
             _payrollService = payrollService;
         }
 
-        [HttpGet]
+        [HttpGet, Authorize]
         public async Task<IActionResult> GetAllPayrolls()
         {
             var results = await _payrollService.GetAllPayrolls();
@@ -22,56 +23,15 @@ namespace EmployeeAPI.Controllers
             return Ok(results);
         }
 
-        [HttpGet("id")]
+        /*[HttpGet("id")]
         public async Task<IActionResult> GetPayrollById(Guid id)
         {
             var result = await _payrollService.GetPayrollById(id);
             if (result == null) return NotFound();
             return Ok(result);
-        }
+        }*/
 
-        [HttpPost]
-        public async Task<IActionResult> CreatePayroll(ResponseModel.CreatePayroll dto)
-        {
-            var result = await _payrollService.CreatePayroll(dto);
-            if (result == null)
-            {
-                return BadRequest();
-            }
-            return Ok(result);
-        }
-
-        [HttpPut]
-        public async Task<IActionResult> UpdatePayroll(ResponseModel.UpdatePayroll dto)
-        {
-            var result = await _payrollService.UpdatePayroll(dto);
-            if (result == null)
-            {
-                return NotFound();
-            }
-            return Ok(result);
-        }
-
-        [HttpDelete]
-        public async Task<IActionResult> DeletePayroll(Guid id)
-        {
-            var result = await _payrollService.SoftDeletePayroll(id);
-            if (result == null) return BadRequest("Không thể xóa payroll " + id);
-            return Ok(result);
-        }
-
-        [HttpGet("Employee")]
-        public async Task<IActionResult> GetCheckinsByStaffAndMonth(Guid staffId, int year, int month)
-        {
-            var results = await _payrollService.GetCheckinsByStaffAndMonthAsync(staffId, year, month);
-            if (results == null)
-            {
-                return NotFound();
-            }
-            return Ok(results);
-        }
-
-        [HttpPost("calculate")]
+        [HttpPost("calculate"), Authorize]
         public async Task<IActionResult> CalculatePayroll(Guid staffId)
         {
             try
@@ -84,5 +44,25 @@ namespace EmployeeAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+        [HttpDelete, Authorize]
+        public async Task<IActionResult> DeletePayroll(Guid id)
+        {
+            var result = await _payrollService.SoftDeletePayroll(id);
+            if (result == null) return BadRequest("Không thể xóa payroll " + id);
+            return Ok(result);
+        }
+
+        [HttpGet("Employee")]
+        public async Task<IActionResult> GetPayrollByStaff(Guid staffId)
+        {
+            var results = await _payrollService.GetPayrollByStaff(staffId);
+            if (results == null)
+            {
+                return NotFound();
+            }
+            return Ok(results);
+        }
+
     }
 }

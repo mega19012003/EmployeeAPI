@@ -17,7 +17,7 @@ namespace EmployeeAPI.Repositories.Staffs
 
         public async Task<IEnumerable<Staff>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
         {
-            var results = _context.Staffs.AsQueryable();
+            var results = _context.Staffs.Include(p => p.Department).Include(p => p.Position).AsQueryable();
 
             if (!string.IsNullOrEmpty(SearchTerm))
             {
@@ -33,7 +33,7 @@ namespace EmployeeAPI.Repositories.Staffs
 
         public async Task<Staff> GetByIdAsync(Guid id)
         {
-            var results = await _context.Staffs.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted && p.IsActive);
+            var results = await _context.Staffs.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted && p.IsActive);
             return results;
         }
 
@@ -43,7 +43,6 @@ namespace EmployeeAPI.Repositories.Staffs
             await _context.SaveChangesAsync();
             return staff;
         }
-
 
         public async Task<Staff> UpdateAsync(Staff staff)
         {
@@ -93,37 +92,6 @@ namespace EmployeeAPI.Repositories.Staffs
                 query = query.Skip(skip).Take(pageSize.Value);
             }
             return await query.ToListAsync();
-        }
-
-        public async Task<IEnumerable<Staff>> GetEmployeeByPosition(string SearchTerm, int? pageSize, int? pageIndex)
-        {
-            var query = _context.Staffs
-                .Include(s => s.Position)
-                .Where(s => !s.IsDeleted);
-
-            if (!string.IsNullOrEmpty(SearchTerm))
-            {
-                query = query.Where(f => f.Position.Name.ToLower().Contains(SearchTerm.ToLower()) && !f.Position.IsDeleted);
-            }
-
-            return await query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value).ToListAsync();
-        }
-
-        public async Task<IEnumerable<Staff>> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex)
-        {
-            var query = _context.Staffs
-                .Include(s => s.Department)
-                .Where(s => !s.IsDeleted && !s.Department.isDeleted);
-            if (query == null)
-            {
-                return null;
-            }
-
-            if (!string.IsNullOrEmpty(SearchTerm))
-            {
-                query = query.Where(f => f.Department.Name.ToLower().Contains(SearchTerm.ToLower()));
-            }
-            return await query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value).ToListAsync();
         }
     }
 }

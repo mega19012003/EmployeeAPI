@@ -27,12 +27,12 @@ namespace EmployeeAPI.Services.DutyServices
             public List<UpdateDutyDetail> DutyDetails { get; set; } = new List<UpdateDutyDetail>();
         }
 
-        public record DeleteDuty
+        /*public record DeleteDuty
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
             public bool IsDeleted { get; set; }
-        }
+        }*/
         public record DutyDetailDto
         {
             public Guid StaffId { get; set; }

@@ -6,10 +6,9 @@ namespace EmployeeAPI.Repositories.Payrolls
     {
         Task<Payroll> GetPayrollById(Guid id);
         Task<IEnumerable<Payroll>> GetAllPayrolls();
-        Task CreatePayroll(Payroll payroll);
         Task UpdatePayroll(Payroll payroll);
         Task<Payroll> SoftDeletePayroll(Guid id);
-        Task<IEnumerable<Payroll>> GetCheckinsByStaffAndMonth(Guid staffId);
+        Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid staffId);
         /// <summary>
         /// ////////////////////////////////////////////////
         /// </summary>

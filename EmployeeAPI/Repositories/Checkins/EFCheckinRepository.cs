@@ -52,12 +52,10 @@ namespace EmployeeAPI.Repositories.Checkins
         {
             return await _context.Checkins.AnyAsync(predicate);
         }
-        public async Task<IEnumerable<Checkin>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month)
+        public async Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId)
         {
             return await _context.Checkins
                 .Where(c => c.StaffId == staffId &&
-                            c.CheckinDate.Year == year &&
-                            c.CheckinDate.Month == month &&
                             !c.IsDeleted)
                 .ToListAsync();
         }

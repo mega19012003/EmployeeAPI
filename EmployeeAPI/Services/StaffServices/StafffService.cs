@@ -25,7 +25,7 @@ namespace EmployeeAPI.Services.StaffServices
         public async Task<IEnumerable<ResponseModel.StaffDto>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
         {
             var results = await _repository.GetAllAsync(pageSize, pageIndex, SearchTerm);
-            return results.Select(p => new ResponseModel.StaffDto
+            return results.Select(p => new ResponseModel.StaffDto 
             {
                 StaffId = p.Id,
                 Name = p.Name,
@@ -33,7 +33,9 @@ namespace EmployeeAPI.Services.StaffServices
                 PhoneNumber = p.PhoneNumber,
                 Address = p.Address,
                 DepartmentId = p.DepartmentId,
+                DepartmentName = p.Department?.Name ?? "Không xác định",
                 PositionId = p.PositionId,
+                PositionName = p.Position?.Name ?? "Không xác định",
                 BasicSalary = p.BasicSalary,
                 ImageUrl = p.ImageUrl
             });
@@ -86,7 +88,9 @@ namespace EmployeeAPI.Services.StaffServices
                 PhoneNumber = created.PhoneNumber,
                 Address = created.Address,
                 DepartmentId = created.DepartmentId,
+                DepartmentName = (await _departmentRepository.GetByIdAsync(created.DepartmentId))?.Name,
                 PositionId = created.PositionId,
+                PositionName = (await _positionRepository.GetByIdAsync(created.PositionId))?.Name,
                 BasicSalary = created.BasicSalary,
                 ImageUrl = created.ImageUrl,
             };
@@ -105,7 +109,6 @@ namespace EmployeeAPI.Services.StaffServices
             existingStaff.PositionId = dto.PositionId;
             existingStaff.BasicSalary = dto.BasicSalary;
 
-            // Gán trực tiếp List<string> (nếu dùng EF converter)
             existingStaff.ImageUrl = imagePaths;
 
             existingStaff.IsActive = dto.IsActive;
@@ -136,7 +139,7 @@ namespace EmployeeAPI.Services.StaffServices
             {
                 return null;
             }
-            return "Đã xóa user: " + Id;
+            return "Đã xóa user: " + existingStaff.Name;
         }
 
 
@@ -159,51 +162,9 @@ namespace EmployeeAPI.Services.StaffServices
                 PhoneNumber = p.PhoneNumber,
                 Address = p.Address,
                 DepartmentId = p.DepartmentId,
+                DepartmentName = p.Department?.Name ?? "Không xác định",
                 PositionId = p.PositionId,
-                BasicSalary = p.BasicSalary,
-                ImageUrl = p.ImageUrl
-            });
-        }
-
-        public async Task<IEnumerable<ResponseModel.StaffDto>> GetEmployeeByPosition(string SearchTerm, int? pageSize, int? pageIndex)
-        {
-            if (pageSize == null || pageSize <= 0)
-            {
-                pageSize = 10;
-            }
-
-            if (pageIndex == null || pageIndex <= 0)
-            {
-                pageIndex = 1;
-            }
-
-            var result = await _repository.GetEmployeeByPosition(SearchTerm, pageSize, pageIndex);
-            return result.Select(p => new ResponseModel.StaffDto
-            {
-                StaffId = p.Id,
-                Name = p.Name,
-                PositionId = p.PositionId,
-                BasicSalary = p.BasicSalary,
-                ImageUrl = p.ImageUrl
-            });
-        }
-
-        public async Task<IEnumerable<ResponseModel.StaffDto>> GetEmployeeByDepartment(string SearchTerm, int? pageSize, int? pageIndex)
-        {
-            if (pageSize == null || pageSize <= 0)
-            {
-                pageSize = 10;
-            }
-            if (pageIndex == null || pageIndex <= 0)
-            {
-                pageIndex = 1;
-            }
-            var result = await _repository.GetEmployeeByDepartment(SearchTerm, pageSize, pageIndex);
-            return result.Select(p => new ResponseModel.StaffDto
-            {
-                StaffId = p.Id,
-                Name = p.Name,
-                DepartmentId = p.DepartmentId,
+                PositionName = p.Position?.Name ?? "Không xác định",
                 BasicSalary = p.BasicSalary,
                 ImageUrl = p.ImageUrl
             });

@@ -1,5 +1,6 @@
 ﻿using System.Linq.Expressions;
 using EmployeeAPI.Models;
+using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 
 
 namespace EmployeeAPI.Services.CheckinServices
@@ -12,6 +13,6 @@ namespace EmployeeAPI.Services.CheckinServices
         Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);
         Task<string> DeleteAsync(Guid id);
         //Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-        //Task<IEnumerable<Checkin>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
+        Task<IEnumerable<CheckinDto>> GetCheckinByStaffAsync(Guid staffId);
     }
 }
