@@ -11,10 +11,7 @@ namespace EmployeeAPI.Models
         public DateTime StartDate { get; set; }
         public bool IsCompleted { get; set; } = false;
         public bool IsDeleted { get; set; } = false; //xóa mềm
-                                                     //public Guid StaffId { get; set; }
-                                                     //public List<Staff> Staffs { get; set; }
-                                                     //public bool OverTime { get; set; } = false;
-                                                     //public bool IsDeleted { get; set; } = false; //xóa mềm
+                                               
         public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
     }
 }

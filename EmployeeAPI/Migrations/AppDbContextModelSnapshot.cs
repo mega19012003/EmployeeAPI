@@ -91,10 +91,8 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
                 {
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("DutyId")
+                    b.Property<Guid>("DutyDetailId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -104,12 +102,17 @@ namespace EmployeeAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("DutyDetailId")
+                    b.Property<Guid>("DutyId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("StaffId", "DutyId");
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DutyDetailId");
 
                     b.HasIndex("DutyId");
+
+                    b.HasIndex("StaffId");
 
                     b.ToTable("DutyDetail");
                 });

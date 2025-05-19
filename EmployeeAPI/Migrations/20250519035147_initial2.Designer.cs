@@ -12,7 +12,7 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250513092357_initial2")]
+    [Migration("20250519035147_initial2")]
     partial class initial2
     {
         /// <inheritdoc />
@@ -25,45 +25,6 @@ namespace EmployeeAPI.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
-            modelBuilder.Entity("EmployeeAPI.Models.Absent", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<DateOnly>("AbsentDate")
-                        .HasColumnType("date");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Note")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<TimeOnly>("TimeAbsent")
-                        .HasColumnType("time");
-
-                    b.Property<double?>("TotalHours")
-                        .HasColumnType("float");
-
-                    b.Property<bool>("isFined")
-                        .HasColumnType("bit");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StaffId");
-
-                    b.ToTable("Absents");
-                });
-
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -73,30 +34,16 @@ namespace EmployeeAPI.Migrations
                     b.Property<DateTime>("CheckinDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<TimeOnly>("CheckinTime")
-                        .HasColumnType("time");
-
-                    b.Property<bool>("IsHoliday")
+                    b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<bool>("IsOvertime")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<Guid?>("PayrollId")
-                        .HasColumnType("uniqueidentifier");
 
                     b.Property<Guid>("StaffId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("isLate")
-                        .HasColumnType("bit");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("PayrollId");
 
                     b.HasIndex("StaffId");
 
@@ -108,10 +55,6 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -131,12 +74,11 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
 
-                    b.Property<DateTime>("EndDate")
-                        .HasColumnType("datetime2");
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -152,28 +94,28 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
                 {
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("DutyId")
+                    b.Property<Guid>("DutyDetailId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsCompleted")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Note")
+                    b.Property<string>("Description")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("StaffId", "DutyId");
+                    b.Property<Guid>("DutyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DutyDetailId");
 
                     b.HasIndex("DutyId");
+
+                    b.HasIndex("StaffId");
 
                     b.ToTable("DutyDetail");
                 });
@@ -186,6 +128,15 @@ namespace EmployeeAPI.Migrations
 
                     b.Property<DateTime>("CheckoutDate")
                         .HasColumnType("datetime2");
+
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsPaid")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Note")
                         .IsRequired()
@@ -202,6 +153,24 @@ namespace EmployeeAPI.Migrations
                     b.HasIndex("StaffId");
 
                     b.ToTable("Payrolls");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.Position", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Positions");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Staff", b =>
@@ -223,6 +192,10 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsActive")
                         .HasColumnType("bit");
 
@@ -237,9 +210,14 @@ namespace EmployeeAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<Guid>("PositionId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("DepartmentId");
+
+                    b.HasIndex("PositionId");
 
                     b.ToTable("Staffs");
                 });
@@ -267,25 +245,10 @@ namespace EmployeeAPI.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("EmployeeAPI.Models.Absent", b =>
-                {
-                    b.HasOne("EmployeeAPI.Models.Staff", "Staff")
-                        .WithMany()
-                        .HasForeignKey("StaffId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Staff");
-                });
-
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
                 {
-                    b.HasOne("EmployeeAPI.Models.Payroll", null)
-                        .WithMany("Checkins")
-                        .HasForeignKey("PayrollId");
-
                     b.HasOne("EmployeeAPI.Models.Staff", "Staff")
-                        .WithMany()
+                        .WithMany("Checkins")
                         .HasForeignKey("StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -315,7 +278,7 @@ namespace EmployeeAPI.Migrations
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.Staff", "Staff")
-                        .WithMany()
+                        .WithMany("Payrolls")
                         .HasForeignKey("StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -326,12 +289,25 @@ namespace EmployeeAPI.Migrations
             modelBuilder.Entity("EmployeeAPI.Models.Staff", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.Department", "Department")
-                        .WithMany()
+                        .WithMany("Staffs")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EmployeeAPI.Models.Position", "Position")
+                        .WithMany("Staffs")
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
                     b.Navigation("Department");
+
+                    b.Navigation("Position");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
+                {
+                    b.Navigation("Staffs");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Duty", b =>
@@ -339,14 +315,18 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("DutyDetails");
                 });
 
-            modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
+            modelBuilder.Entity("EmployeeAPI.Models.Position", b =>
                 {
-                    b.Navigation("Checkins");
+                    b.Navigation("Staffs");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Staff", b =>
                 {
+                    b.Navigation("Checkins");
+
                     b.Navigation("DutyDetails");
+
+                    b.Navigation("Payrolls");
                 });
 #pragma warning restore 612, 618
         }

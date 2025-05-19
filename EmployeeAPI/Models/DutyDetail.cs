@@ -1,10 +1,11 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using Microsoft.EntityFrameworkCore;
 namespace EmployeeAPI.Models
 {
-    [Keyless]
     public class DutyDetail
     {
+        [Key]
         public Guid DutyDetailId { get; set; } = Guid.NewGuid();
         public Guid StaffId { get; set; }
         [JsonIgnore]

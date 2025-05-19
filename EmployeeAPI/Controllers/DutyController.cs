@@ -10,70 +10,111 @@ namespace EmployeeAPI.Controllers
     public class DutyController : ControllerBase
     {
         private readonly IDutyService _dutyService;
-
-        public DutyController(IDutyService dutyService)
+        private readonly ILogger<DutyController> _logger;
+        public DutyController(IDutyService dutyService, ILogger<DutyController> logger)
         {
             _dutyService = dutyService;
+            _logger = logger;
         }
 
         [HttpGet, Authorize]
         public async Task<IActionResult> GetAll(int? pageSize, int? pageIndex, string? SearchTerm)
         {
-            var result = await _dutyService.GetAllAsync(pageSize, pageIndex, SearchTerm);
-            if (pageSize == null || pageSize <= 0)
+            try
             {
-                pageSize = 10;
+                var result = await _dutyService.GetAllAsync(pageSize, pageIndex, SearchTerm);
+                if (pageSize == null || pageSize <= 0)
+                {
+                    pageSize = 10;
+                }
+                if (pageIndex == null || pageIndex <= 0)
+                {
+                    pageIndex = 1;
+                }
+                return Ok(result);
             }
-            if (pageIndex == null || pageIndex <= 0)
+            catch (Exception ex)
             {
-                pageIndex = 1;
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { message = ex.Message });
             }
-            return Ok(result);
         }
 
         [HttpGet("Id"), Authorize]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
-            var duty = await _dutyService.GetByIdAsync(id);
-            if (duty == null)
+            try
             {
-                return NotFound();
+                var duty = await _dutyService.GetByIdAsync(id);
+                if (duty == null)
+                {
+                    return NotFound();
+                }
+                return Ok(duty);
             }
-            return Ok(duty);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
         [HttpPost, Authorize]
         public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDuty dto)
         {
-            var result = await _dutyService.AddAsync(dto);
-            if (dto == null)
+            try
             {
-                return BadRequest("Invalid data.");
+                var result = await _dutyService.AddAsync(dto);
+                if (dto == null)
+                {
+                    return BadRequest("Invalid data.");
+                }
+
+                return Ok(result);
             }
-            
-            return Ok(result);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
         [HttpPut, Authorize]
         public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDuty dto)
         {
-            if (dto == null)
+            try
             {
-                return BadRequest("Invalid data.");
+                if (dto == null)
+                {
+                    return BadRequest("Invalid data.");
+                }
+                var result = await _dutyService.UpdateAsync(dto);
+                return Ok(result);
             }
-            var result = await _dutyService.UpdateAsync(dto);
-            return Ok(result);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
         [HttpDelete, Authorize]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid id)
         {
-            var result = await _dutyService.SoftDeleteAsync(id);
-            if (result == null)
+            try
             {
-                return NotFound();
+                var result = await _dutyService.SoftDeleteAsync(id);
+                if (result == null)
+                {
+                    return NotFound();
+                }
+                return Ok(result);
             }
-            return Ok(result);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { message = ex.Message });
+            }
         }
 
     }

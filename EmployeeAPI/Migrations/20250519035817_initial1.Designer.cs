@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250516015052_sua-model-payroll-va-checkin")]
-    partial class suamodelpayrollvacheckin
+    [Migration("20250519035817_initial1")]
+    partial class initial1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -94,10 +94,8 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
                 {
-                    b.Property<Guid>("StaffId")
-                        .HasColumnType("uniqueidentifier");
-
-                    b.Property<Guid>("DutyId")
+                    b.Property<Guid>("DutyDetailId")
+                        .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<DateTime>("CreatedAt")
@@ -107,12 +105,17 @@ namespace EmployeeAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<Guid>("DutyDetailId")
+                    b.Property<Guid>("DutyId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.HasKey("StaffId", "DutyId");
+                    b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("DutyDetailId");
 
                     b.HasIndex("DutyId");
+
+                    b.HasIndex("StaffId");
 
                     b.ToTable("DutyDetail");
                 });
@@ -126,8 +129,8 @@ namespace EmployeeAPI.Migrations
                     b.Property<DateTime>("CheckoutDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<bool>("IsAbsent")
-                        .HasColumnType("bit");
+                    b.Property<DateTime>("CreatedDate")
+                        .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");

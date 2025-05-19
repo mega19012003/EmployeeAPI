@@ -9,26 +9,32 @@ public class FileService : IFileService
         if (files == null || files.Count == 0)
             return imagePaths;
 
-        foreach (var file in files)
+        try
         {
-            if (file.Length > 0)
+            Directory.CreateDirectory(uploadsFolder); // tạo thư mục nếu chưa có
+
+            foreach (var file in files)
             {
-                // Tạo tên file duy nhất (ví dụ: GUID + tên gốc)
-                var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-
-                // Đường dẫn lưu file
-                var filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                // Lưu file vào đĩa
-                using (var stream = new FileStream(filePath, FileMode.Create))
+                if (file.Length > 0)
                 {
-                    await file.CopyToAsync(stream);
-                }
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
 
-                // Thêm đường dẫn dạng "images/filename.ext" để lưu vào DB
-                var relativePath = Path.Combine("images", uniqueFileName).Replace("\\", "/");
-                imagePaths.Add(relativePath);
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    var relativePath = Path.Combine("images", uniqueFileName).Replace("\\", "/");
+                    imagePaths.Add(relativePath);
+                }
             }
+        }
+        catch (Exception ex)
+        {
+            // Ghi log hoặc trả lỗi rõ ràng để biết chuyện gì đang xảy ra
+            Console.WriteLine($"Lỗi lưu file: {ex.Message}");
+            throw; // hoặc return imagePaths để không ngắt tiến trình
         }
 
         return imagePaths;

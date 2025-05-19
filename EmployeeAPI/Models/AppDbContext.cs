@@ -21,8 +21,8 @@ namespace EmployeeAPI.Models
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<DutyDetail>()
-            .HasKey(dd => new { dd.StaffId, dd.DutyId }); 
+            /*modelBuilder.Entity<DutyDetail>()
+            .HasKey(dd => new { dd.StaffId, dd.DutyId }); */
 
             modelBuilder.Entity<DutyDetail>()
                 .HasOne(dd => dd.Staff)
