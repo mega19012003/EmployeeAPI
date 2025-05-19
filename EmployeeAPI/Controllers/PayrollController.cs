@@ -16,9 +16,9 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet, Authorize]
-        public async Task<IActionResult> GetAllPayrolls()
+        public async Task<IActionResult> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            var results = await _payrollService.GetAllPayrolls();
+            var results = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
             if (results == null) return NotFound();
             return Ok(results);
         }

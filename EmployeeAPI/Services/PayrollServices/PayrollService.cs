@@ -18,9 +18,17 @@ namespace EmployeeAPI.Services.PayrollServices
             _checkinRepository = checkinRepository;
         }
 
-        public async Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls()
+        public async Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            var result = await _payrollRepository.GetAllPayrolls();
+            if (pageSize == null || pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+            if (pageIndex == null || pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
+            var result = await _payrollRepository.GetAllPayrolls(name, pageIndex, pageSize);
             return result.Select(c => new PayrollDto
             {
                 Id = c.Id,

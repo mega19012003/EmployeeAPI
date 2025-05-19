@@ -5,7 +5,7 @@ namespace EmployeeAPI.Repositories.Payrolls
     public interface IPayrollRepository
     {
         Task<Payroll> GetPayrollById(Guid id);
-        Task<IEnumerable<Payroll>> GetAllPayrolls();
+        Task<IEnumerable<Payroll>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize);
         Task UpdatePayroll(Payroll payroll);
         Task<Payroll> SoftDeletePayroll(Guid id);
         Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid staffId);

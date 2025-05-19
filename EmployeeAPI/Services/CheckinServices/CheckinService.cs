@@ -1,11 +1,14 @@
 ﻿using System.Runtime.CompilerServices;
+using System.Transactions;
 using Azure;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Staffs;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
+using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
 
 namespace EmployeeAPI.Services.CheckinServices
 {
@@ -13,23 +16,67 @@ namespace EmployeeAPI.Services.CheckinServices
     {
         private readonly ICheckinRepository _checkinRepository;
         private readonly IStaffRepository _staffcheckinRepository;
+        private readonly AppDbContext _context;
 
-        public CheckinService(ICheckinRepository checkinRepository, IStaffRepository staffcheckinRepository)
+        public CheckinService(ICheckinRepository checkinRepository, IStaffRepository staffcheckinRepository, AppDbContext context)
         {
             _checkinRepository = checkinRepository;
             _staffcheckinRepository = staffcheckinRepository;
+            _context = context;
         }
 
-        public async Task<IEnumerable<ResponseModel.CheckinDto>> GetAllAsync()
+        /*public async Task<IEnumerable<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize)
         {
-            var checkins = await _checkinRepository.GetAllAsync();
-            return checkins.Select(c => new ResponseModel.CheckinDto
+            if (pageSize == null || pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+            if (pageIndex == null || pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
+            var result = await _checkinRepository.GetAllAsync(StaffName, pageIndex, pageSize);
+
+            return result.Select(c => new ResponseModel.CheckinDto
             {
                 CheckinId = c.Id,
                 CheckinDate = c.CheckinDate,
                 Status = c.Status,
                 StaffId = c.StaffId,
+                StaffName = c.Staff.Name,
             });
+        }*/
+        public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.Checkins
+                .Include(c => c.Staff)
+                .Where(f => string.IsNullOrEmpty(StaffName) || f.Staff.Name.ToLower().Contains(StaffName.ToLower()))
+                .Where(p => !p.IsDeleted);
+            
+            var totalCount = await query.CountAsync();
+            
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(c => new ResponseModel.CheckinDto
+                {
+                    CheckinId = c.Id,
+                    CheckinDate = c.CheckinDate,
+                    Status = c.Status,
+                    StaffId = c.StaffId,
+                    StaffName = c.Staff.Name,
+                }).ToListAsync();
+
+            return new PagedResult<ResponseModel.CheckinDto>
+            {
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id)
@@ -47,8 +94,13 @@ namespace EmployeeAPI.Services.CheckinServices
 
         public async Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto)
         {
-            var checkins = await _checkinRepository.GetAllAsync();
-            var exists = checkins.Any(c => c.StaffId == dto.StaffId && c.CheckinDate.Date == dto.CheckinDate.Date);
+            //using var transaction = await _context.Database.BeginTransactionAsync();
+            /*try
+            { */
+            //var checkins = await _checkinRepository.GetAllAsync();
+            var exists = await _checkinRepository.ExistAsync(dto.StaffId);
+            if (exists)
+                return null;
             /*var exists = await _checkinRepository.ExistsAsync(c =>
     c.StaffId == dto.StaffId && EF.Functions.DateDiffDay(c.CheckinDate, dto.CheckinDate) == 0);*/
 
@@ -68,6 +120,9 @@ namespace EmployeeAPI.Services.CheckinServices
             };
 
             await _checkinRepository.CreateAsync(checkin);
+            /*await _context.SaveChangesAsync(); //nhớ xóa savechang trong repository
+
+            await transaction.CommitAsync();*/
             var staff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
             return new ResponseModel.CheckinDto
             {
@@ -76,10 +131,17 @@ namespace EmployeeAPI.Services.CheckinServices
                 Status = checkin.Status,
                 StaffId = checkin.StaffId,
             };
+            /*}
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw
+            }*/
         }
 
         public async Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto)
         {
+ 
             var existing = await _checkinRepository.GetByIdAsync(dto.Id);
             if (existing == null) return null;
 

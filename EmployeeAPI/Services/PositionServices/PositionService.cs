@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.PositionServices;
@@ -12,23 +13,62 @@ namespace EmployeeAPI.Services.PositionServices
     public class PositionService : IPositionService
     {
         private readonly IPositionRepository _positionRepository;
-        private readonly IStaffRepository _staffRepository;
+        private readonly AppDbContext _context;
 
-        public PositionService(IPositionRepository repository)
+        public PositionService(IPositionRepository repository, AppDbContext context)
         {
             _positionRepository = repository;
+            _context = context;
         }
 
-        public async Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync()
+        /*public async Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
         {
-            var positions = await _positionRepository.GetAllAsync();
+            if (pageSize == null || pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+            if (pageIndex == null || pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
+            var positions = await _positionRepository.GetAllAsync(SearchTerm, pageIndex, pageSize);
             return positions.Select(p => new ResponseModel.PositionDTO
             {
                 Id = p.Id,
                 Name = p.Name,
                 IsDeleted = p.IsDeleted
             });
+        }*/
+        public async Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.Positions
+                .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                .Where(p => !p.IsDeleted); 
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(f => new ResponseModel.PositionDTO
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    IsDeleted = f.IsDeleted
+                }).ToListAsync();
+
+            return new PagedResult<ResponseModel.PositionDTO>
+            {
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
         }
+
 
         public async Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id)
         {
@@ -45,6 +85,7 @@ namespace EmployeeAPI.Services.PositionServices
 
         public async Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string name)
         {
+            var query = await _positionRepository.GetAllAsync(name, null, null);
             var model = new Position
             {
                 Id = Guid.NewGuid(),
@@ -58,6 +99,7 @@ namespace EmployeeAPI.Services.PositionServices
                 Name = entity.Name,
             };
         }
+
 
         public async Task<ResponseModel.CreateAndUpdatePosition?> UpdateAsync(Guid id, string newName)
         {

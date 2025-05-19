@@ -18,11 +18,11 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet, Authorize]
-        public async Task<IActionResult> GetAll(int? pageSize, int? pageIndex, string? SearchTerm)
+        public async Task<IActionResult> GetAll(string? SearchTerm, int? pageSize, int? pageIndex)
         {
             try
             {
-                var result = await _dutyService.GetAllAsync(pageSize, pageIndex, SearchTerm);
+                var result = await _dutyService.GetAllAsync(SearchTerm, pageSize, pageIndex);
                 if (pageSize == null || pageSize <= 0)
                 {
                     pageSize = 10;

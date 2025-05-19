@@ -1,11 +1,12 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Services.PositionServices;
 using static EmployeeAPI.Services.StaffServices.ResponseModel;
 namespace EmployeeAPI.Services.PositionServices
 {
      public interface IPositionService
      {
-        Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync();
+        Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize);
         Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id);
         Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string Name);
         Task<ResponseModel.CreateAndUpdatePosition> UpdateAsync(Guid id, string Name);

@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.DepartmentServices;
@@ -21,10 +22,19 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet, Authorize]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
-            var result = await _departmentService.GetAllAsync();
-            return Ok(result);
+            /*var result = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
+            return Ok(result);*/
+            var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
+
+            var resopnse = new ApiResponse<PagedResult<ResponseModel.DepartmentDto>>
+            {
+                Message = "Get All departments successfully",
+                Data = pagedResult,
+                StatusCode = 200
+            };
+            return Ok(resopnse);
         }
 
         /*[HttpGet("{id}")]

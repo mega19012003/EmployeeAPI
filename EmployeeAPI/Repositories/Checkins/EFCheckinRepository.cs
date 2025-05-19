@@ -13,12 +13,19 @@ namespace EmployeeAPI.Repositories.Checkins
             _context = context;
         }
 
-        public async Task<IEnumerable<Checkin>> GetAllAsync()
+        public async Task<IEnumerable<Checkin>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize)
         {
-            return await _context.Checkins
-                .Include(c => c.Staff)
-                .Where(c => !c.IsDeleted)
-                .ToListAsync();
+            var item = _context.Checkins.AsQueryable();
+            var result = item.Include(c => c.Staff).Where(c => c.IsDeleted == false && c.Staff.IsDeleted == false);
+            if (!string.IsNullOrEmpty(StaffName))
+            {
+                result = result.Where(c => c.Staff.Name.ToLower().Contains(StaffName.ToLower()));
+            }
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                result = result.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+            return await result.AsNoTracking().ToListAsync();
         }
 
         public async Task<Checkin> GetByIdAsync(Guid id)
@@ -58,6 +65,11 @@ namespace EmployeeAPI.Repositories.Checkins
                 .Where(c => c.StaffId == staffId &&
                             !c.IsDeleted)
                 .ToListAsync();
+        }
+
+        public async Task<bool> ExistAsync(Guid staffId)
+        {
+            return await _context.Checkins.AnyAsync(c => c.StaffId == staffId && !c.IsDeleted);
         }
     }
 }

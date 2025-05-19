@@ -17,7 +17,7 @@ namespace EmployeeAPI.Services.DutyServices
         {
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
-            public List<DutyDetailDto> DutyDetails { get; set; } = new List<DutyDetailDto>();
+            public List<CreateDutyDetail> DutyDetails { get; set; } = new List<CreateDutyDetail>();
         }
         public record UpdateDuty
         {
@@ -35,6 +35,14 @@ namespace EmployeeAPI.Services.DutyServices
         }*/
         public record DutyDetailDto
         {
+            public Guid DutyDetailId { get; set; }
+            public Guid StaffId { get; set; }
+            public string StaffName { get; set; }
+            public string Description { get; set; }
+        }
+        public record CreateDutyDetail
+        {
+            public Guid DutyDetailId { get; set; }
             public Guid StaffId { get; set; }
             public string Description { get; set; }
         }

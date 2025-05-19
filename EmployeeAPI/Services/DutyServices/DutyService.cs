@@ -15,9 +15,17 @@ namespace EmployeeAPI.Services.DutyServices
             _dutyRepository = dutyRepository;
         }
 
-        public async Task<IEnumerable<ResponseModel.DutyDto>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
+        public async Task<IEnumerable<ResponseModel.DutyDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
-            var results = await _dutyRepository.GetAllAsync(pageSize, pageIndex, SearchTerm);
+            if (pageSize == null || pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+            if (pageIndex == null || pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
+            var results = await _dutyRepository.GetAllAsync(SearchTerm, pageSize, pageIndex);
             if (results == null)
             {
                 return null;
@@ -26,15 +34,16 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 Id = p.Id,
                 Name = p.Name,
+                StartDate = p.StartDate,
                 IsCompleted = p.IsCompleted,
                 DutyDetails = p.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
+                    DutyDetailId = d.DutyDetailId,
                     StaffId = d.StaffId,
                     Description = d.Description
                 }).ToList()
             });
         }
-
 
         public async Task<ResponseModel.DutyDto> GetByIdAsync(Guid id)
         {
@@ -74,7 +83,7 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 Name = created.Name,
                 StartDate = created.StartDate,
-                DutyDetails = created.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                DutyDetails = created.DutyDetails.Select(d => new ResponseModel.CreateDutyDetail
                 {
                     StaffId = d.StaffId,
                     Description = d.Description
@@ -94,6 +103,7 @@ namespace EmployeeAPI.Services.DutyServices
             existingDuty.IsCompleted = dto.IsCompleted;
             existingDuty.DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
             {
+                DutyDetailId = d.Id,
                 StaffId = d.StaffId,
                 Description = d.Description
             }).ToList();

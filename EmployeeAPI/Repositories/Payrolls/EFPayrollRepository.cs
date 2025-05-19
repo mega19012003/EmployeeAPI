@@ -13,13 +13,22 @@ namespace EmployeeAPI.Repositories.Payrolls
             _context = context;
         }
 
-        public async Task<IEnumerable<Payroll>> GetAllPayrolls()
+        public async Task<IEnumerable<Payroll>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            var result = await _context.Payrolls
-                .Include(p => p.Staff)
-                .Where(p => p.Staff.IsDeleted == false && p.IsDeleted == false)
-                .ToListAsync();
-            return result;
+            var result = _context.Payrolls.AsQueryable();
+            if (!string.IsNullOrEmpty(name))
+            {
+                result = result.Where(p => p.Staff.Name.Contains(name));
+            }
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                result = result.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+            /* var result = await _context.Payrolls
+                 .Include(p => p.Staff)
+                 .Where(p => p.Staff.IsDeleted == false && p.IsDeleted == false)
+                 .ToListAsync();*/
+            return await result.Include(p => p.Staff).Where(p => p.Staff.IsDeleted == false && p.IsDeleted == false).ToListAsync(); 
         }
 
         public async Task<Payroll> GetPayrollById(Guid id)

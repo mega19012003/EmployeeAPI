@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Services.CheckinServices;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,8 +16,25 @@ namespace EmployeeAPI.Controllers
             _service = service;
         }
 
+        /*[HttpGet, Authorize]
+        public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
+        {
+            var result = await _service.GetAllAsync(StaffName, pageIndex, pageSize);
+            if (result == null) return NotFound();
+            return Ok(result);
+        }*/
         [HttpGet, Authorize]
-        public async Task<IActionResult> GetAll() => Ok(await _service.GetAllAsync());
+        public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
+        {
+            var pagedResult = await _service.GetAllAsync(StaffName, pageIndex, pageSize);
+            var response = new ApiResponse<PagedResult<ResponseModel.CheckinDto>>
+            {
+                Message = "Get All checkins successfully",
+                Data = pagedResult,
+                StatusCode = 200
+            };
+            return Ok(response);
+        }
 
         /*[HttpGet("{id}")]
         public async Task<IActionResult> GetById(Guid id)

@@ -13,9 +13,18 @@ namespace EmployeeAPI.Repositories.Departments
             _context = context;
             _staffRepository = staffRepository;
         }
-        public async Task<IEnumerable<Department>> GetAllAsync()
+        public async Task<IEnumerable<Department>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
-            return await _context.Departments.Where(p => !p.isDeleted).ToListAsync();
+            var results = _context.Departments.AsQueryable();
+            if (!string.IsNullOrEmpty(name))
+            {
+                results = results.Where(f => f.Name.Contains(name));
+            }
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                results = results.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+            return await results.Where(p => !p.isDeleted).ToListAsync();
         }
         public async Task<Department> GetByIdAsync(Guid id)
         {

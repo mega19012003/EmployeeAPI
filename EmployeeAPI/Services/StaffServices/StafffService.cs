@@ -24,6 +24,14 @@ namespace EmployeeAPI.Services.StaffServices
 
         public async Task<IEnumerable<ResponseModel.StaffDto>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
         {
+            if (pageSize == null || pageSize <= 0)
+            {
+                pageSize = 10;
+            }
+            if (pageIndex == null || pageIndex <= 0)
+            {
+                pageIndex = 1;
+            }
             var results = await _repository.GetAllAsync(pageSize, pageIndex, SearchTerm);
             return results.Select(p => new ResponseModel.StaffDto 
             {

@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 
@@ -7,7 +8,7 @@ namespace EmployeeAPI.Services.CheckinServices
 {
     public interface ICheckinService
     {
-        Task<IEnumerable<ResponseModel.CheckinDto>> GetAllAsync();
+        Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex);
         Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id);
         Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto);
         Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);

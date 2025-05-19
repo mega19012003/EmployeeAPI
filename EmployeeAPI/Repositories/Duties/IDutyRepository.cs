@@ -4,7 +4,7 @@ namespace EmployeeAPI.Repositories.Duties
 {
     public interface IDutyRepository
     {
-        Task<IEnumerable<Duty>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm);
+        Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
         Task<Duty> GetByIdAsync(Guid id);
         Task<Duty> AddAsync(Duty duty);
         Task<Duty> UpdateAsync(Duty duty);

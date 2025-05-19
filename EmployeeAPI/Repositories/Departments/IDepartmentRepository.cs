@@ -5,7 +5,7 @@ namespace EmployeeAPI.Repositories.Departments
 {
     public interface IDepartmentRepository
     {
-        Task<IEnumerable<Department>> GetAllAsync();
+        Task<IEnumerable<Department>> GetAllAsync(string? name, int? pageIndex, int? pageSize);
         Task<Department> GetByIdAsync(Guid id);
         Task AddAsync(Department department);
         Task UpdateAsync(Department department);

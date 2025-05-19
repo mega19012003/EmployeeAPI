@@ -14,9 +14,18 @@ namespace EmployeeAPI.Repositories.Positions
             _staffRepository = staffRepository;
         }
 
-        public async Task<IEnumerable<Position>> GetAllAsync()
+        public async Task<IEnumerable<Position>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
         {
-            return await _context.Positions.Where(p => !p.IsDeleted).ToListAsync();
+            var results = _context.Positions.AsQueryable();
+            if (!string.IsNullOrEmpty(SearchTerm))
+            {
+                results = results.Where(f => f.Name.Contains(SearchTerm));
+            }
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                results = results.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+            return await results.Where(p => !p.IsDeleted).ToListAsync();
         }
 
         public async Task<Position?> GetByIdAsync(Guid id)

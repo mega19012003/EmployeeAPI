@@ -8,7 +8,7 @@ namespace EmployeeAPI.Services.PayrollServices
      public interface IPayrollService
     {
         Task<ResponseModel.PayrollDto> GetPayrollById(Guid id);
-        Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls();
+        Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize );
         Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto);
         Task<string> SoftDeletePayroll(Guid id);
         //Task<IEnumerable<ResponseModel.PayrollDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);

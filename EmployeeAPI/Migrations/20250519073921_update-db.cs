@@ -5,7 +5,7 @@
 namespace EmployeeAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class initial2 : Migration
+    public partial class updatedb : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

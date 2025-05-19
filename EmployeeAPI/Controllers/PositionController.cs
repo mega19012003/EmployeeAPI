@@ -3,6 +3,7 @@ using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Authorization;
+using EmployeeAPI.Base;
 
 namespace EmployeeAPI.Controllers
 {
@@ -18,11 +19,20 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet, Authorize]
-        public async Task<IActionResult> GetAllPositions()
+        public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
-            var result = await _positionService.GetAllAsync();
-            return Ok(result);
+            var pagedResult = await _positionService.GetAllAsync(name, pageIndex, pageSize);
+
+            var response = new ApiResponse<PagedResult<ResponseModel.PositionDTO>>
+            {
+                Message = "Get All positions successfully",
+                Data = pagedResult,
+                StatusCode = 200
+            };
+
+            return Ok(response);
         }
+
 
         /*[HttpGet("id"), Authorize]
         public async Task<IActionResult> GetPositionById(Guid id)

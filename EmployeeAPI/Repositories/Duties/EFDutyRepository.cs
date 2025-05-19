@@ -11,20 +11,12 @@ namespace EmployeeAPI.Repositories.Duties
         {
             _context = context;
         }
-        public async Task<IEnumerable<Duty>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
+        public async Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
-            if (pageSize == null || pageSize <= 0)
-            {
-                pageSize = 10;
-            }
-            if (pageIndex == null || pageIndex <= 0)
-            {
-                pageIndex = 1;
-            }
             var item = _context.Duties.Include(d => d.DutyDetails).AsQueryable();
             if (!string.IsNullOrEmpty(SearchTerm))
             {
-                item = item.Where(m => m.Name.ToLower().Equals(SearchTerm.ToLower()));
+                item = item.Where(m => m.Name.ToLower().Contains(SearchTerm.ToLower()));
             }
             var result = await item.Skip((int)(pageSize * (pageIndex - 1))).Take((int)pageSize).Where(p => !p.IsDeleted).ToListAsync();
             return result;

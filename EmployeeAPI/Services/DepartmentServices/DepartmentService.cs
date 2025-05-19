@@ -1,6 +1,8 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Staffs;
+using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.StaffServices.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -11,20 +13,38 @@ namespace EmployeeAPI.Services.DepartmentServices
     {
         private readonly IDepartmentRepository _repository;
         private readonly IStaffRepository _staffRepository;
-        public DepartmentService(IDepartmentRepository repository, IStaffRepository staffRepository)
+        private readonly AppDbContext _context;
+        public DepartmentService(IDepartmentRepository repository, IStaffRepository staffRepository, AppDbContext context)
         {
             _repository = repository;
             _staffRepository = staffRepository;
+            _context = context;
         }
-        public async Task<IEnumerable<ResponseModel.DepartmentDto>> GetAllAsync()
+        public async Task<PagedResult<ResponseModel.DepartmentDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
-            var departmant = await _repository.GetAllAsync();
-            return departmant.Select(p => new DepartmentDto
+            pageIndex ??= 1;
+            pageSize ??= 10;
+            var query = _context.Departments
+                .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                .Where(p => !p.isDeleted);
+            
+            var totalCount = await query.CountAsync();
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(f => new ResponseModel.DepartmentDto
+                {
+                    DepartmentId = f.Id,
+                    Name = f.Name,
+                    IsDeleted = f.isDeleted
+                }).ToListAsync();
+            return new PagedResult<ResponseModel.DepartmentDto>
             {
-                DepartmentId = p.Id,
-                Name = p.Name,
-                IsDeleted = p.isDeleted
-            });
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
         }
         public async Task<ResponseModel.DepartmentDto> GetByIdAsync(Guid id)
         {
