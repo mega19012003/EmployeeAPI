@@ -15,6 +15,6 @@ namespace EmployeeAPI.Services.PayrollServices
         //Task<IEnumerable<ResponseModel.PayrollDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
         ///////////////////////////////
         Task<PaidPayroll> CalculatePayrollAsync(Guid staffId);
-        Task<IEnumerable<PayrollDto>> GetPayrollByStaff(Guid staffId);
+        Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize);
     }
 }

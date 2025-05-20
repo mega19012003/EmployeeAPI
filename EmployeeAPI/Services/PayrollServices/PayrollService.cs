@@ -3,6 +3,7 @@ using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Services.CheckinServices;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 using static EmployeeAPI.Services.PayrollServices.ResponseModel;
@@ -125,19 +126,38 @@ namespace EmployeeAPI.Services.PayrollServices
             return "Đã xóa payroll";
         }
 
-        public async Task<IEnumerable<ResponseModel.PayrollDto>> GetPayrollByStaff(Guid staffId)
+        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
-            var result = await _payrollRepository.GetPayrollByStaffAsync(staffId);
-            return result.Select(c => new PayrollDto
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.Payrolls
+                .Include(c => c.Staff)
+                .Where(p => !p.IsDeleted);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(c => new ResponseModel.PayrollDto
+                {
+                    Id = c.Id,
+                    StaffId = c.StaffId,
+                    StaffName = c.Staff.Name,
+                    Salary = c.Salary,
+                    CreatedDate = c.CreatedDate,
+                    Note = c.Note,
+                    IsDeleted = c.IsDeleted,
+                }).ToListAsync();
+
+            return new PagedResult<ResponseModel.PayrollDto>
             {
-                Id = c.Id,
-                StaffId = c.StaffId,
-                StaffName = c.Staff.Name,
-                Salary = c.Salary,
-                CreatedDate = c.CreatedDate,
-                Note = c.Note,
-                IsDeleted = c.IsDeleted,
-            });
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
         }
 
         ////////////////////////////////////////////////////////

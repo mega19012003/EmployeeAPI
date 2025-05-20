@@ -8,7 +8,7 @@ namespace EmployeeAPI.Repositories.Payrolls
         Task<IEnumerable<Payroll>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize);
         Task UpdatePayroll(Payroll payroll);
         Task<Payroll> SoftDeletePayroll(Guid id);
-        Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid staffId);
+        Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid staffId, int? pageIndex, int? pageSize);
         /// <summary>
         /// ////////////////////////////////////////////////
         /// </summary>

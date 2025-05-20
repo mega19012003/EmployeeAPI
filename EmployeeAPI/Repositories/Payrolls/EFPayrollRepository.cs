@@ -62,9 +62,10 @@ namespace EmployeeAPI.Repositories.Payrolls
             return entity;
         }
 
-        public async Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid id)
+        public async Task<IEnumerable<Payroll>> GetPayrollByStaffAsync(Guid id, int? pageIndex, int? pageSize)
         {
             var result = await _context.Payrolls
+                .AsNoTracking()
                 .Include(p => p.Staff)
                 .Where(p => p.StaffId == id && p.IsDeleted == false)
                 .ToListAsync();

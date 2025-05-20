@@ -56,7 +56,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        /*[HttpGet("id")]
+        /*[HttpGet("id"), Authorize]
         public async Task<IActionResult> GetPayrollById(Guid id)
         {
             var result = await _payrollService.GetPayrollById(id);
@@ -86,16 +86,41 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
 
-        [HttpGet("Employee")]
-        public async Task<IActionResult> GetPayrollByStaff(Guid staffId)
+        [HttpGet("Employee"), Authorize]
+        public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
-            var results = await _payrollService.GetPayrollByStaff(staffId);
-            if (results == null)
+            try
             {
-                return NotFound();
-            }
-            return Ok(results);
-        }
+                var pagedResult = await _payrollService.GetPayrollByStaff(staffId, pageIndex, pageSize);
 
+                if (pagedResult.Items.Count() == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<PagedResult<ResponseModel.PayrollDto>>
+                {
+                    Message = "Get list staff by payroll success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                var response = new ApiResponse<string>
+                {
+                    Message = "An error occurred while retrieving staff by payroll",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+
+                return StatusCode(500, response);
+            }
+        }
     }
 }
