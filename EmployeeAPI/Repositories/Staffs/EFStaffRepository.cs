@@ -17,7 +17,7 @@ namespace EmployeeAPI.Repositories.Staffs
 
         public async Task<IEnumerable<Staff>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
         {
-            var results = _context.Staffs.Include(p => p.Department).Include(p => p.Position).AsQueryable();
+            var results = _context.Staffs.AsNoTracking().Include(p => p.Department).Include(p => p.Position).AsQueryable();
 
             if (!string.IsNullOrEmpty(SearchTerm))
             {
@@ -78,6 +78,7 @@ namespace EmployeeAPI.Repositories.Staffs
         public async Task<IEnumerable<Staff>> GetByNameAsync(string name, int? pageSize, int? pageIndex)
         {
             var query = _context.Staffs
+                .AsNoTracking()
                 .Include(s => s.Department)
                 .Include(s => s.Position)
                 .Where(p => p.IsActive == true && !p.IsDeleted);

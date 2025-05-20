@@ -16,7 +16,7 @@ namespace EmployeeAPI.Repositories.Positions
 
         public async Task<IEnumerable<Position>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
         {
-            var results = _context.Positions.AsQueryable();
+            var results = _context.Positions.AsNoTracking().AsQueryable();
             if (!string.IsNullOrEmpty(SearchTerm))
             {
                 results = results.Where(f => f.Name.Contains(SearchTerm));
@@ -30,7 +30,7 @@ namespace EmployeeAPI.Repositories.Positions
 
         public async Task<Position?> GetByIdAsync(Guid id)
         {
-            return await _context.Positions.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            return await _context.Positions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
         public async Task<Position> AddAsync(Position position)
@@ -64,12 +64,14 @@ namespace EmployeeAPI.Repositories.Positions
         public async Task<Position?> GetAllEmployee(string name)
         {
             return await _context.Positions
+                .AsNoTracking()
                 .Include(p => p.Staffs.Where(s => s.IsActive))
                 .FirstOrDefaultAsync(p => p.Name.ToLower().Equals(name.ToLower()));
         }
         public async Task<IEnumerable<Position>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
         {
             var query = _context.Positions
+                .AsNoTracking()
                 .Include(s => s.Staffs)
                 .Where(s => !s.IsDeleted);
 

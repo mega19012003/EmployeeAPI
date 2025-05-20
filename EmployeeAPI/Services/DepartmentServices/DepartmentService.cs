@@ -14,121 +14,197 @@ namespace EmployeeAPI.Services.DepartmentServices
         private readonly IDepartmentRepository _repository;
         private readonly IStaffRepository _staffRepository;
         private readonly AppDbContext _context;
-        public DepartmentService(IDepartmentRepository repository, IStaffRepository staffRepository, AppDbContext context)
+        private readonly ILogger<DepartmentService> _logger;
+
+        public DepartmentService(IDepartmentRepository repository, IStaffRepository staffRepository, AppDbContext context, ILogger<DepartmentService> logger)
         {
             _repository = repository;
             _staffRepository = staffRepository;
             _context = context;
+            _logger = logger;
         }
         public async Task<PagedResult<ResponseModel.DepartmentDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
-            pageIndex ??= 1;
-            pageSize ??= 10;
-            var query = _context.Departments
-                .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
-                .Where(p => !p.isDeleted);
-            
-            var totalCount = await query.CountAsync();
-            var items = await query
-                .Skip((pageIndex.Value - 1) * pageSize.Value)
-                .Take(pageSize.Value)
-                .Select(f => new ResponseModel.DepartmentDto
-                {
-                    DepartmentId = f.Id,
-                    Name = f.Name,
-                    IsDeleted = f.isDeleted
-                }).ToListAsync();
-            return new PagedResult<ResponseModel.DepartmentDto>
+            try
             {
-                Items = items,
-                PageIndex = pageIndex.Value,
-                PageSize = pageSize.Value,
-                TotalCount = totalCount
-            };
+                pageIndex ??= 1;
+                pageSize ??= 10;
+                var query = _context.Departments
+                    .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                    .Where(p => !p.isDeleted);
+
+                var totalCount = await query.CountAsync();
+                var items = await query
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(f => new ResponseModel.DepartmentDto
+                    {
+                        DepartmentId = f.Id,
+                        Name = f.Name,
+                        IsDeleted = f.isDeleted
+                    }).ToListAsync();
+                return new PagedResult<ResponseModel.DepartmentDto>
+                {
+                    Items = items,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
         public async Task<ResponseModel.DepartmentDto> GetByIdAsync(Guid id)
         {
-            var departmant = await _repository.GetByIdAsync(id);
-            return new DepartmentDto
+            try
             {
-                DepartmentId = departmant.Id,
-                Name = departmant.Name,
-                IsDeleted = departmant.isDeleted
-            };
+                var departmant = await _repository.GetByIdAsync(id);
+                return new DepartmentDto
+                {
+                    DepartmentId = departmant.Id,
+                    Name = departmant.Name,
+                    IsDeleted = departmant.isDeleted
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving department by id. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
+
         public async Task<ResponseModel.CreateDepartment> AddAsync(string name)
         {
+            using var transaction = await _context.Database.BeginTransactionAsync();
 
-            var model = new Department
+            try
             {
-                Id = Guid.NewGuid(),
-                Name = name,
-            };
+                var model = new Department
+                {
+                    Id = Guid.NewGuid(),
+                    Name = name,
+                };
 
-            /*var entity =*/ await _repository.AddAsync(model);
-            return new ResponseModel.CreateDepartment
+                /*var entity =*/
+                await _repository.AddAsync(model);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new ResponseModel.CreateDepartment
+                {
+                    DepartmentId = model.Id,
+                    Name = model.Name,
+                };
+            }
+            catch (Exception ex)
             {
-                DepartmentId = model.Id,
-                Name = model.Name,
-            };
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while adding department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
-        
+
         public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName)
         {
-            var result = await _repository.GetByIdAsync(id);
-            if (result == null)
-            {
-                return null;
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try { 
+                var result = await _repository.GetByIdAsync(id);
+
+                if (result == null) return null;
+
+                result.Name = newName;
+
+                await _repository.UpdateAsync(result);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new UpdateDepartment
+                {
+                    DepartmentId = result.Id,
+                    Name = result.Name,
+                };
             }
-            result.Name = newName;
-            await _repository.UpdateAsync(result);
-            return new UpdateDepartment
+            catch (Exception ex)
             {
-                DepartmentId = result.Id,
-                Name = result.Name,
-            };
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while updating department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
 
         public async Task<string> SoftDeleteAsync(Guid id)
         {
-            var result = await _repository.GetByIdAsync(id);
-            if (result == null) return null;
-
-            result.isDeleted = true;
-            await _repository.SoftDeleteAsync(result.Id);
-            //if (result == null) return null;
-
-            return "Đã xóa phòng ban: " + result.Name;
-         }
-
-        public async Task<IEnumerable<ResponseModel.DepartmentDto>> GetDepartmentByName(string name)
-        {
-            var result = await _repository.GetDepartmentByName(name);
-            if (result == null)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                return null;
+                var result = await _repository.GetByIdAsync(id);
+                if (result == null) return null;
+
+                result.isDeleted = true;
+                await _repository.SoftDeleteAsync(result.Id);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "Đã xóa phòng ban: " + result.Name;
             }
-            return result.Select(d => new DepartmentDto
+            catch (Exception ex)
             {
-                DepartmentId = d.Id,
-                Name = d.Name,
-                IsDeleted = d.isDeleted
-            });
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while deleting department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
 
-        public async Task<IEnumerable<StaffFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<StaffFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
         {
-            var staffs = await _repository.GetStaffByDepartmentAsync(positionName, pageSize, pageIndex);
-
-            return staffs.SelectMany(pos => pos.Staffs
-            .Where(st => st.IsActive && !st.IsDeleted))
-            .Select(st => new StaffFilter
+            try
             {
-                StaffId = st.Id,
-                Name = st.Name,
-                BasicSalary = st.BasicSalary,
-                ImageUrl = st.ImageUrl,
-            });
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                var query = _context.Departments
+                    .Include(d => d.Staffs)
+                    .Where(d => !d.isDeleted);
+
+                if (!string.IsNullOrEmpty(positionName))
+                {
+                    query = query.Where(d => d.Name.ToLower().Contains(positionName.ToLower()));
+                }
+
+                var allStaffs = query
+                    .SelectMany(d => d.Staffs
+                        .Where(s => s.IsActive && !s.IsDeleted));
+
+                var totalCount = await allStaffs.CountAsync();
+
+                var items = await allStaffs
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(st => new StaffFilter
+                    {
+                        StaffId = st.Id,
+                        Name = st.Name,
+                        BasicSalary = st.BasicSalary,
+                        ImageUrl = st.ImageUrl,
+                    })
+                    .ToListAsync();
+
+                return new PagedResult<StaffFilter>
+                {
+                    TotalCount = totalCount,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    Items = items
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving staff by department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
     }
 }

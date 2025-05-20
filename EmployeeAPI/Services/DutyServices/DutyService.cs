@@ -18,35 +18,6 @@ namespace EmployeeAPI.Services.DutyServices
             _context = context;
         }
 
-        /**public async Task<IEnumerable<ResponseModel.DutyDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
-        {
-            if (pageSize == null || pageSize <= 0)
-            {
-                pageSize = 10;
-            }
-            if (pageIndex == null || pageIndex <= 0)
-            {
-                pageIndex = 1;
-            }
-            var results = await _dutyRepository.GetAllAsync(SearchTerm, pageSize, pageIndex);
-            if (results == null)
-            {
-                return null;
-            }
-            return results.Select(p => new ResponseModel.DutyDto
-            {
-                Id = p.Id,
-                Name = p.Name,
-                StartDate = p.StartDate,
-                IsCompleted = p.IsCompleted,
-                DutyDetails = p.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
-                {
-                    DutyDetailId = d.DutyDetailId,
-                    StaffId = d.StaffId,
-                    Description = d.Description
-                }).ToList()
-            });
-        }*/
         public async Task<PagedResult<ResponseModel.DutyDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
@@ -132,7 +103,6 @@ namespace EmployeeAPI.Services.DutyServices
                 }).ToList()
             };
         }
-
 
         public async Task<ResponseModel.UpdateDuty> UpdateAsync(ResponseModel.UpdateDuty dto)
         {

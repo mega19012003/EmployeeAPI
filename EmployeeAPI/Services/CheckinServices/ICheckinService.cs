@@ -14,6 +14,6 @@ namespace EmployeeAPI.Services.CheckinServices
         Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);
         Task<string> DeleteAsync(Guid id);
         //Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-        Task<IEnumerable<CheckinDto>> GetCheckinByStaffAsync(Guid staffId);
+        Task<PagedResult<CheckinDto>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize);
     }
 }

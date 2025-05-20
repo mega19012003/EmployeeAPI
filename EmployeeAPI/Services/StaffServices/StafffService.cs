@@ -30,44 +30,52 @@ namespace EmployeeAPI.Services.StaffServices
 
         public async Task<PagedResult<ResponseModel.StaffDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
-
-            pageIndex ??= 1;
-            pageSize ??= 10;
-
-            var query = _context.Staffs
-                .Include(c => c.Department)
-                .Include(c => c.Position)
-                .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
-                .Where(p => !p.IsDeleted);
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .Skip((pageIndex.Value - 1) * pageSize.Value)
-                .Take(pageSize.Value)
-                .Select(f => new ResponseModel.StaffDto
-                {
-                    StaffId = f.Id,
-                    Name = f.Name,
-                    DateOfBirth = f.DateOfBirth,
-                    PhoneNumber = f.PhoneNumber,
-                    Address = f.Address,
-                    DepartmentId = f.DepartmentId,
-                    DepartmentName = f.Department.Name,
-                    PositionId = f.PositionId,
-                    PositionName = f.Position.Name,
-                    BasicSalary = f.BasicSalary,
-                    ImageUrl = f.ImageUrl,
-                    IsActive = f.IsActive
-                })
-                .ToListAsync();
-
-            return new PagedResult<ResponseModel.StaffDto>
+            try
             {
-                TotalCount = totalCount,
-                PageIndex = pageIndex.Value,
-                PageSize = pageSize.Value,
-                Items = items
-            };
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                var query = _context.Staffs
+                    .Include(c => c.Department)
+                    .Include(c => c.Position)
+                    .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                    .Where(p => !p.IsDeleted);
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(f => new ResponseModel.StaffDto
+                    {
+                        StaffId = f.Id,
+                        Name = f.Name,
+                        DateOfBirth = f.DateOfBirth,
+                        PhoneNumber = f.PhoneNumber,
+                        Address = f.Address,
+                        DepartmentId = f.DepartmentId,
+                        DepartmentName = f.Department.Name,
+                        PositionId = f.PositionId,
+                        PositionName = f.Position.Name,
+                        BasicSalary = f.BasicSalary,
+                        ImageUrl = f.ImageUrl,
+                        IsActive = f.IsActive
+                    })
+                    .ToListAsync();
+
+                return new PagedResult<ResponseModel.StaffDto>
+                {
+                    TotalCount = totalCount,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    Items = items
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving all staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
 
         public async Task<ResponseModel.StaffDto> GetByIdAsync(Guid id)
@@ -185,27 +193,6 @@ namespace EmployeeAPI.Services.StaffServices
             }
         }
 
-        /*public async Task<string> SoftDeleteAsync(Guid Id)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var existingStaff = await _repository.GetByIdAsync(Id);
-                existingStaff.IsDeleted = true;
-                existingStaff.IsActive = false;
-                
-                await _repository.SoftDeleteAsync(Id);
-                await transaction.CommitAsync();
-
-                return "Đã xóa user: " + existingStaff.Name;
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while deleting staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
-            }
-        }*/
         public async Task<string> SoftDeleteAsync(Guid Id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -235,29 +222,37 @@ namespace EmployeeAPI.Services.StaffServices
 
         public async Task<IEnumerable<ResponseModel.StaffDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex)
         {
-            if (pageSize == null || pageSize <= 0)
+            try
             {
-                pageSize = 10;
+                if (pageSize == null || pageSize <= 0)
+                {
+                    pageSize = 10;
+                }
+                if (pageIndex == null || pageIndex <= 0)
+                {
+                    pageIndex = 1;
+                }
+                var result = await _repository.GetByNameAsync(name, pageSize, pageIndex);
+                return result.Select(p => new ResponseModel.StaffDto
+                {
+                    StaffId = p.Id,
+                    Name = p.Name,
+                    DateOfBirth = p.DateOfBirth,
+                    PhoneNumber = p.PhoneNumber,
+                    Address = p.Address,
+                    DepartmentId = p.DepartmentId,
+                    DepartmentName = p.Department?.Name ?? "Không xác định",
+                    PositionId = p.PositionId,
+                    PositionName = p.Position?.Name ?? "Không xác định",
+                    BasicSalary = p.BasicSalary,
+                    ImageUrl = p.ImageUrl
+                });
             }
-            if (pageIndex == null || pageIndex <= 0)
+            catch (Exception ex)
             {
-                pageIndex = 1;
+                _logger.LogError(ex, "Error occurred while retrieving staff by name. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
-            var result = await _repository.GetByNameAsync(name, pageSize, pageIndex);
-            return result.Select(p => new ResponseModel.StaffDto
-            {
-                StaffId = p.Id,
-                Name = p.Name,
-                DateOfBirth = p.DateOfBirth,
-                PhoneNumber = p.PhoneNumber,
-                Address = p.Address,
-                DepartmentId = p.DepartmentId,
-                DepartmentName = p.Department?.Name ?? "Không xác định",
-                PositionId = p.PositionId,
-                PositionName = p.Position?.Name ?? "Không xác định",
-                BasicSalary = p.BasicSalary,
-                ImageUrl = p.ImageUrl
-            });
         }
     }
 }

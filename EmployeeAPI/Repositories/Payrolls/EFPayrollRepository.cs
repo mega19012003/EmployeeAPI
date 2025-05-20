@@ -15,7 +15,10 @@ namespace EmployeeAPI.Repositories.Payrolls
 
         public async Task<IEnumerable<Payroll>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            var result = _context.Payrolls.AsQueryable();
+            var result = _context.Payrolls
+                .AsNoTracking()
+                .AsQueryable();
+
             if (!string.IsNullOrEmpty(name))
             {
                 result = result.Where(p => p.Staff.Name.Contains(name));
@@ -24,16 +27,14 @@ namespace EmployeeAPI.Repositories.Payrolls
             {
                 result = result.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
             }
-            /* var result = await _context.Payrolls
-                 .Include(p => p.Staff)
-                 .Where(p => p.Staff.IsDeleted == false && p.IsDeleted == false)
-                 .ToListAsync();*/
+
             return await result.Include(p => p.Staff).Where(p => p.Staff.IsDeleted == false && p.IsDeleted == false).ToListAsync(); 
         }
 
         public async Task<Payroll> GetPayrollById(Guid id)
         {
             return await _context.Payrolls
+                .AsNoTracking()
                 .Include(p => p.Staff)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
@@ -48,14 +49,12 @@ namespace EmployeeAPI.Repositories.Payrolls
         {
             _context.Payrolls.Update(payroll);
             await _context.SaveChangesAsync();
-
         }
 
         public async Task<Payroll> SoftDeletePayroll(Guid id)
         {
             var entity = await _context.Payrolls.FirstOrDefaultAsync(p => !p.IsDeleted && p.Id == id);
             if(entity == null)  return null;
-
 
             entity.IsDeleted = true;
             _context.Payrolls.Update(entity);

@@ -13,7 +13,12 @@ namespace EmployeeAPI.Repositories.Duties
         }
         public async Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
-            var item = _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Staff).AsQueryable();
+            var item = _context.Duties
+                .AsNoTracking()
+                .Include(d => d.DutyDetails)
+                .ThenInclude(dd => dd.Staff)
+                .AsQueryable();
+
             if (!string.IsNullOrEmpty(SearchTerm))
             {
                 item = item.Where(m => m.Name.ToLower().Contains(SearchTerm.ToLower()));
@@ -25,6 +30,7 @@ namespace EmployeeAPI.Repositories.Duties
         public async Task<Duty> GetByIdAsync(Guid id)
         {
             return await _context.Duties
+                .AsNoTracking()
                 .Include(p => p.DutyDetails)
                 .ThenInclude(p => p.Staff)
                 .FirstOrDefaultAsync(p => p.Id == id);
@@ -62,6 +68,7 @@ namespace EmployeeAPI.Repositories.Duties
         public async Task<IEnumerable<Duty>> GetDutyByName(string name, int? pageSize, int? pageIndex)
         {
             var query = _context.Duties
+                .AsNoTracking()
                 .Include(p => p.DutyDetails)
                 .ThenInclude(p => p.Staff)
                 .Where(p => !p.IsDeleted);
@@ -78,9 +85,9 @@ namespace EmployeeAPI.Repositories.Duties
             }
             return await query.ToListAsync();
         }
-        public async Task<Duty> GetUnfinishedDuty(string status)
+        /*public async Task<Duty> GetUnfinishedDuty(string status)
         {
             return null;// await _context.Duties.FirstOrDefaultAsync(d => d.Status == status);
-        }
+        }*/
     }
 }

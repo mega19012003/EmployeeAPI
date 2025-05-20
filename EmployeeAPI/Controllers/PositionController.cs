@@ -4,6 +4,7 @@ using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Authorization;
 using EmployeeAPI.Base;
+using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -120,16 +121,34 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var positions = await _positionService.GetStaffByPositionAsync(searchTerm, pageSize, pageIndex);
-                if (!positions.Any())
-                    return NotFound("Không tìm thấy vị trí hoặc nhân viên phù hợp.");
+                var pagedResult = await _positionService.GetStaffByPositionAsync(searchTerm, pageSize, pageIndex);
 
-                return Ok(positions);
+                if (pagedResult.Items.Count() == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<PagedResult<StaffFilter>>
+                {
+                    Message = "Get list employee by department success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Exception thrown in GetEmployeeByPosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message });
+                var response = new ApiResponse<string>
+                {
+                    Message = "An error occurred while retrieving departments",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                return StatusCode(500, response);
             }
         }
     }

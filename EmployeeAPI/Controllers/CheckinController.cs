@@ -79,11 +79,39 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet("employee"), Authorize]
-        public async Task<IActionResult> GetCheckinsByStaff(Guid staffId)
+        public async Task<IActionResult> GetCheckinsByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
-            var checkins = await _service.GetCheckinByStaffAsync(staffId);
-            if (checkins == null) return NotFound();
-            return Ok(checkins);
+            try
+            {
+                var result = await _service.GetCheckinByStaffAsync(staffId, pageIndex, pageSize);
+
+                if (result.Items.Count() == 0)
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                return Ok(new ApiResponse<PagedResult<ResponseModel.CheckinDto>>
+                {
+                    Message = "Get list employee by checkin success",
+                    Data = result,
+                    StatusCode = 200
+                });
+
+                /*if (checkins == null) return NotFound();
+                return Ok(checkins);*/
+            }
+            catch (Exception ex)
+            {
+                var response = new ApiResponse<string>
+                {
+                    Message = "Error occurred while fetching checkins",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                return StatusCode(500, response);
+            }
         }
     }
 }

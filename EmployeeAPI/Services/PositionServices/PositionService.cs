@@ -14,11 +14,13 @@ namespace EmployeeAPI.Services.PositionServices
     {
         private readonly IPositionRepository _positionRepository;
         private readonly AppDbContext _context;
+        private readonly ILogger<PositionService> _logger;
 
-        public PositionService(IPositionRepository repository, AppDbContext context)
+        public PositionService(IPositionRepository repository, AppDbContext context, ILogger<PositionService> logger)
         {
             _positionRepository = repository;
             _context = context;
+            _logger = logger;
         }
 
         /*public async Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
@@ -41,46 +43,62 @@ namespace EmployeeAPI.Services.PositionServices
         }*/
         public async Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
-            pageIndex ??= 1;
-            pageSize ??= 10;
-
-            var query = _context.Positions
-                .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
-                .Where(p => !p.IsDeleted); 
-
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .Skip((pageIndex.Value - 1) * pageSize.Value)
-                .Take(pageSize.Value)
-                .Select(f => new ResponseModel.PositionDTO
-                {
-                    Id = f.Id,
-                    Name = f.Name,
-                    IsDeleted = f.IsDeleted
-                }).ToListAsync();
-
-            return new PagedResult<ResponseModel.PositionDTO>
+            try
             {
-                Items = items,
-                PageIndex = pageIndex.Value,
-                PageSize = pageSize.Value,
-                TotalCount = totalCount
-            };
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                var query = _context.Positions
+                    .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                    .Where(p => !p.IsDeleted);
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(f => new ResponseModel.PositionDTO
+                    {
+                        Id = f.Id,
+                        Name = f.Name,
+                        IsDeleted = f.IsDeleted
+                    }).ToListAsync();
+
+                return new PagedResult<ResponseModel.PositionDTO>
+                {
+                    Items = items,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("An error occurred while retrieving positions. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
 
 
         public async Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id)
         {
-            var position = await _positionRepository.GetByIdAsync(id);
-            if (position == null) return null;
-
-            return new ResponseModel.PositionDTO
+            try
             {
-                Id = position.Id,
-                Name = position.Name,
-                IsDeleted = position.IsDeleted
-            };
+                var position = await _positionRepository.GetByIdAsync(id);
+                if (position == null) return null;
+
+                return new ResponseModel.PositionDTO
+                {
+                    Id = position.Id,
+                    Name = position.Name,
+                    IsDeleted = position.IsDeleted
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("An error occurred while retrieving position by ID. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
 
         public async Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string name)
@@ -88,7 +106,6 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-
                 var query = await _positionRepository.GetAllAsync(name, null, null);
                 var model = new Position
                 {
@@ -98,7 +115,6 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var entity = await _positionRepository.AddAsync(model);
 
-                
                 await _context.SaveChangesAsync();
                 
                 await transaction.CommitAsync();
@@ -112,10 +128,10 @@ namespace EmployeeAPI.Services.PositionServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred while adding the position: " + ex.Message);
+                _logger.LogError("An error occurred while adding staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
-
 
         public async Task<ResponseModel.CreateAndUpdatePosition?> UpdateAsync(Guid id, string newName)
         {
@@ -141,8 +157,9 @@ namespace EmployeeAPI.Services.PositionServices
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                throw new Exception("An error occurred while updating the position: " + ex.Message);
+                await transaction.RollbackAsync(); 
+                _logger.LogError("An error occurred while updating staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
 
@@ -165,35 +182,78 @@ namespace EmployeeAPI.Services.PositionServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred while deleting the position: " + ex.Message);
+                _logger.LogError("An error occurred while deleting staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
 
-        public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)
+        /*public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)
         {
-            var entity = await _positionRepository.GetAllEmployee(name);
-            if (entity == null) return null;
-
-            return new ResponseModel.PositionDTO
+            try
             {
-                Id = entity.Id,
-                Name = entity.Name
-            };
-        }
+                var entity = await _positionRepository.GetAllEmployee(name);
+                if (entity == null) return null;
 
-        public async Task<IEnumerable<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
+                return new ResponseModel.PositionDTO
+                {
+                    Id = entity.Id,
+                    Name = entity.Name
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("An error occurred while retrieving all employees. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
+        }*/
+
+        public async Task<PagedResult<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
         {
-            var staffs = await _positionRepository.GetStaffByPositionAsync(positionName, pageSize, pageIndex);
-
-            return staffs.SelectMany(pos => pos.Staffs
-            .Where(st => st.IsActive && !st.IsDeleted))
-            .Select(st => new StaffFilter
+            try
             {
-                StaffId = st.Id,
-                Name = st.Name,
-                BasicSalary = st.BasicSalary,
-                ImageUrl = st.ImageUrl,
-            });
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                var query = _context.Positions
+                    .Include(d => d.Staffs)
+                    .Where(d => !d.IsDeleted);
+
+                if (!string.IsNullOrEmpty(positionName))
+                {
+                    query = query.Where(d => d.Name.ToLower().Contains(positionName.ToLower()));
+                }
+
+                var allStaffs = query
+                    .SelectMany(d => d.Staffs
+                        .Where(s => s.IsActive && !s.IsDeleted));
+
+                var totalCount = await allStaffs.CountAsync();
+
+                var items = await allStaffs
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(st => new StaffFilter
+                    {
+                        StaffId = st.Id,
+                        Name = st.Name,
+                        BasicSalary = st.BasicSalary,
+                        ImageUrl = st.ImageUrl,
+                    })
+                    .ToListAsync();
+
+                return new PagedResult<StaffFilter>
+                {
+                    TotalCount = totalCount,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    Items = items
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("An error occurred while retrieving staff by position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
     }
 }

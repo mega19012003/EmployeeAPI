@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Repositories.Checkins
@@ -11,7 +12,7 @@ namespace EmployeeAPI.Repositories.Checkins
         Task UpdateAsync(Checkin checkin);
         Task<Checkin> SoftDeleteAsync(Guid id);
         Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-        Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId);
+        Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize);
         Task<bool> ExistAsync(Guid staffId);
     }
 }

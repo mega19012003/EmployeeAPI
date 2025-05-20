@@ -11,7 +11,7 @@ namespace EmployeeAPI.Services.PositionServices
         Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string Name);
         Task<ResponseModel.CreateAndUpdatePosition> UpdateAsync(Guid id, string Name);
         Task<string> SoftDeleteAsync(Guid id);
-        Task<ResponseModel.PositionDTO> GetAllEmployee(string name);
-        Task<IEnumerable<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex);
+        //Task<ResponseModel.PositionDTO> GetAllEmployee(string name);
+        Task<PagedResult<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex);
     }
 }

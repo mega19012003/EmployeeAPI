@@ -1,4 +1,5 @@
 ﻿using System.Linq.Expressions;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
@@ -15,7 +16,10 @@ namespace EmployeeAPI.Repositories.Checkins
 
         public async Task<IEnumerable<Checkin>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize)
         {
-            var item = _context.Checkins.AsQueryable();
+            var item = _context.Checkins
+                .AsNoTracking()
+                .AsQueryable();
+
             var result = item.Include(c => c.Staff).Where(c => c.IsDeleted == false && c.Staff.IsDeleted == false);
             if (!string.IsNullOrEmpty(StaffName))
             {
@@ -38,13 +42,13 @@ namespace EmployeeAPI.Repositories.Checkins
         public async Task CreateAsync(Checkin checkin)
         {
             _context.Checkins.Add(checkin);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Checkin checkin)
         {
             _context.Checkins.Update(checkin);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
         }
 
         public async Task<Checkin> SoftDeleteAsync(Guid id)
@@ -52,19 +56,26 @@ namespace EmployeeAPI.Repositories.Checkins
             var checkin = await _context.Checkins.FindAsync(id);
             if (checkin == null) return null;
             checkin.IsDeleted = true;
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
             return checkin;
         }
         public async Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate)
         {
             return await _context.Checkins.AnyAsync(predicate);
         }
-        public async Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId)
+
+        public async Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize)
         {
-            return await _context.Checkins
-                .Where(c => c.StaffId == staffId &&
-                            !c.IsDeleted)
-                .ToListAsync();
+            var query = _context.Checkins
+                 .AsNoTracking()
+                 .Where(s => !s.IsDeleted);
+
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                query = query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+
+            return await query.ToListAsync();
         }
 
         public async Task<bool> ExistAsync(Guid staffId)

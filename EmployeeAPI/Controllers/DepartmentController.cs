@@ -5,6 +5,8 @@ using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.DepartmentServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -28,8 +30,6 @@ namespace EmployeeAPI.Controllers
             return Ok(result);*/
             try
             {
-
-
                 var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
 
 
@@ -111,7 +111,7 @@ namespace EmployeeAPI.Controllers
 
             return Ok(result);
         }
-        
+
         /*[HttpGet("name"), Authorize]
         public async Task<IActionResult> GetDepartmentByName(string name)
         {
@@ -123,13 +123,41 @@ namespace EmployeeAPI.Controllers
             return Ok(department);
         }*/
         [HttpGet("Employee"), Authorize]
-        public async Task<IActionResult> GetEmployeeByPosition(string searchTerm, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetEmployeeByDepartment(string searchTerm, int? pageSize, int? pageIndex)
         {
-            var positions = await _departmentService.GetStaffByDepartmentAsync(searchTerm, pageSize, pageIndex);
-            if (!positions.Any())
-                return NotFound("Không tìm thấy phòng ban hoặc nhân viên phù hợp.");
+            try
+            {
+                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(searchTerm, pageSize, pageIndex);
+                /*if (positions == null)
+                    return NotFound("Không tìm thấy phòng ban hoặc nhân viên phù hợp.");*/
 
-            return Ok(positions);
+                if (pagedResult.Items.Count() == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<PagedResult<StaffFilter>>
+                {
+                    Message = "Get list employee by department success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                var response = new ApiResponse<string>
+                {
+                    Message = "An error occurred while retrieving departments",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                return StatusCode(500, response);
+            }
         }
     }
 }
