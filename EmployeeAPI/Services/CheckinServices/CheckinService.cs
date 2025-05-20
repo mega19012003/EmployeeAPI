@@ -89,6 +89,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 CheckinDate = c.CheckinDate,
                 Status = c.Status,
                 StaffId = c.StaffId,
+                StaffName = c.Staff.Name,
             };
         }
 
@@ -130,6 +131,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 CheckinDate = checkin.CheckinDate,
                 Status = checkin.Status,
                 StaffId = checkin.StaffId,
+                StaffName = staff.Name,
             };
             /*}
             catch
@@ -142,20 +144,23 @@ namespace EmployeeAPI.Services.CheckinServices
         public async Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto)
         {
  
-            var existing = await _checkinRepository.GetByIdAsync(dto.Id);
+            var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
             if (existing == null) return null;
 
-            existing.CheckinDate = dto.CheckinDate;
+            existing.Id = dto.CheckinId;
+            //existing.CheckinDate = dto.CheckinDate;
             existing.Status = dto.Status;
-            existing.StaffId = dto.StaffId;
+            //existing.StaffId = dto.StaffId;
 
             await _checkinRepository.UpdateAsync(existing);
 
             return new ResponseModel.CheckinDto
             {
+                CheckinId = existing.Id,
                 CheckinDate = existing.CheckinDate,
                 Status = existing.Status,
                 StaffId = existing.StaffId,
+                StaffName = existing.Staff.Name,
             };
         }
 
@@ -176,6 +181,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 CheckinDate = p.CheckinDate,
                 Status = p.Status,
                 StaffId = p.StaffId,
+                StaffName = p.Staff.Name,
             });
         }
     }

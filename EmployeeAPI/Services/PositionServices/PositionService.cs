@@ -85,48 +85,88 @@ namespace EmployeeAPI.Services.PositionServices
 
         public async Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string name)
         {
-            var query = await _positionRepository.GetAllAsync(name, null, null);
-            var model = new Position
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                Id = Guid.NewGuid(),
-                Name = name,
-            };
 
-            var entity = await _positionRepository.AddAsync(model);
-            return new ResponseModel.CreateAndUpdatePosition
+                var query = await _positionRepository.GetAllAsync(name, null, null);
+                var model = new Position
+                {
+                    Id = Guid.NewGuid(),
+                    Name = name,
+                };
+
+                var entity = await _positionRepository.AddAsync(model);
+
+                
+                await _context.SaveChangesAsync();
+                
+                await transaction.CommitAsync();
+
+                return new ResponseModel.CreateAndUpdatePosition
+                {
+                    PositionId = entity.Id,
+                    Name = entity.Name,
+                };
+            }
+            catch (Exception ex)
             {
-                PositionId = entity.Id,
-                Name = entity.Name,
-            };
+                await transaction.RollbackAsync();
+                throw new Exception("An error occurred while adding the position: " + ex.Message);
+            }
         }
 
 
         public async Task<ResponseModel.CreateAndUpdatePosition?> UpdateAsync(Guid id, string newName)
         {
-            var entity = await _positionRepository.GetByIdAsync(id);
-            if (entity == null) return null;
-
-            entity.Name = newName;
-            var updated = await _positionRepository.UpdateAsync(entity);
-            if (updated == null) return null;
-
-            return new ResponseModel.CreateAndUpdatePosition
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                PositionId = updated.Id,
-                Name = updated.Name,
-            };
+                var entity = await _positionRepository.GetByIdAsync(id);
+                if (entity == null) return null;
+
+                entity.Name = newName;
+                var updated = await _positionRepository.UpdateAsync(entity);
+                if (updated == null) return null;
+
+                await _context.SaveChangesAsync();
+
+                await transaction.CommitAsync();
+
+                return new ResponseModel.CreateAndUpdatePosition
+                {
+                    PositionId = updated.Id,
+                    Name = updated.Name,
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("An error occurred while updating the position: " + ex.Message);
+            }
         }
 
         public async Task<string> SoftDeleteAsync(Guid id)
         {
-            var result = await _positionRepository.GetByIdAsync(id);
-            if (result == null) return "Không tìm thấy vị trí";
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var result = await _positionRepository.GetByIdAsync(id);
+                if (result == null) return "Không tìm thấy vị trí";
 
-            result.IsDeleted = true;
+                result.IsDeleted = true;
 
-            await _positionRepository.SoftDeleteAsync(id);
- 
-            return "Đã xóa vị trí: " + result.Name;
+                await _positionRepository.SoftDeleteAsync(id);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "Đã xóa vị trí: " + result.Name;
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception("An error occurred while deleting the position: " + ex.Message);
+            }
         }
 
         public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)

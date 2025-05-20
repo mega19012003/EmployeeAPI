@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata.Ecma335;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Staffs;
@@ -10,12 +11,14 @@ namespace EmployeeAPI.Services.DutyServices
     public class DutyService : IDutyService
     {
         private readonly IDutyRepository _dutyRepository;
-        public DutyService(IDutyRepository dutyRepository)
+        private readonly AppDbContext _context;
+        public DutyService(IDutyRepository dutyRepository, AppDbContext context)
         {
             _dutyRepository = dutyRepository;
+            _context = context;
         }
 
-        public async Task<IEnumerable<ResponseModel.DutyDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
+        /**public async Task<IEnumerable<ResponseModel.DutyDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
             if (pageSize == null || pageSize <= 0)
             {
@@ -43,6 +46,43 @@ namespace EmployeeAPI.Services.DutyServices
                     Description = d.Description
                 }).ToList()
             });
+        }*/
+        public async Task<PagedResult<ResponseModel.DutyDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.Duties
+                .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                .Where(p => !p.IsDeleted);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(f => new ResponseModel.DutyDto
+                {
+                    Id = f.Id,
+                    Name = f.Name,
+                    IsCompleted = f.IsCompleted,
+                    DutyDetails = f.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    {
+                        DutyDetailId = d.DutyDetailId,
+                        StaffId = d.StaffId,
+                        StaffName = d.Staff.Name,
+                        Description = d.Description
+                    }).ToList()
+                })
+                .ToListAsync();
+
+            return new PagedResult<ResponseModel.DutyDto>
+            {
+                TotalCount = totalCount,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                Items = items
+            };
         }
 
         public async Task<ResponseModel.DutyDto> GetByIdAsync(Guid id)
@@ -59,8 +99,10 @@ namespace EmployeeAPI.Services.DutyServices
                 IsCompleted = results.IsCompleted,
                 DutyDetails = results.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
+                    DutyDetailId = d.DutyDetailId,
                     StaffId = d.StaffId,
-                    Description = d.Description
+                    Description = d.Description,
+                    StaffName = d.Staff.Name ?? "ko tồn tại",
                 }).ToList()
             };
         }

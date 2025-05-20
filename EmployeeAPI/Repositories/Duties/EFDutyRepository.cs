@@ -13,7 +13,7 @@ namespace EmployeeAPI.Repositories.Duties
         }
         public async Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
-            var item = _context.Duties.Include(d => d.DutyDetails).AsQueryable();
+            var item = _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Staff).AsQueryable();
             if (!string.IsNullOrEmpty(SearchTerm))
             {
                 item = item.Where(m => m.Name.ToLower().Contains(SearchTerm.ToLower()));
@@ -24,7 +24,10 @@ namespace EmployeeAPI.Repositories.Duties
 
         public async Task<Duty> GetByIdAsync(Guid id)
         {
-            return await _context.Duties.Include(d => d.DutyDetails).FirstOrDefaultAsync(p => p.Id == id);
+            return await _context.Duties
+                .Include(p => p.DutyDetails)
+                .ThenInclude(p => p.Staff)
+                .FirstOrDefaultAsync(p => p.Id == id);
         }
 
         public async Task<Duty> AddAsync(Duty duty)
@@ -58,7 +61,10 @@ namespace EmployeeAPI.Repositories.Duties
         }
         public async Task<IEnumerable<Duty>> GetDutyByName(string name, int? pageSize, int? pageIndex)
         {
-            var query = _context.Duties.Where(p => !p.IsDeleted);
+            var query = _context.Duties
+                .Include(p => p.DutyDetails)
+                .ThenInclude(p => p.Staff)
+                .Where(p => !p.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(name))
             {

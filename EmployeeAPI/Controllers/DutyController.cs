@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Repositories.Duties;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Services.DutyServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -22,21 +23,34 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var result = await _dutyService.GetAllAsync(SearchTerm, pageSize, pageIndex);
-                if (pageSize == null || pageSize <= 0)
+                var pagedResult = await _dutyService.GetAllAsync(SearchTerm, pageSize, pageIndex);
+
+                if (pagedResult.Items.Count() == 0)
                 {
-                    pageSize = 10;
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
                 }
-                if (pageIndex == null || pageIndex <= 0)
+
+                return Ok(new ApiResponse<PagedResult<ResponseModel.DutyDto>>
                 {
-                    pageIndex = 1;
-                }
-                return Ok(result);
+                    Message = "Get list duty success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { message = ex.Message });
+                var response = new ApiResponse<string>
+                {
+                    Message = "An error occurred while retrieving duty",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                return StatusCode(500, response);
             }
         }
 

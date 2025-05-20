@@ -1,11 +1,12 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Services.DutyServices;
 
 namespace EmployeeAPI.Services.DutyServices
 {
     public interface IDutyService
     {
-        Task<IEnumerable<ResponseModel.DutyDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
+        Task<PagedResult<ResponseModel.DutyDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
         Task<ResponseModel.DutyDto> GetByIdAsync(Guid id);
         Task<ResponseModel.CreateDuty> AddAsync(ResponseModel.CreateDuty dto);
         Task<ResponseModel.UpdateDuty> UpdateAsync(ResponseModel.UpdateDuty dto);

@@ -49,7 +49,8 @@ namespace EmployeeAPI.Repositories.Staffs
             var existingStaff = await _context.Staffs.FirstOrDefaultAsync(p => p.Id == staff.Id && !p.IsDeleted && p.IsActive);
 
             if (existingStaff == null)
-                return null; 
+                return null;
+
             existingStaff.Name = staff.Name;
             existingStaff.DepartmentId = staff.DepartmentId;
             existingStaff.PositionId = staff.PositionId;
@@ -57,29 +58,29 @@ namespace EmployeeAPI.Repositories.Staffs
             existingStaff.ImageUrl = staff.ImageUrl;
             existingStaff.IsActive = staff.IsActive;
 
-            await _context.SaveChangesAsync();
+            // Bỏ SaveChangesAsync ở đây
             return existingStaff;
         }
 
-        public async Task<Staff> SoftDeleteAsync(Guid Id)
+        public async Task<Staff> SoftDeleteAsync(Staff staff)
         {
-
-            var existingStaff = await _context.Staffs.FirstOrDefaultAsync(p => p.Id == Id && !p.IsDeleted && p.IsActive);
-
-            if (existingStaff == null)
+            if (staff == null)
                 return null;
 
-            existingStaff.IsDeleted = true;
-            existingStaff.IsActive = false;
-            _context.Staffs.Update(existingStaff);
-            await _context.SaveChangesAsync();
-            return existingStaff;
-        }
+            staff.IsDeleted = true;
+            staff.IsActive = false;
 
+            _context.Staffs.Update(staff);
+
+            return staff;
+        }
 
         public async Task<IEnumerable<Staff>> GetByNameAsync(string name, int? pageSize, int? pageIndex)
         {
-            var query = _context.Staffs.Where(p => p.IsActive == true && !p.IsDeleted);
+            var query = _context.Staffs
+                .Include(s => s.Department)
+                .Include(s => s.Position)
+                .Where(p => p.IsActive == true && !p.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(name))
             {

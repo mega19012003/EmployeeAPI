@@ -1,10 +1,11 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Services.StaffServices
 {
     public interface IStaffService
     {
-        Task<IEnumerable<ResponseModel.StaffDto>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm);
+        Task<PagedResult<ResponseModel.StaffDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
         Task<ResponseModel.StaffDto> GetByIdAsync(Guid id);
         Task<ResponseModel.StaffDto> AddAsync(ResponseModel.CreateStaff dto);
         Task<ResponseModel.StaffDto> UpdateAsync(ResponseModel.UpdateStaff staff);

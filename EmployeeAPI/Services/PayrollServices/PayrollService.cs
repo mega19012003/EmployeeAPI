@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Services.CheckinServices;
@@ -12,13 +13,15 @@ namespace EmployeeAPI.Services.PayrollServices
     {
         private readonly IPayrollRepository _payrollRepository;
         private readonly ICheckinRepository _checkinRepository;
-        public PayrollService(IPayrollRepository payrollRepository, ICheckinRepository checkinRepository)
+        private readonly AppDbContext _context;
+        public PayrollService(IPayrollRepository payrollRepository, ICheckinRepository checkinRepository, AppDbContext context)
         {
             _payrollRepository = payrollRepository;
             _checkinRepository = checkinRepository;
+            _context = context;
         }
 
-        public async Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
+        /*public async Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
             if (pageSize == null || pageSize <= 0)
             {
@@ -39,6 +42,40 @@ namespace EmployeeAPI.Services.PayrollServices
                 Note = c.Note,
                 IsDeleted = c.IsDeleted,
             });
+        }*/
+        public async Task<PagedResult<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.Payrolls
+                .Include(c => c.Staff)
+                .Where(f => string.IsNullOrEmpty(name) || f.Staff.Name.ToLower().Contains(name.ToLower()))
+                .Where(p => !p.IsDeleted);
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(c => new ResponseModel.PayrollDto
+                {
+                    Id = c.Id,
+                    StaffId = c.StaffId,
+                    StaffName = c.Staff.Name,
+                    Salary = c.Salary,
+                    CreatedDate = c.CreatedDate,
+                    Note = c.Note,
+                    IsDeleted = c.IsDeleted,
+                }).ToListAsync();
+
+            return new PagedResult<ResponseModel.PayrollDto>
+            {
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<ResponseModel.PayrollDto> GetPayrollById(Guid id)

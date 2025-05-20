@@ -16,33 +16,42 @@ namespace EmployeeAPI.Controllers
             _service = service;
         }
 
-        /*[HttpGet, Authorize]
-        public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
-        {
-            var result = await _service.GetAllAsync(StaffName, pageIndex, pageSize);
-            if (result == null) return NotFound();
-            return Ok(result);
-        }*/
         [HttpGet, Authorize]
         public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
         {
-            var pagedResult = await _service.GetAllAsync(StaffName, pageIndex, pageSize);
-            var response = new ApiResponse<PagedResult<ResponseModel.CheckinDto>>
+            try
             {
-                Message = "Get All checkins successfully",
-                Data = pagedResult,
-                StatusCode = 200
-            };
-            return Ok(response);
-        }
+                var pagedResult = await _service.GetAllAsync(StaffName, pageIndex, pageSize);
 
-        /*[HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
-        {
-            var checkin = await _service.GetByIdAsync(id);
-            if (checkin == null) return NotFound();
-            return Ok(checkin);
-        }*/
+
+                if (pagedResult.Items.Count() == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<PagedResult<ResponseModel.CheckinDto>>
+                {
+                    Message = "Get list checkin success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                var response = new ApiResponse<string>
+                {
+                    Message = "Error occurred while fetching checkins",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                return StatusCode(500, response);
+            }
+        }
 
         [HttpPost, Authorize]
         public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)

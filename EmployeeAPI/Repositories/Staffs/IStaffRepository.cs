@@ -8,7 +8,8 @@ namespace EmployeeAPI.Repositories.Staffs
         Task<Staff> GetByIdAsync(Guid id);
         Task<Staff> AddAsync(Staff dto);
         Task<Staff> UpdateAsync(Staff staff);
-        Task<Staff> SoftDeleteAsync(Guid staff);
+        //Task<Staff> SoftDeleteAsync(Guid staff);
+        Task<Staff> SoftDeleteAsync(Staff staff);
         Task<IEnumerable<Staff>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
     }
 }

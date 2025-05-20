@@ -25,9 +25,9 @@ namespace EmployeeAPI.Services.CheckinServices
 
         public record UpdateCheckin
         {
-            public Guid Id { get; set; }
-            public Guid StaffId { get; set; }
-            public DateTime CheckinDate { get; set; }
+            public Guid CheckinId { get; set; }
+            //public Guid StaffId { get; set; }
+            //public DateTime CheckinDate { get; set; }
             public CheckinStatus Status { get; set; }
             //public Guid PayrollId { get; set; } //lương tháng này
         }

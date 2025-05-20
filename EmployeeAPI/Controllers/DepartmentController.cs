@@ -26,15 +26,40 @@ namespace EmployeeAPI.Controllers
         {
             /*var result = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
             return Ok(result);*/
-            var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
-
-            var resopnse = new ApiResponse<PagedResult<ResponseModel.DepartmentDto>>
+            try
             {
-                Message = "Get All departments successfully",
-                Data = pagedResult,
-                StatusCode = 200
-            };
-            return Ok(resopnse);
+
+
+                var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
+
+
+                if (pagedResult.Items.Count() == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<PagedResult<ResponseModel.DepartmentDto>>
+                {
+                    Message = "Get list department success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                var response = new ApiResponse<string>
+                {
+                    Message = "An error occurred while retrieving departments",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                return StatusCode(500, response);
+            }
         }
 
         /*[HttpGet("{id}")]

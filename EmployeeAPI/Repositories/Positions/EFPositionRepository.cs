@@ -36,7 +36,7 @@ namespace EmployeeAPI.Repositories.Positions
         public async Task<Position> AddAsync(Position position)
         {
             await _context.Positions.AddAsync(position);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
             return position;
         }
 
@@ -47,17 +47,18 @@ namespace EmployeeAPI.Repositories.Positions
 
             entity.Name = position.Name;
             //_context.Positions.Update(entity);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
             return entity;
         }
 
-        public async Task SoftDeleteAsync(Guid id)
+        public async Task<Position> SoftDeleteAsync(Guid id)
         {
             var entity = await _context.Positions.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
-            if (entity == null) return;
+            if (entity == null) return null;
 
-            _context.Positions.Update(entity);
-            await _context.SaveChangesAsync();
+            //_context.Positions.Update(entity);
+            //await _context.SaveChangesAsync();
+            return entity;
         }
 
         public async Task<Position?> GetAllEmployee(string name)

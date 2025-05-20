@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Services.PayrollServices;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Services.PayrollServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
@@ -18,9 +19,41 @@ namespace EmployeeAPI.Controllers
         [HttpGet, Authorize]
         public async Task<IActionResult> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            var results = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
+            try
+            {
+                var pagedResult = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
+
+                if (pagedResult.Items.Count() == 0)
+                {
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot find the result",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<PagedResult<ResponseModel.PayrollDto>>
+                {
+                    Message = "Get list Payroll success",
+                    Data = pagedResult,
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                var response = new ApiResponse<string>
+                {
+                    Message = "An error occurred while retrieving payrolls",
+                    Data = ex.Message,
+                    StatusCode = 500
+                };
+                /*return StatusCode(500, response);
+                var results = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
             if (results == null) return NotFound();
-            return Ok(results);
+            return Ok(results);*/
+                return StatusCode(500, response);
+            }
         }
 
         /*[HttpGet("id")]
