@@ -95,12 +95,9 @@ namespace EmployeeAPI.Services.CheckinServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             { 
-                //var checkins = await _checkinRepository.GetAllAsync();
-                var exists = await _checkinRepository.ExistAsync(dto.StaffId);
+                /*var exists = await _checkinRepository.ExistAsync(dto.StaffId);
                 if (exists)
-                    return null;
-                /*var exists = await _checkinRepository.ExistsAsync(c =>
-        c.StaffId == dto.StaffId && EF.Functions.DateDiffDay(c.CheckinDate, dto.CheckinDate) == 0);*/
+                    return null;*/
 
                 var existStaff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
                 if (existStaff == null)
@@ -116,7 +113,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 await _checkinRepository.CreateAsync(checkin);
                 await _context.SaveChangesAsync(); //nhớ xóa savechang trong repository
-
                 await transaction.CommitAsync();
 
                 var staff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
@@ -209,7 +205,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var query = _context.Checkins
                     //.Include(c => c.Staff)
-                    .Where(p => !p.IsDeleted);
+                    .Where(p => !p.IsDeleted && p.StaffId == staffId);
 
                 var totalCount = await query.CountAsync();
 

@@ -59,10 +59,7 @@ namespace EmployeeAPI.Repositories.Checkins
             //await _context.SaveChangesAsync();
             return checkin;
         }
-        public async Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate)
-        {
-            return await _context.Checkins.AnyAsync(predicate);
-        }
+
 
         public async Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize)
         {
