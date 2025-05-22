@@ -157,5 +157,13 @@ namespace EmployeeAPI.Repositories.Payrolls
             _context.Payrolls.Add(payroll);
             await _context.SaveChangesAsync();
         }
+
+        public async Task<int> CountDayWorked(Guid staffId, int month, int year)
+        {
+            return await _context.Checkins.CountAsync(c => c.StaffId == staffId &&
+                                                           c.CheckinDate.Month == month &&
+                                                           c.CheckinDate.Year == year &&
+                                                           c.IsDeleted == false);
+        }
     }
 }

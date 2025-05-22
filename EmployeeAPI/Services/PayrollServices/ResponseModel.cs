@@ -14,6 +14,7 @@ namespace EmployeeAPI.Services.PayrollServices
             //public DateTime CheckoutDate { get; set; } //ngày trả lương
             public string Note { get; set; }
             public bool IsDeleted { get; set; } = false;
+            public int DaysWorked { get; set; }
             //public bool IsPaid { get; set; } = false; //đã trả lương
         }
 
@@ -40,6 +41,7 @@ namespace EmployeeAPI.Services.PayrollServices
             public string Note { get; set; }
             public DateTime CreatedDate { get; set; }
             public bool isPaid { get; set; }
+            public int DaysWorked { get; set; } //ngày công
         }
     }
 }

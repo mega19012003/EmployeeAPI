@@ -42,7 +42,6 @@ namespace EmployeeAPI.Services.DutyServices
         }
         public record CreateDutyDetail
         {
-            public Guid DutyDetailId { get; set; }
             public Guid StaffId { get; set; }
             public string Description { get; set; }
         }

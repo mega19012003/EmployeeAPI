@@ -91,9 +91,17 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     });
 // Add services to the container.
 builder.Services.AddControllers();
+//Ý nghĩa: Đăng ký dịch vụ Controllers vào Dependency Injection (DI container).
+//Tác dụng: Cho phép bạn sử dụng các Controller (thường nằm trong thư mục Controllers/) để xử lý các HTTP request (GET, POST, PUT, DELETE...).
 builder.Services.AddAuthorization();
+//Ý nghĩa: Đăng ký middleware Authorization.
+//Tác dụng: Cho phép kiểm tra quyền truy cập người dùng đối với từng endpoint (ví dụ: [Authorize] trên controller hoặc action).
 builder.Logging.ClearProviders();
+//Ý nghĩa: Xóa tất cả các "provider" ghi log mặc định.
+//Tác dụng: Giúp bạn tùy chỉnh lại hệ thống logging (ghi log), thường dùng khi bạn không muốn log vào những nơi mặc định như debug output hoặc Event Log.
 builder.Logging.AddConsole();
+//Ý nghĩa: Thêm một provider để ghi log ra Console.
+//Tác dụng: Hiển thị log trong Terminal, Command Prompt hoặc Output window của Visual Studio.
 var app = builder.Build();
 
 app.MapGet("/", context =>

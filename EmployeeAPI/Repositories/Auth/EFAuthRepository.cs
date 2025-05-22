@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Http.HttpResults;
 using System.Text;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using Azure;
+using EmployeeAPI.Services.AuthServices;
 
 namespace EmployeeAPI.Repositories.Auth
 {
@@ -15,13 +17,31 @@ namespace EmployeeAPI.Repositories.Auth
             _context = context;
         }
 
-        public async Task<User> RegisterAsync(User user, string password)
+        public async Task<ResponseModel.RegisterDto> RegisterAsync(string username, string password, string fullname)
         {
-            user.Id = Guid.NewGuid();
-            user.Password = HashPassword(password);
+
+            var result = await _context.Users.FirstOrDefaultAsync(p => p.Username == username);
+
+            if (result != null)
+                return null;
+
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Username = username,
+                Fullname = fullname,
+                Password = HashPassword(password)
+            };
+            /*user.Id = Guid.NewGuid();
+            user.Password = HashPassword(password);*/
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            return user;
+            return new ResponseModel.RegisterDto
+            {
+                Username = user.Username,
+                Fullname = user.Fullname,
+                Password = user.Password
+            };
         }
 
         public async Task<User> LoginAsync(string username, string password)
@@ -29,6 +49,7 @@ namespace EmployeeAPI.Repositories.Auth
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             if (user == null || user.Password != HashPassword(password))
                 return null;
+
             return user;
         }
 

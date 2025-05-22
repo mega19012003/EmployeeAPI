@@ -6,6 +6,7 @@ using EmployeeAPI.Services.DepartmentServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
@@ -16,11 +17,13 @@ namespace EmployeeAPI.Controllers
     {
         private readonly IDepartmentService _departmentService;
         private readonly IStaffRepository _staffRepository;
+        private readonly ILogger<DepartmentController> _logger;
 
-        public DepartmentController(IDepartmentService departmentService, IStaffRepository staffRepository)
+        public DepartmentController(IDepartmentService departmentService, IStaffRepository staffRepository, ILogger<DepartmentController> logger)
         {
             _departmentService = departmentService;
             _staffRepository = staffRepository;
+            _logger = logger;
         }
 
         [HttpGet, Authorize]
@@ -32,8 +35,7 @@ namespace EmployeeAPI.Controllers
             {
                 var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
 
-
-                if (pagedResult.Items.Count() == 0)
+                /*if (pagedResult.Items.Count() == 0)
                 {
                     return NotFound(new ApiResponse<object>
                     {
@@ -41,24 +43,15 @@ namespace EmployeeAPI.Controllers
                         Data = null,
                         StatusCode = 404
                     });
-                }
+                }*/
 
-                return Ok(new ApiResponse<PagedResult<ResponseModel.DepartmentDto>>
-                {
-                    Message = "Get list department success",
-                    Data = pagedResult,
-                    StatusCode = 200
-                });
+                return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("Get list department success", pagedResult, 200));
+
             }
             catch (Exception ex)
             {
-                var response = new ApiResponse<string>
-                {
-                    Message = "An error occurred while retrieving departments",
-                    Data = ex.Message,
-                    StatusCode = 500
-                };
-                return StatusCode(500, response);
+                _logger.LogError(ex, "An error occurred while retrieving departments");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -76,87 +69,110 @@ namespace EmployeeAPI.Controllers
         [HttpPost, Authorize]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
-            if (Name == null)
+            try
             {
-                return BadRequest("Department Name cannot be null");
+                if (Name == null)
+                {
+                    return BadRequest("Department Name cannot be null");
+                }
+                var result = await _departmentService.AddAsync(Name);
+
+                return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("", result, 200));
             }
-            var result = await _departmentService.AddAsync(Name);
-            return Ok(result);
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "An error occurred while adding the department");
+                return StatusCode(400, new { Message = "Department cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred while adding the department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while adding the department");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
         }
 
         [HttpPut, Authorize]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
-            if (id == null || newName == null)
+            try
             {
-                return BadRequest("Invalid Department data");
+                //var existingDepartment = await _departmentService.GetByIdAsync(id);
+                var result = await _departmentService.UpdateAsync(id, newName);
+
+                return Ok(ApiResponse<ResponseModel.UpdateDepartment>.ReturnResult("Updated Department Success", result, 200));
             }
-            //var existingDepartment = await _departmentService.GetByIdAsync(id);
-            var result = await _departmentService.UpdateAsync(id, newName);
-            if (result == null)
+            catch (ArgumentException argEx)
             {
-                return NotFound();
+                _logger.LogError(argEx, "An error occurred while adding the department");
+                return StatusCode(400, new { Message = "Department cannot be found", Detail = argEx.Message, StatusCode = 400 });
             }
-            return Ok(result);
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred while updating the department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while updating the department");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
         }
 
 
         [HttpDelete, Authorize]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
-            if (id == null) return BadRequest("Id không hợp lệ hoặc tồn tại");
-
-            var result = await _departmentService.SoftDeleteAsync(id);
-            if (result == null) return NotFound();
-
-            return Ok(result);
-        }
-
-        /*[HttpGet("name"), Authorize]
-        public async Task<IActionResult> GetDepartmentByName(string name)
-        {
-            var department = await _departmentService.GetDepartmentByName(name);
-            if (department == null)
-            {
-                return NotFound();
-            }
-            return Ok(department);
-        }*/
-        [HttpGet("Employee"), Authorize]
-        public async Task<IActionResult> GetEmployeeByDepartment(string searchTerm, int? pageSize, int? pageIndex)
-        {
             try
             {
-                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(searchTerm, pageSize, pageIndex);
-                /*if (positions == null)
-                    return NotFound("Không tìm thấy phòng ban hoặc nhân viên phù hợp.");*/
+                //if (id == null) return BadRequest("Id không hợp lệ hoặc tồn tại");
 
-                if (pagedResult.Items.Count() == 0)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }
+                var result = await _departmentService.SoftDeleteAsync(id);
+                if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("", result, 400));
 
-                return Ok(new ApiResponse<PagedResult<StaffFilter>>
-                {
-                    Message = "Get list employee by department success",
-                    Data = pagedResult,
-                    StatusCode = 200
-                });
+                return Ok(ApiResponse<string>.ReturnResult("Delete department success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "An error occurred while deleting the department");
+                return StatusCode(400, new { Message = "Department cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred while deleting the department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
-                var response = new ApiResponse<string>
-                {
-                    Message = "An error occurred while retrieving departments",
-                    Data = ex.Message,
-                    StatusCode = 500
-                };
-                return StatusCode(500, response);
+                _logger.LogError(ex, "An error occurred while deleting the department");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
+        }
+
+        [HttpGet("Employee"), Authorize]
+        public async Task<IActionResult> GetEmployeeByDepartment(string DepartmentName, int? pageSize, int? pageIndex)
+        {
+            try
+            {
+                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(DepartmentName, pageSize, pageIndex);
+                if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+
+                return Ok(ApiResponse<PagedResult<StaffFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred while retrieving employees by department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving employees by department");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
     }

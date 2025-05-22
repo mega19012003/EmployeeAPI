@@ -41,6 +41,7 @@ namespace EmployeeAPI.Services.PositionServices
                 IsDeleted = p.IsDeleted
             });
         }*/
+
         public async Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
             try
@@ -106,6 +107,9 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                if(!string.IsNullOrEmpty(name))
+                    throw new ArgumentNullException("Position name cannot be null or empty");
+
                 var query = await _positionRepository.GetAllAsync(name, null, null);
                 var model = new Position
                 {
@@ -138,11 +142,12 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var entity = await _positionRepository.GetByIdAsync(id);
-                if (entity == null) return null;
+                var result = await _positionRepository.GetByIdAsync(id);
+                if (result == null)
+                    throw new ArgumentException("Cannot find position id");
 
-                entity.Name = newName;
-                var updated = await _positionRepository.UpdateAsync(entity);
+                result.Name = newName;
+                var updated = await _positionRepository.UpdateAsync(result);
                 if (updated == null) return null;
 
                 await _context.SaveChangesAsync();
@@ -169,7 +174,8 @@ namespace EmployeeAPI.Services.PositionServices
             try
             {
                 var result = await _positionRepository.GetByIdAsync(id);
-                if (result == null) return "Không tìm thấy vị trí";
+                if (result == null)
+                    throw new ArgumentException("Cannot find position id");
 
                 result.IsDeleted = true;
 
@@ -220,7 +226,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if (!string.IsNullOrEmpty(positionName))
                 {
-                    query = query.Where(d => d.Name.ToLower().Contains(positionName.ToLower()));
+                    query = query.Where(d => d.Name.ToLower().Equals(positionName.ToLower()));
                 }
 
                 var allStaffs = query

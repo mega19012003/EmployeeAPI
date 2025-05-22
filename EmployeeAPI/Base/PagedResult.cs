@@ -8,6 +8,5 @@
         public int PageIndex { get; set; }
         public bool HasNextPage  =>  PageIndex * PageSize < TotalCount;
         public bool HasPreviousPage => PageIndex > 1;
-
     }
 }

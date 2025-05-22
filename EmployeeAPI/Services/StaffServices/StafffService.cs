@@ -5,6 +5,7 @@ using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.FileServices;
 using Microsoft.AspNetCore.Http.HttpResults;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 
@@ -81,6 +82,9 @@ namespace EmployeeAPI.Services.StaffServices
         public async Task<ResponseModel.StaffDto> GetByIdAsync(Guid id)
         {
             var results = await _repository.GetByIdAsync(id);
+            if (results == null) 
+                throw new ArgumentException("Cannot find staff id");
+
             return new ResponseModel.StaffDto
             {
                 StaffId = results.Id,
@@ -154,7 +158,7 @@ namespace EmployeeAPI.Services.StaffServices
                 var imagePaths = await _fileService.SaveFilesAsync(dto.ImageUrl, uploadsFolder);
 
                 var existingStaff = await _repository.GetByIdAsync(dto.Id);
-                if (existingStaff == null) throw new Exception("Staff not found");
+                if (existingStaff == null) throw new ArgumentException("Cannot find staff id");
 
                 existingStaff.Name = dto.Name;
                 existingStaff.DepartmentId = dto.DepartmentId;
@@ -199,7 +203,8 @@ namespace EmployeeAPI.Services.StaffServices
             try
             {
                 var existingStaff = await _repository.GetByIdAsync(Id);
-                if (existingStaff == null) return null;
+                if (existingStaff == null) 
+                    throw new ArgumentException("Cannot find staff id");
 
                 existingStaff.IsDeleted = true;
                 existingStaff.IsActive = false;
@@ -220,19 +225,40 @@ namespace EmployeeAPI.Services.StaffServices
             }
         }
 
-        public async Task<IEnumerable<ResponseModel.StaffDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<ResponseModel.StaffDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex)
         {
             try
             {
-                if (pageSize == null || pageSize <= 0)
-                {
-                    pageSize = 10;
-                }
-                if (pageIndex == null || pageIndex <= 0)
-                {
-                    pageIndex = 1;
-                }
-                var result = await _repository.GetByNameAsync(name, pageSize, pageIndex);
+                pageSize ??= 10;
+                pageIndex ??= 1;
+                var query = _context.Staffs
+                    .Include(c => c.Department)
+                    .Include(c => c.Position)
+                    .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
+                    .Where(p => !p.IsDeleted);
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(f => new ResponseModel.StaffDto
+                    {
+                        StaffId = f.Id,
+                        Name = f.Name,
+                        DateOfBirth = f.DateOfBirth,
+                        PhoneNumber = f.PhoneNumber,
+                        Address = f.Address,
+                        DepartmentId = f.DepartmentId,
+                        DepartmentName = f.Department.Name,
+                        PositionId = f.PositionId,
+                        PositionName = f.Position.Name,
+                        BasicSalary = f.BasicSalary,
+                        ImageUrl = f.ImageUrl
+                    })
+                    .ToListAsync();
+
+                /*var result = await _repository.GetByNameAsync(name, pageSize, pageIndex);
                 return result.Select(p => new ResponseModel.StaffDto
                 {
                     StaffId = p.Id,
@@ -246,7 +272,14 @@ namespace EmployeeAPI.Services.StaffServices
                     PositionName = p.Position?.Name ?? "Không xác định",
                     BasicSalary = p.BasicSalary,
                     ImageUrl = p.ImageUrl
-                });
+                });*/
+                return new PagedResult<ResponseModel.StaffDto>
+                {
+                    TotalCount = totalCount,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    Items = items
+                };
             }
             catch (Exception ex)
             {

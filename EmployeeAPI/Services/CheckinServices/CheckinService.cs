@@ -48,7 +48,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     {
                         CheckinId = c.Id,
                         CheckinDate = c.CheckinDate,
-                        Status = c.Status,
+                        CheckinStatus = c.Status,
+                        Status = c.Status.ToString(),
                         StaffId = c.StaffId,
                         StaffName = c.Staff.Name,
                     }).ToListAsync();
@@ -78,7 +79,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 return new ResponseModel.CheckinDto
                 {
                     CheckinDate = c.CheckinDate,
-                    Status = c.Status,
+                    CheckinStatus = c.Status,
+                    Status = c.Status.ToString(),
                     StaffId = c.StaffId,
                     StaffName = c.Staff.Name,
                 };
@@ -94,25 +96,24 @@ namespace EmployeeAPI.Services.CheckinServices
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
-            { 
-                /*var exists = await _checkinRepository.ExistAsync(dto.StaffId);
-                if (exists)
-                    return null;*/
+            {
+                /*if (dto.StaffId == Guid.Empty)
+                    throw new ArgumentException("Staff id cannot be empty");*/
 
                 var existStaff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
                 if (existStaff == null)
-                    return null;
+                    throw new ArgumentException("Cannot find staff id");
 
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     CheckinDate = dto.CheckinDate,
-                    Status = dto.Status,
+                    Status = dto.CheckinStatus,
                     StaffId = dto.StaffId,
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
-                await _context.SaveChangesAsync(); //nhớ xóa savechang trong repository
+                await _context.SaveChangesAsync(); 
                 await transaction.CommitAsync();
 
                 var staff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
@@ -120,7 +121,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = checkin.Id,
                     CheckinDate = checkin.CheckinDate,
-                    Status = checkin.Status,
+                    CheckinStatus = checkin.Status,
+                    Status = checkin.Status.ToString(),
                     StaffId = checkin.StaffId,
                     StaffName = staff.Name,
                 };
@@ -140,10 +142,11 @@ namespace EmployeeAPI.Services.CheckinServices
             try
             {
                 var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
-                if (existing == null) return null;
+                if (existing == null)
+                    throw new ArgumentException("Cannot find checkin id");
 
                 //existing.CheckinDate = dto.CheckinDate;
-                existing.Status = dto.Status;
+                existing.Status = dto.CheckinStatus;
                 //existing.StaffId = dto.StaffId;
 
                 await _checkinRepository.UpdateAsync(existing);
@@ -156,7 +159,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = existing.Id,
                     CheckinDate = existing.CheckinDate,
-                    Status = existing.Status,
+                    CheckinStatus = existing.Status,
+                    Status = existing.Status.ToString(),
                     StaffId = existing.StaffId,
                     StaffName = existing.Staff.Name,
                 };
@@ -175,8 +179,9 @@ namespace EmployeeAPI.Services.CheckinServices
             try
             {
                 var existing = await _checkinRepository.GetByIdAsync(id);
-                if (existing == null) return null;
-                
+                if (existing == null)
+                    throw new ArgumentException("Cannot find checkin id");
+
                 await _checkinRepository.SoftDeleteAsync(id);
 
                 await _context.SaveChangesAsync();
@@ -201,7 +206,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageSize ??= 10;
 
                 var checkin = await _staffcheckinRepository.GetByIdAsync(staffId);
-                if (checkin == null) return null;
+                if (checkin == null)
+                    throw new ArgumentException("Cannot find staff id");
 
                 var query = _context.Checkins
                     //.Include(c => c.Staff)
@@ -216,7 +222,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     {
                         CheckinId = c.Id,
                         CheckinDate = c.CheckinDate,
-                        Status = c.Status,
+                        CheckinStatus = c.Status,
+                        Status = c.Status.ToString(),
                         StaffId = c.StaffId,
                         StaffName = c.Staff.Name,
                     }).ToListAsync();

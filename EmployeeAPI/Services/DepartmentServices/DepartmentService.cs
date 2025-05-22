@@ -34,6 +34,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                     .Where(p => !p.isDeleted);
 
                 var totalCount = await query.CountAsync();
+
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
@@ -62,6 +63,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             try
             {
                 var departmant = await _repository.GetByIdAsync(id);
+
                 return new DepartmentDto
                 {
                     DepartmentId = departmant.Id,
@@ -82,6 +84,11 @@ namespace EmployeeAPI.Services.DepartmentServices
 
             try
             {
+                if(!string.IsNullOrEmpty(name))
+                {
+                    throw new ArgumentNullException(nameof(name), "Department name cannot be null or empty");
+                }
+
                 var model = new Department
                 {
                     Id = Guid.NewGuid(),
@@ -110,10 +117,17 @@ namespace EmployeeAPI.Services.DepartmentServices
         public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
-            try { 
-                var result = await _repository.GetByIdAsync(id);
+            try {
+                /*if (id == Guid.Empty)
+                    throw new ArgumentException("Department ID is invalid", nameof(id));
 
-                if (result == null) return null;
+                if (string.IsNullOrWhiteSpace(newName))
+                    throw new ArgumentException("Department name cannot be empty", nameof(newName));*/
+
+
+                var result = await _repository.GetByIdAsync(id);
+                if (result == null)
+                    throw new ArgumentException("Cannot find department id");
 
                 result.Name = newName;
 
@@ -141,7 +155,8 @@ namespace EmployeeAPI.Services.DepartmentServices
             try
             {
                 var result = await _repository.GetByIdAsync(id);
-                if (result == null) return null;
+                if (result == null)
+                    throw new ArgumentException("Cannot find department id");
 
                 result.isDeleted = true;
                 await _repository.SoftDeleteAsync(result.Id);

@@ -10,6 +10,6 @@ namespace EmployeeAPI.Services.StaffServices
         Task<ResponseModel.StaffDto> AddAsync(ResponseModel.CreateStaff dto);
         Task<ResponseModel.StaffDto> UpdateAsync(ResponseModel.UpdateStaff staff);
         Task<string> SoftDeleteAsync(Guid staff);
-        Task<IEnumerable<ResponseModel.StaffDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
+        Task<PagedResult<ResponseModel.StaffDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
     }
 }

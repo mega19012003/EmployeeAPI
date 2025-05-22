@@ -22,28 +22,6 @@ namespace EmployeeAPI.Services.PayrollServices
             _context = context;
         }
 
-        /*public async Task<IEnumerable<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
-        {
-            if (pageSize == null || pageSize <= 0)
-            {
-                pageSize = 10;
-            }
-            if (pageIndex == null || pageIndex <= 0)
-            {
-                pageIndex = 1;
-            }
-            var result = await _payrollRepository.GetAllPayrolls(name, pageIndex, pageSize);
-            return result.Select(c => new PayrollDto
-            {
-                Id = c.Id,
-                StaffId = c.StaffId,
-                StaffName = c.Staff.Name,
-                Salary = c.Salary,
-                CreatedDate = c.CreatedDate,
-                Note = c.Note,
-                IsDeleted = c.IsDeleted,
-            });
-        }*/
         public async Task<PagedResult<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
@@ -65,6 +43,7 @@ namespace EmployeeAPI.Services.PayrollServices
                     StaffId = c.StaffId,
                     StaffName = c.Staff.Name,
                     Salary = c.Salary,
+                    DaysWorked = c.DaysWorked,
                     CreatedDate = c.CreatedDate,
                     Note = c.Note,
                     IsDeleted = c.IsDeleted,
@@ -123,7 +102,7 @@ namespace EmployeeAPI.Services.PayrollServices
             if (result == null) return null;
             /*result.IsDeleted = true;
             await _payrollRepository.UpdatePayroll(result);*/
-            return "Đã xóa payroll";
+            return "Đã xóa payroll " + id;
         }
 
         public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
@@ -161,16 +140,17 @@ namespace EmployeeAPI.Services.PayrollServices
         }
 
         ////////////////////////////////////////////////////////
-        ///
+        ////////////////////////////////////////////////////////
+        
         public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId)
         {
             int month = DateTime.Now.Month;
             int year = DateTime.Now.Year;
             if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
-                throw new InvalidOperationException("Đã tồn tại bảng lương cho tháng này.");
+                throw new InvalidOperationException("Payroll for this month already existed");
 
             var staff = await _payrollRepository.GetStaffWithSalary(staffId);
-            if (staff == null) throw new Exception("Nhân viên không tồn tại.");
+            if (staff == null) throw new Exception("Cannot find staff id");
 
             var validCheckins = await _payrollRepository.CountValidCheckins(staffId, month, year);
             var lateCheckins = await _payrollRepository.CountLateCheckins(staffId, month, year);
@@ -195,14 +175,16 @@ namespace EmployeeAPI.Services.PayrollServices
                                 + (penalty10 * absentPermissionCheckins)
                                 + (penalty50 * absentCheckins);
 
+            var totalDayWorked = await _payrollRepository.CountDayWorked(staffId, month, year);
+
             var payroll = new Payroll
             {
                 Id = Guid.NewGuid(),
                 StaffId = staffId,
                 Salary = totalSalary,
+                DaysWorked = totalDayWorked,
                 CreatedDate = DateTime.Now,
                 Note = $"Lương tháng {month}/{year}",
-                IsPaid = false
             };
 
             await _payrollRepository.CreatePayrollAsync(payroll);
@@ -211,9 +193,7 @@ namespace EmployeeAPI.Services.PayrollServices
             {
                 Id = payroll.Id,
                 StaffId = staffId,
-                
-                //BasicSalary = staff.BasicSalary,
-                //ValidCheckinCount = validCheckins,
+                DaysWorked = totalDayWorked,
                 Salary = totalSalary,
                 CreatedDate = payroll.CreatedDate,
                 Note = payroll.Note

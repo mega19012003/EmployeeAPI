@@ -2,7 +2,9 @@
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Services.DutyServices;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Controllers
 {
@@ -25,7 +27,7 @@ namespace EmployeeAPI.Controllers
             {
                 var pagedResult = await _dutyService.GetAllAsync(SearchTerm, pageSize, pageIndex);
 
-                if (pagedResult.Items.Count() == 0)
+                /*if (pagedResult.Items.Count() == 0)
                 {
                     return NotFound(new ApiResponse<object>
                     {
@@ -33,24 +35,24 @@ namespace EmployeeAPI.Controllers
                         Data = null,
                         StatusCode = 404
                     });
-                }
+                }*/
 
-                return Ok(new ApiResponse<PagedResult<ResponseModel.DutyDto>>
-                {
-                    Message = "Get list duty success",
-                    Data = pagedResult,
-                    StatusCode = 200
-                });
+                return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("Get list duty success", pagedResult, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentNullException in GetAll");
+                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the duty id", argEx.Message, 400));
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in GetAll");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
-                var response = new ApiResponse<string>
-                {
-                    Message = "An error occurred while retrieving duty",
-                    Data = ex.Message,
-                    StatusCode = 500
-                };
-                return StatusCode(500, response);
+                _logger.LogError(ex, "An error occurred while retrieving duties");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -62,14 +64,14 @@ namespace EmployeeAPI.Controllers
                 var duty = await _dutyService.GetByIdAsync(id);
                 if (duty == null)
                 {
-                    return NotFound();
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the duty id", null, 404));
                 }
-                return Ok(duty);
+                return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Get duty by id success", duty, 200));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { message = ex.Message });
+                _logger.LogError(ex, "Error while retrieving duty id");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -81,15 +83,30 @@ namespace EmployeeAPI.Controllers
                 var result = await _dutyService.AddAsync(dto);
                 if (dto == null)
                 {
-                    return BadRequest("Invalid data.");
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "Cannot add duty",
+                        Data = null,
+                        StatusCode = 404
+                    });
                 }
 
-                return Ok(result);
+                return Ok(ApiResponse<ResponseModel.CreateDuty>.ReturnResult("Create duty success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentNullException in AddDutyAsync");
+                return StatusCode(400, new { Message = "Add duty failed", Deatail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in AddDutyAsync");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { message = ex.Message });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -98,17 +115,27 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                if (dto == null)
-                {
-                    return BadRequest("Invalid data.");
-                }
                 var result = await _dutyService.UpdateAsync(dto);
-                return Ok(result);
+                if (result == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Database update error", "Invalid input", 400));
+
+                return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Update duty success", result, 200));
+
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in AddDutyAsync");
+                return StatusCode(400, new { Message = "Update duty failed", Deatail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in AddDutyAsync");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { message = ex.Message });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -118,16 +145,26 @@ namespace EmployeeAPI.Controllers
             try
             {
                 var result = await _dutyService.SoftDeleteAsync(id);
-                if (result == null)
+                /*if (result == null)
                 {
                     return NotFound();
-                }
-                return Ok(result);
+                }*/
+                return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
+                return StatusCode(400, new { Message = "Delete duty failed", Deatail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { message = ex.Message });
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find id", StatusCode = 500 });
             }
         }
 

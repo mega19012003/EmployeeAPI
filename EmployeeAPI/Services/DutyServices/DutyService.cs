@@ -37,6 +37,7 @@ namespace EmployeeAPI.Services.DutyServices
                     Id = f.Id,
                     Name = f.Name,
                     IsCompleted = f.IsCompleted,
+                    StartDate = f.StartDate,
                     DutyDetails = f.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
@@ -60,14 +61,14 @@ namespace EmployeeAPI.Services.DutyServices
         {
             var results = await _dutyRepository.GetByIdAsync(id);
             if (results == null)
-            {
-                return null;
-            }
+                throw new ArgumentException("Cannot find duty id");
+
             return new ResponseModel.DutyDto
             {
                 Id = id,
                 Name = results.Name,
                 IsCompleted = results.IsCompleted,
+                StartDate = results.StartDate,
                 DutyDetails = results.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
                     DutyDetailId = d.DutyDetailId,
@@ -84,6 +85,7 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 Id = Guid.NewGuid(),
                 Name = dto.Name,
+                StartDate = DateTime.Now,
                 DutyDetails = (List<DutyDetail>)dto.DutyDetails.Select(d => new DutyDetail
                 {
                     StaffId = d.StaffId,
@@ -104,13 +106,26 @@ namespace EmployeeAPI.Services.DutyServices
             };
         }
 
-        public async Task<ResponseModel.UpdateDuty> UpdateAsync(ResponseModel.UpdateDuty dto)
+        public async Task<ResponseModel.DutyDto> UpdateAsync(ResponseModel.UpdateDuty dto)
         {
             var existingDuty = await _dutyRepository.GetByIdAsync(dto.Id);
             if (existingDuty == null)
-            {
-                return null;
-            }
+                throw new ArgumentException("Duty not found");
+
+            var existingStaff = await _context.Staffs
+                .Where(s => dto.DutyDetails.Any(d => d.StaffId == s.Id))
+                .AsNoTracking()
+                .ToListAsync();
+            if (existingStaff == null)
+                throw new ArgumentException("Staff not found");
+
+            var existingDutyDetails = await _context.DutyDetail
+                .Where(d => dto.DutyDetails.Any(dd => dd.Id == d.DutyDetailId))
+                .AsNoTracking()
+                .ToListAsync();
+            if (existingDutyDetails == null)
+                throw new ArgumentException("DutyDetail not found");
+
             existingDuty.Name = dto.Name;
             existingDuty.IsCompleted = dto.IsCompleted;
             existingDuty.DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
@@ -126,14 +141,15 @@ namespace EmployeeAPI.Services.DutyServices
                 return null;
             }
 
-            return new ResponseModel.UpdateDuty 
+            return new ResponseModel.DutyDto
             {
                 Id = result.Id,
                 Name = dto.Name,
                 IsCompleted = dto.IsCompleted,
-                DutyDetails = result.DutyDetails.Select(d => new ResponseModel.UpdateDutyDetail
+                StartDate = result.StartDate,
+                DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
-                    Id = d.DutyDetailId,
+                    DutyDetailId = d.DutyDetailId,
                     StaffId = d.StaffId,
                     Description = d.Description
                 }).ToList(),
@@ -143,7 +159,8 @@ namespace EmployeeAPI.Services.DutyServices
         public async Task<string> SoftDeleteAsync(Guid Id)
         {
             var entity = await _dutyRepository.SoftDeleteAsync(Id);
-            if (entity == null) return null;
+            if (entity == null)
+                throw new ArgumentException("Cannot find duty id");
 
             return "Đã xóa công việc" + Id;
         }

@@ -5,6 +5,8 @@ using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Authorization;
 using EmployeeAPI.Base;
 using static EmployeeAPI.Services.StaffServices.ResponseModel;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Http.HttpResults;
 
 namespace EmployeeAPI.Controllers
 {
@@ -26,34 +28,15 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var pagedResult = await _positionService.GetAllAsync(name, pageIndex, pageSize);
+                var result = await _positionService.GetAllAsync(name, pageIndex, pageSize);
 
-                if (pagedResult.Items.Count() == 0)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }
-
-                return Ok(new ApiResponse<PagedResult<ResponseModel.PositionDTO>>
-                {
-                    Message = "Get list position success",
-                    Data = pagedResult,
-                    StatusCode = 200
-                });
+                return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
             }
+
             catch (Exception ex)
             {
-                var response = new ApiResponse<string>
-                {
-                    Message = "An error occurred while retrieving positions",
-                    Data = ex.Message,
-                    StatusCode = 500
-                };
-                return StatusCode(500, response);
+                _logger.LogError(ex, "Exception thrown in GetAllPositions controller method.");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -70,14 +53,24 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
+                //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
                 var result = await _positionService.AddAsync(name);
-                return Ok(result);
+                return Ok(ApiResponse<ResponseModel.CreateAndUpdatePosition>.ReturnResult("Create position success", result, 200));
+            }
+            catch(ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentNullException in AddPosition");
+                return StatusCode(400, new { Message = "Position cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in AddPosition");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception thrown in AddPosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -86,17 +79,29 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                if (id == Guid.Empty || string.IsNullOrWhiteSpace(newName)) return BadRequest("Invalid input");
+                if (id == Guid.Empty || string.IsNullOrWhiteSpace(newName)) 
+                    return BadRequest(ApiResponse<string>.ReturnResult("Invalid input", null, 404));
 
                 var result = await _positionService.UpdateAsync(id, newName);
-                if (result == null) return NotFound();
+                if (result == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
 
-                return Ok(result);
+                return Ok(ApiResponse<ResponseModel.CreateAndUpdatePosition>.ReturnResult("Update position success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentNullException in AddPosition");
+                return StatusCode(400, new { Message = "Position cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in UpdatePosition");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception thrown in UpdatePosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -106,49 +111,45 @@ namespace EmployeeAPI.Controllers
             try
             {
                 var result = await _positionService.SoftDeleteAsync(id);
-                if (result == null) return NotFound();
-                return Ok(result);
+                if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
+                return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentNullException in SoftDeletePosition");
+                return StatusCode(400, new { Message = "Position cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in SoftDeletePosition");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception thrown in SoftDeletePosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message });
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Position id", StatusCode = 500 });
             }
         }
 
         [HttpGet("Employee"), Authorize]
-        public async Task<IActionResult> GetEmployeeByPosition(string searchTerm, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetEmployeeByPosition(string PositionName, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _positionService.GetStaffByPositionAsync(searchTerm, pageSize, pageIndex);
+                var pagedResult = await _positionService.GetStaffByPositionAsync(PositionName, pageSize, pageIndex);
+                if (pagedResult == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position name", null, 404));
 
-                if (pagedResult.Items.Count() == 0)
+                /*if (pagedResult.Items.Count() == 0)
                 {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }
+                    return BadRequest(ApiResponse<object>.ReturnResult("Cannot find the Position name", null, 400));
+                }*/
 
-                return Ok(new ApiResponse<PagedResult<StaffFilter>>
-                {
-                    Message = "Get list employee by department success",
-                    Data = pagedResult,
-                    StatusCode = 200
-                });
+                return Ok(ApiResponse<PagedResult<StaffFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
             }
             catch (Exception ex)
             {
-                var response = new ApiResponse<string>
-                {
-                    Message = "An error occurred while retrieving departments",
-                    Data = ex.Message,
-                    StatusCode = 500
-                };
-                return StatusCode(500, response);
+                _logger.LogError(ex, "Exception thrown in GetEmployeeByPosition controller method.");
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Position name", StatusCode = 500 });
             }
         }
     }

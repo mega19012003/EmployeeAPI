@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 
 namespace EmployeeAPI.Services.AuthServices
 {
@@ -13,6 +14,8 @@ namespace EmployeeAPI.Services.AuthServices
         }
         public class RegisterDto
         {
+            [JsonIgnore]
+            public Guid Id { get; set; }
             [Required]
             public string Username { get; set; }
             [Required]
@@ -20,5 +23,11 @@ namespace EmployeeAPI.Services.AuthServices
             [Required]
             public string Fullname { get; set; }
         }
+
+        public class TokenDto
+        {
+            public string token;
+        }
+
     }
 }
