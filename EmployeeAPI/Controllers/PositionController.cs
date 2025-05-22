@@ -60,7 +60,7 @@ namespace EmployeeAPI.Controllers
             catch(ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentNullException in AddPosition");
-                return StatusCode(400, new { Message = "Position cannot be found", Detail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "Add position failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {

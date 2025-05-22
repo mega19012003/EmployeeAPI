@@ -55,9 +55,6 @@ namespace EmployeeAPI.Controllers
                         StatusCode = 400,
                     });
 
-                //return BadRequest("User already exists");
-
-                /*return Ok(new { result.Username, result.Fullname });*/
                 return Ok(new ApiResponse<ResponseModel.RegisterDto>
                 {
                   Message = "Register success",
@@ -96,6 +93,8 @@ namespace EmployeeAPI.Controllers
                 var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.Name, dto.Username),
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(ClaimTypes.GivenName, user.Fullname),
                 };
                 var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
                 var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -107,7 +106,7 @@ namespace EmployeeAPI.Controllers
                     signingCredentials: signinCredentials
                 );
                 var jwt = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-                //return Ok(new { token = jwt });
+  
                 return Ok(new ApiResponse<string>
                 {
                     Message = "Login success",
@@ -137,6 +136,38 @@ namespace EmployeeAPI.Controllers
             var hash = Convert.ToBase64String(hashBytes);
 
             return Ok(hash);
+        }
+
+        [HttpGet("current")]
+        public IActionResult GetCurrentUser()
+        {
+            var user = HttpContext.User;
+
+            if (user == null || !user.Identity.IsAuthenticated)
+            {
+                return Unauthorized(new ApiResponse<string>
+                {
+                    Message = "Unauthorized",
+                    Data = null,
+                    StatusCode = 401,
+                });
+            }
+
+            var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var username = user.FindFirst(ClaimTypes.Name)?.Value;
+            var fullname = user.FindFirst(ClaimTypes.GivenName)?.Value;
+
+            return Ok(new ApiResponse<object>
+            {
+                Message = "Get login user success",
+                Data = new
+                {
+                    UserId = userId,
+                    Username = username,
+                    Fullname = fullname,
+                },
+                StatusCode = 200,
+            });
         }
 
     }

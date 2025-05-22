@@ -162,7 +162,7 @@ namespace EmployeeAPI.Services.DutyServices
             if (entity == null)
                 throw new ArgumentException("Cannot find duty id");
 
-            return "Đã xóa công việc" + Id;
+            return "Đã xóa công việc" + entity.Name;
         }
     }
 }

@@ -84,7 +84,7 @@ namespace EmployeeAPI.Services.DepartmentServices
 
             try
             {
-                if(!string.IsNullOrEmpty(name))
+                if(name ==null)
                 {
                     throw new ArgumentNullException(nameof(name), "Department name cannot be null or empty");
                 }

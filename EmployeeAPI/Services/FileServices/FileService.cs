@@ -40,6 +40,54 @@ public class FileService : IFileService
         return imagePaths;
     }
 
+    public async Task<List<string>> UpdateFilesAsync(List<IFormFile> files, string uploadsFolder, List<String>oldFiles)
+    {
+        var imagePaths = new List<string>();
+
+        if (files == null || files.Count == 0)
+            return imagePaths;
+
+        try
+        {
+            Directory.CreateDirectory(uploadsFolder); 
+
+            foreach (var file in files)
+            {
+                if (file.Length > 0)
+                {
+                    var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
+                    var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+
+                    using (var stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        await file.CopyToAsync(stream);
+                    }
+
+                    var relativePath = Path.Combine("images", uniqueFileName).Replace("\\", "/");
+                    imagePaths.Add(relativePath);
+                }
+            }
+
+            foreach (var oldFile in oldFiles)
+            {
+                var fullPath = Path.Combine(uploadsFolder, oldFile);
+                if (File.Exists(fullPath))
+                {
+                    File.Delete(fullPath);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+
+            Console.WriteLine($"Lỗi lưu file: {ex.Message}");
+            throw; 
+        }
+
+        return imagePaths;
+    }
+
+
     /*public async Task<List<string>> UpdateFileAsync(List<IFormFile> files, string folderPath, List<String> oldFiles)
     {
         var filePaths = new List<string>();

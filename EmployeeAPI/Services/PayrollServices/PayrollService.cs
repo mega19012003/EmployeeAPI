@@ -75,7 +75,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
         }
 
-        public async Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto)
+        /*public async Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto)
         {
             var exsistingPayroll = await _payrollRepository.GetPayrollById(dto.Id);
             if (exsistingPayroll == null)
@@ -94,7 +94,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 CreatedDate = exsistingPayroll.CreatedDate,
                 Note = exsistingPayroll.Note,
             };
-        }
+        }*/
 
         public async Task<string> SoftDeletePayroll(Guid id)
         {

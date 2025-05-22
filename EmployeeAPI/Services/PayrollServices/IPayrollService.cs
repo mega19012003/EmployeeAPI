@@ -10,7 +10,7 @@ namespace EmployeeAPI.Services.PayrollServices
     {
         Task<ResponseModel.PayrollDto> GetPayrollById(Guid id);
         Task<PagedResult<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize );
-        Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto);
+        //Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto);
         Task<string> SoftDeletePayroll(Guid id);
         //Task<IEnumerable<ResponseModel.PayrollDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
         ///////////////////////////////

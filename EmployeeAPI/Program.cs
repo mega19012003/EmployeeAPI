@@ -20,7 +20,20 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
+var CustomCors = "_customCors";
 
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "CustomCors",
+                      builder =>
+                      {
+                          builder.AllowAnyOrigin()
+                                 .AllowAnyHeader()
+                                 .AllowAnyMethod();
+                                 //.AllowCredentials();
+                      });
+});
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("EmployeeDb")));
@@ -114,6 +127,7 @@ app.UseSwagger();
 app.UseSwaggerUI();      
 app.UseHttpsRedirection();
 app.UseStaticFiles();
+app.UseCors("CustomCors");
 app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();

@@ -28,6 +28,11 @@ namespace EmployeeAPI.Services.AuthServices
         {
             public string token;
         }
-
+        public class UserDto
+        {
+            public Guid userId { get; set; }
+            public string username { get; set; }
+            public string fullname { get; set; }
+        }
     }
 }

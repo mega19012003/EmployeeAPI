@@ -72,6 +72,11 @@ namespace EmployeeAPI.Repositories.Auth
                 return Convert.ToBase64String(hash);
             }
         }
+
+        public async Task<IEnumerable<User>> GetLoginUserAsync(User user)
+        {
+            return await _context.Users.ToListAsync();
+        }
     }
 }
 

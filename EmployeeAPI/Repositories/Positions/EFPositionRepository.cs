@@ -55,7 +55,7 @@ namespace EmployeeAPI.Repositories.Positions
         {
             var entity = await _context.Positions.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
             if (entity == null) return null;
-
+            entity.IsDeleted = true;
             //_context.Positions.Update(entity);
             //await _context.SaveChangesAsync();
             return entity;

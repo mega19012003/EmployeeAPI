@@ -107,8 +107,8 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if(!string.IsNullOrEmpty(name))
-                    throw new ArgumentNullException("Position name cannot be null or empty");
+                if(name == null)
+                    throw new ArgumentException("Position name cannot be null or empty");
 
                 var query = await _positionRepository.GetAllAsync(name, null, null);
                 var model = new Position
@@ -177,7 +177,7 @@ namespace EmployeeAPI.Services.PositionServices
                 if (result == null)
                     throw new ArgumentException("Cannot find position id");
 
-                result.IsDeleted = true;
+                //result.IsDeleted = true;
 
                 await _positionRepository.SoftDeleteAsync(id);
                 await _context.SaveChangesAsync();

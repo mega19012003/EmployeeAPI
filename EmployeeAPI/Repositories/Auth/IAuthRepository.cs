@@ -10,5 +10,6 @@ namespace EmployeeAPI.Repositories.Auth
         Task<User> LoginAsync(string username, string password);
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> GetUserAsync(string username, string password, string fullname);
+        Task<IEnumerable<User>> GetLoginUserAsync(User user);
     }
 }
