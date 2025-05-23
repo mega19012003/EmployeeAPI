@@ -202,7 +202,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("Test-Encrypt-Password")]
+        [HttpGet("TestEncryptPassword")]
         public IActionResult Get([FromQuery] string password)
         {
             if (string.IsNullOrWhiteSpace(password))
