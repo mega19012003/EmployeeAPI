@@ -6,9 +6,16 @@
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
+            public string DepartmentName { get; set; }
             public bool IsDeleted { get; set; } = false;
         }
-        public class CreateAndUpdatePosition
+        public class CreatePosition
+        {
+            //public Guid PositionId { get; set; }
+            public Guid DepartmentId { get; set; }
+            public string Name { get; set; }
+        }
+        public class UpdatePosition
         {
             public Guid PositionId { get; set; }
             public string Name { get; set; }

@@ -1,5 +1,5 @@
 ﻿using EmployeeAPI.Models;
-using EmployeeAPI.Repositories.Staffs;
+using EmployeeAPI.Repositories.Auth;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Repositories.Departments
@@ -7,11 +7,11 @@ namespace EmployeeAPI.Repositories.Departments
     public class EFDepartmentRepository : IDepartmentRepository
     {
         private readonly AppDbContext _context;
-        private readonly IStaffRepository _staffRepository;
-        public EFDepartmentRepository(AppDbContext context, IStaffRepository staffRepository)
+        private readonly IAuthRepository _authRepository;
+        public EFDepartmentRepository(AppDbContext context, IAuthRepository authRepository)
         {
             _context = context;
-            _staffRepository = staffRepository;
+            _authRepository = authRepository;
         }
         public async Task<IEnumerable<Department>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
@@ -76,7 +76,7 @@ namespace EmployeeAPI.Repositories.Departments
         {
             var query = _context.Departments
                 .AsNoTracking()
-                .Include(s => s.Staffs)
+                .Include(s => s.Users)
                 .Where(s => !s.isDeleted);
 
             if (!string.IsNullOrEmpty(positionName))

@@ -3,8 +3,8 @@ using System.Transactions;
 using Azure;
 using EmployeeAPI.Base;
 using EmployeeAPI.Models;
+using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
-using EmployeeAPI.Repositories.Staffs;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
@@ -15,14 +15,14 @@ namespace EmployeeAPI.Services.CheckinServices
     public class CheckinService : ICheckinService
     {
         private readonly ICheckinRepository _checkinRepository;
-        private readonly IStaffRepository _staffcheckinRepository;
+        private readonly IAuthRepository _authRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<CheckinService> _logger;
 
-        public CheckinService(ICheckinRepository checkinRepository, IStaffRepository staffcheckinRepository, AppDbContext context, ILogger<CheckinService> logger)
+        public CheckinService(ICheckinRepository checkinRepository, IAuthRepository authRepository, AppDbContext context, ILogger<CheckinService> logger)
         {
             _checkinRepository = checkinRepository;
-            _staffcheckinRepository = staffcheckinRepository;
+            _authRepository = authRepository;
             _context = context;
             _logger = logger;
         }
@@ -100,7 +100,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 /*if (dto.StaffId == Guid.Empty)
                     throw new ArgumentException("Staff id cannot be empty");*/
 
-                var existStaff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
+                var existStaff = await _authRepository.GetByIdAsync(dto.StaffId);
                 if (existStaff == null)
                     throw new ArgumentException("Cannot find staff id");
 
@@ -116,7 +116,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 await _context.SaveChangesAsync(); 
                 await transaction.CommitAsync();
 
-                var staff = await _staffcheckinRepository.GetByIdAsync(dto.StaffId);
+                var staff = await _authRepository.GetByIdAsync(dto.StaffId);
                 return new ResponseModel.CheckinDto
                 {
                     CheckinId = checkin.Id,
@@ -124,7 +124,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinStatus = checkin.Status,
                     Status = checkin.Status.ToString(),
                     StaffId = checkin.StaffId,
-                    StaffName = staff.Name,
+                    StaffName = staff.Fullname,
                 };
             }
             catch (Exception ex)
@@ -205,7 +205,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var checkin = await _staffcheckinRepository.GetByIdAsync(staffId);
+                var checkin = await _authRepository.GetByIdAsync(staffId);
                 if (checkin == null)
                     throw new ArgumentException("Cannot find staff id");
 

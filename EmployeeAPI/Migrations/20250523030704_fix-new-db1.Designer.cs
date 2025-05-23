@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250521094841_update-payrol2")]
-    partial class updatepayrol2
+    [Migration("20250523030704_fix-new-db1")]
+    partial class fixnewdb1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -43,9 +43,14 @@ namespace EmployeeAPI.Migrations
                     b.Property<int>("Status")
                         .HasColumnType("int");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
 
                     b.HasIndex("StaffId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Checkins");
                 });
@@ -111,11 +116,16 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("StaffId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("DutyDetailId");
 
                     b.HasIndex("DutyId");
 
                     b.HasIndex("StaffId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("DutyDetail");
                 });
@@ -125,6 +135,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("CheckinStatus")
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -142,12 +155,22 @@ namespace EmployeeAPI.Migrations
                     b.Property<double>("Salary")
                         .HasColumnType("float");
 
+                    b.Property<string>("SalaryRuleId")
+                        .HasColumnType("nvarchar(450)");
+
                     b.Property<Guid>("StaffId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
 
+                    b.HasIndex("SalaryRuleId");
+
                     b.HasIndex("StaffId");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Payrolls");
                 });
@@ -156,6 +179,9 @@ namespace EmployeeAPI.Migrations
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<bool>("IsDeleted")
@@ -167,7 +193,31 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("DepartmentId");
+
                     b.ToTable("Positions");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.SalaryRule", b =>
+                {
+                    b.Property<string>("SalaryRuleId")
+                        .HasColumnType("nvarchar(450)");
+
+                    b.Property<int>("CheckinStatus")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("Updated")
+                        .HasColumnType("datetime2");
+
+                    b.Property<double>("multiplier")
+                        .HasColumnType("float");
+
+                    b.HasKey("SalaryRuleId");
+
+                    b.ToTable("SalaryRule");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Staff", b =>
@@ -221,23 +271,60 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>
                 {
-                    b.Property<Guid>("Id")
+                    b.Property<Guid>("UserId")
                         .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("Address")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("BasicSalary")
+                        .HasColumnType("float");
+
+                    b.Property<DateOnly>("DateOfBirth")
+                        .HasColumnType("date");
+
+                    b.Property<Guid>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Fullname")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("ImageUrl")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("PhoneNumber")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<Guid>("PositionId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<int>("Role")
+                        .HasColumnType("int");
 
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.HasKey("Id");
+                    b.HasKey("UserId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.HasIndex("PositionId");
 
                     b.ToTable("Users");
                 });
@@ -249,6 +336,10 @@ namespace EmployeeAPI.Migrations
                         .HasForeignKey("StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.HasOne("EmployeeAPI.Models.User", null)
+                        .WithMany("Checkins")
+                        .HasForeignKey("UserId");
 
                     b.Navigation("Staff");
                 });
@@ -267,6 +358,10 @@ namespace EmployeeAPI.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EmployeeAPI.Models.User", null)
+                        .WithMany("DutyDetails")
+                        .HasForeignKey("UserId");
+
                     b.Navigation("Duty");
 
                     b.Navigation("Staff");
@@ -274,25 +369,46 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
+                    b.HasOne("EmployeeAPI.Models.SalaryRule", "SalaryRule")
+                        .WithMany()
+                        .HasForeignKey("SalaryRuleId");
+
                     b.HasOne("EmployeeAPI.Models.Staff", "Staff")
                         .WithMany("Payrolls")
                         .HasForeignKey("StaffId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("EmployeeAPI.Models.User", null)
+                        .WithMany("Payrolls")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("SalaryRule");
+
                     b.Navigation("Staff");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.Position", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Department", "Department")
+                        .WithMany("Positions")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Staff", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.Department", "Department")
-                        .WithMany("Staffs")
+                        .WithMany()
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EmployeeAPI.Models.Position", "Position")
-                        .WithMany("Staffs")
+                        .WithMany()
                         .HasForeignKey("PositionId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -302,9 +418,30 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("Position");
                 });
 
+            modelBuilder.Entity("EmployeeAPI.Models.User", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Department", "Department")
+                        .WithMany("Users")
+                        .HasForeignKey("DepartmentId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EmployeeAPI.Models.Position", "Position")
+                        .WithMany("Users")
+                        .HasForeignKey("PositionId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Department");
+
+                    b.Navigation("Position");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
                 {
-                    b.Navigation("Staffs");
+                    b.Navigation("Positions");
+
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Duty", b =>
@@ -314,10 +451,19 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.Position", b =>
                 {
-                    b.Navigation("Staffs");
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Staff", b =>
+                {
+                    b.Navigation("Checkins");
+
+                    b.Navigation("DutyDetails");
+
+                    b.Navigation("Payrolls");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.User", b =>
                 {
                     b.Navigation("Checkins");
 

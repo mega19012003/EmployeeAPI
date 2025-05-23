@@ -1,5 +1,4 @@
 ﻿using EmployeeAPI.Models;
-using EmployeeAPI.Repositories.Staffs;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Repositories.Positions
@@ -7,11 +6,9 @@ namespace EmployeeAPI.Repositories.Positions
     public class EFPositionRepository : IPositionRepository
     {
         private readonly AppDbContext _context;
-        private readonly IStaffRepository _staffRepository;
-        public EFPositionRepository(AppDbContext context, IStaffRepository staffRepository)
+        public EFPositionRepository(AppDbContext context)
         {
             _context = context;
-            _staffRepository = staffRepository;
         }
 
         public async Task<IEnumerable<Position>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
@@ -65,14 +62,14 @@ namespace EmployeeAPI.Repositories.Positions
         {
             return await _context.Positions
                 .AsNoTracking()
-                .Include(p => p.Staffs.Where(s => s.IsActive))
+                .Include(p => p.Users.Where(s => s.IsActive))
                 .FirstOrDefaultAsync(p => p.Name.ToLower().Equals(name.ToLower()));
         }
         public async Task<IEnumerable<Position>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
         {
             var query = _context.Positions
                 .AsNoTracking()
-                .Include(s => s.Staffs)
+                .Include(s => s.Users)
                 .Where(s => !s.IsDeleted);
 
             if (!string.IsNullOrEmpty(positionName))

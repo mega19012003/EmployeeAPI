@@ -8,6 +8,8 @@ namespace EmployeeAPI.Models
         public string Name { get; set; }
         public bool IsDeleted { get; set; } = false;
         [JsonIgnore]
-        public ICollection<Staff> Staffs { get; set; } = new List<Staff>();
+        public ICollection<User> Users { get; set; } = new List<User>();
+        public Department Department { get; set; }
+        public Guid DepartmentId { get; set; }
     }
 }

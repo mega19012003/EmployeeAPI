@@ -34,6 +34,29 @@ namespace EmployeeAPI.Models
                 .WithMany(d => d.DutyDetails)
                 .HasForeignKey(dd => dd.DutyId);
 
+
+            //DeleteBehavior.Restrict: cấm xóa nếu còn bản ghi liên quan (rõ ràng, an toàn)
+            // Department - Position
+            modelBuilder.Entity<Position>()
+                .HasOne(p => p.Department)
+                .WithMany(d => d.Positions)
+                .HasForeignKey(p => p.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict); // Không cascade
+
+            // Department - Employee
+            modelBuilder.Entity<User>()
+                .HasOne(e => e.Department)
+                .WithMany(d => d.Users)
+                .HasForeignKey(e => e.DepartmentId)
+                .OnDelete(DeleteBehavior.Restrict); // Không cascade
+
+            // Position - Employee
+            modelBuilder.Entity<User>()
+                .HasOne(e => e.Position)
+                .WithMany(p => p.Users)
+                .HasForeignKey(e => e.PositionId)
+                .OnDelete(DeleteBehavior.Restrict); // Không cascade
+
         }
     }
 }

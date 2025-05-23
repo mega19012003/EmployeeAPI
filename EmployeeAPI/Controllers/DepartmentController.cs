@@ -1,13 +1,13 @@
 ﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Departments;
-using EmployeeAPI.Repositories.Staffs;
+using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Services.DepartmentServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using static EmployeeAPI.Services.StaffServices.ResponseModel;
+using static EmployeeAPI.Services.AuthServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -16,17 +16,17 @@ namespace EmployeeAPI.Controllers
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentService _departmentService;
-        private readonly IStaffRepository _staffRepository;
+        private readonly IAuthRepository _authRepository;
         private readonly ILogger<DepartmentController> _logger;
 
-        public DepartmentController(IDepartmentService departmentService, IStaffRepository staffRepository, ILogger<DepartmentController> logger)
+        public DepartmentController(IDepartmentService departmentService, IAuthRepository authRepository, ILogger<DepartmentController> logger)
         {
             _departmentService = departmentService;
-            _staffRepository = staffRepository;
+            _authRepository = authRepository;
             _logger = logger;
         }
 
-        [HttpGet, Authorize]
+        [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
             /*var result = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
@@ -66,7 +66,7 @@ namespace EmployeeAPI.Controllers
             return Ok(department);
         }*/
 
-        [HttpPost, Authorize]
+        [HttpPost/*, Authorize*/]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
             try
@@ -77,7 +77,7 @@ namespace EmployeeAPI.Controllers
                 }
                 var result = await _departmentService.AddAsync(Name);
 
-                return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("", result, 200));
+                return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("Department added success", result, 200));
             }
             catch (ArgumentException argEx)
             {
@@ -96,7 +96,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPut, Authorize]
+        [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
             try
@@ -124,7 +124,7 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        [HttpDelete, Authorize]
+        [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
             try
@@ -153,7 +153,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("Employee"), Authorize]
+        [HttpGet("Employee-nhớ sửa lại")/*, Authorize*/]
         public async Task<IActionResult> GetEmployeeByDepartment(string DepartmentName, int? pageSize, int? pageIndex)
         {
             try
@@ -162,7 +162,7 @@ namespace EmployeeAPI.Controllers
                 if (pagedResult == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
 
-                return Ok(ApiResponse<PagedResult<StaffFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
             }
             catch (DbUpdateException dbEx)
             {

@@ -20,7 +20,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet, Authorize]
+        [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
             try
@@ -36,7 +36,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPost("calculate"), Authorize]
+        [HttpPost("calculate")/*, Authorize*/]
         public async Task<IActionResult> CalculatePayroll(Guid staffId)
         {
             try
@@ -51,7 +51,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpDelete, Authorize]
+        [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> DeletePayroll(Guid id)
         {
             try
@@ -66,7 +66,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("Employee"), Authorize]
+        [HttpGet("Employee")/*, Authorize*/]
         public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
             try

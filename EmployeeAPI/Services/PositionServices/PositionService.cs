@@ -1,24 +1,26 @@
 ﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
+using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Positions;
-using EmployeeAPI.Repositories.Staffs;
 using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
-using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Services.PositionServices
 {
     public class PositionService : IPositionService
     {
         private readonly IPositionRepository _positionRepository;
+        private readonly IDepartmentRepository _departmentRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<PositionService> _logger;
 
-        public PositionService(IPositionRepository repository, AppDbContext context, ILogger<PositionService> logger)
+        public PositionService(IPositionRepository PositionRepository, IDepartmentRepository departmentRepository, AppDbContext context, ILogger<PositionService> logger)
         {
-            _positionRepository = repository;
+            _positionRepository = PositionRepository;
+            _departmentRepository = departmentRepository;
             _context = context;
             _logger = logger;
         }
@@ -102,19 +104,19 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.CreateAndUpdatePosition> AddAsync(string name)
+        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePosition dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if(name == null)
+                if(dto.Name == null)
                     throw new ArgumentException("Position name cannot be null or empty");
-
-                var query = await _positionRepository.GetAllAsync(name, null, null);
+                
                 var model = new Position
                 {
                     Id = Guid.NewGuid(),
-                    Name = name,
+                    Name = dto.Name,
+                    DepartmentId = dto.DepartmentId,
                 };
 
                 var entity = await _positionRepository.AddAsync(model);
@@ -123,10 +125,11 @@ namespace EmployeeAPI.Services.PositionServices
                 
                 await transaction.CommitAsync();
 
-                return new ResponseModel.CreateAndUpdatePosition
+                return new ResponseModel.PositionDTO
                 {
-                    PositionId = entity.Id,
+                    Id = entity.Id,
                     Name = entity.Name,
+                    DepartmentName = entity.Department.Name,
                 };
             }
             catch (Exception ex)
@@ -137,7 +140,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.CreateAndUpdatePosition?> UpdateAsync(Guid id, string newName)
+        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -154,7 +157,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 await transaction.CommitAsync();
 
-                return new ResponseModel.CreateAndUpdatePosition
+                return new ResponseModel.UpdatePosition
                 {
                     PositionId = updated.Id,
                     Name = updated.Name,
@@ -213,7 +216,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }*/
 
-        public async Task<PagedResult<StaffFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -221,7 +224,7 @@ namespace EmployeeAPI.Services.PositionServices
                 pageSize ??= 10;
 
                 var query = _context.Positions
-                    .Include(d => d.Staffs)
+                    .Include(d => d.Users)
                     .Where(d => !d.IsDeleted);
 
                 if (!string.IsNullOrEmpty(positionName))
@@ -229,25 +232,25 @@ namespace EmployeeAPI.Services.PositionServices
                     query = query.Where(d => d.Name.ToLower().Equals(positionName.ToLower()));
                 }
 
-                var allStaffs = query
-                    .SelectMany(d => d.Staffs
+                var allUsers = query
+                    .SelectMany(d => d.Users
                         .Where(s => s.IsActive && !s.IsDeleted));
 
-                var totalCount = await allStaffs.CountAsync();
+                var totalCount = await allUsers.CountAsync();
 
-                var items = await allStaffs
+                var items = await allUsers
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(st => new StaffFilter
+                    .Select(st => new UserFilter
                     {
-                        StaffId = st.Id,
-                        Name = st.Name,
+                        UserId = st.UserId,
+                        Name = st.Fullname,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
                     })
                     .ToListAsync();
 
-                return new PagedResult<StaffFilter>
+                return new PagedResult<UserFilter>
                 {
                     TotalCount = totalCount,
                     PageIndex = pageIndex.Value,

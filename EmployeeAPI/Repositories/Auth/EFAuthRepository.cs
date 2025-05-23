@@ -17,31 +17,18 @@ namespace EmployeeAPI.Repositories.Auth
             _context = context;
         }
 
-        public async Task<ResponseModel.RegisterDto> RegisterAsync(string username, string password, string fullname)
+        public async Task<User> GetUserByName(string username)
         {
-
-            var result = await _context.Users.FirstOrDefaultAsync(p => p.Username == username);
+            /*var result = await _context.Users
+                .Include(p => p.Department)
+                .Include(p => p.Position)
+                .FirstOrDefaultAsync(p => p.Username == users.Username);
 
             if (result != null)
                 return null;
 
-            var user = new User
-            {
-                Id = Guid.NewGuid(),
-                Username = username,
-                Fullname = fullname,
-                Password = HashPassword(password)
-            };
-            /*user.Id = Guid.NewGuid();
-            user.Password = HashPassword(password);*/
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-            return new ResponseModel.RegisterDto
-            {
-                Username = user.Username,
-                Fullname = user.Fullname,
-                Password = user.Password
-            };
+            return result;*/
+            return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 
         public async Task<User> LoginAsync(string username, string password)
@@ -53,16 +40,43 @@ namespace EmployeeAPI.Repositories.Auth
             return user;
         }
 
-        public async Task<IEnumerable<User>> GetAllUsersAsync()
+        public async Task<User> UpdateAsync(User user)
         {
-            return await _context.Users.ToListAsync();
+            var existingUser = await _context.Users
+                .Include(p => p.Department)
+                .Include(p => p.Position)
+                .FirstOrDefaultAsync(p => p.UserId == user.UserId && !p.IsDeleted && p.IsActive);
+
+            if (existingUser == null)
+                return null;
+
+            existingUser.Fullname = user.Fullname;
+            existingUser.Address = user.Address;
+            existingUser.PhoneNumber = user.PhoneNumber;
+            existingUser.DateOfBirth = user.DateOfBirth;
+            existingUser.Role = user.Role;
+            existingUser.BasicSalary = user.BasicSalary;
+            existingUser.PositionId = user.PositionId;
+            existingUser.DepartmentId = user.DepartmentId;
+            existingUser.ImageUrl = user.ImageUrl;
+            existingUser.IsActive = user.IsActive;
+
+            // Bỏ SaveChangesAsync ở đây
+            return existingUser;
         }
 
-        public async Task<User> GetUserAsync(string username, string password, string fullname)
+        public async Task<User> SoftDeleteAsync(User User)
         {
-            return await _context.Users.FirstOrDefaultAsync(p => p.Username == username && p.Fullname == fullname && p.Password == password);
-        }
+            if (User == null)
+                return null;
 
+            User.IsDeleted = true;
+            //User.IsActive = false;
+
+            _context.Users.Update(User);
+
+            return User;
+        }
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
@@ -73,9 +87,30 @@ namespace EmployeeAPI.Repositories.Auth
             }
         }
 
-        public async Task<IEnumerable<User>> GetLoginUserAsync(User user)
+        public async Task<IEnumerable<User>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
         {
-            return await _context.Users.ToListAsync();
+            var results = _context.Users.AsNoTracking().Include(p => p.Department).Include(p => p.Position).AsQueryable();
+
+            if (!string.IsNullOrEmpty(SearchTerm))
+            {
+                results = results.Where(f => f.Fullname.Contains(SearchTerm));
+            }
+            if (pageSize.HasValue && pageIndex.HasValue)
+            {
+                results = results.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
+            }
+            return await results.Where(p => !p.IsDeleted && p.IsActive).ToListAsync();
+        }
+
+        public async Task<User> GetByIdAsync(Guid id)
+        {
+            var results = await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
+            return results;
+        }
+
+        public async Task<User> GetLoginUserAsync(string username)
+        {
+            return await _context.Users.FirstOrDefaultAsync(p => p.Username == username);
         }
     }
 }

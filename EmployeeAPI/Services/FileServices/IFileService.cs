@@ -2,9 +2,9 @@
 {
     public interface IFileService
     {
-        Task<List<string>> SaveFilesAsync(List<IFormFile> files, string uploadsFolder);
-        Task<List<string>> UpdateFilesAsync(List<IFormFile> files, string uploadsFolder, List<String> oldFiles);
-        //Task<List<string>> UpdateFileAsync(List<IFormFile> files, string folderPath, List<string> oldFiles);
+        Task<string?> SaveFileAsync(IFormFile file, string uploadsFolder);
+        Task<string?> UpdateFileAsync(IFormFile newFile, string uploadsFolder, string? oldFilePath);
+        //Task<string> UpdateFileAsync(List<IFormFile> files, string folderPath, List<string> oldFiles);
 
     }
 }

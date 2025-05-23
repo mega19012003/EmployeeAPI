@@ -17,7 +17,6 @@ namespace EmployeeAPI.Models
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; } = false;
         public List<string> ImageUrl { get; set; }
-        //public ICollection<Fine> Fines { get; set; }
         public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
         public List<Checkin> Checkins { get; set; } = new List<Checkin>();
         public List<Payroll> Payrolls { get; set; } = new List<Payroll>();

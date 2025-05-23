@@ -9,6 +9,9 @@ using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Base;
 using Azure;
+using System.Globalization;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
 
 namespace EmployeeAPI.Controllers
 {
@@ -16,19 +19,20 @@ namespace EmployeeAPI.Controllers
     [Route("api/[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly IAuthRepository _authRepository;
+        private readonly IAuthService _authService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(IAuthRepository authRepository, IConfiguration configuration, ILogger<AuthController> logger)
+        public AuthController(IAuthService authService, IConfiguration configuration, ILogger<AuthController> logger)
         {
-            _authRepository = authRepository;
+            _authService = authService;
             _configuration = configuration;
             _logger = logger;
         }
 
         [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] ResponseModel.RegisterDto dto)
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> Register([FromForm] ResponseModel.RegisterDto dto)
         {
             try
             {
@@ -40,27 +44,12 @@ namespace EmployeeAPI.Controllers
                     return BadRequest("password not allow null");
                 if (string.IsNullOrEmpty(dto.Fullname))
                     return BadRequest("fullname not allow null");
-                var user = new User
-                {
-                    Username = dto.Username,
-                    Fullname = dto.Fullname
-                };
 
-                var result = await _authRepository.RegisterAsync(dto.Username, dto.Password, dto.Fullname);
+                var result = await _authService.RegisterAsync(dto);
                 if (result == null)
-                    return BadRequest(new ApiResponse<ResponseModel.RegisterDto>
-                    {
-                        Message = "User already exists",
-                        Data = null,
-                        StatusCode = 400,
-                    });
+                    return StatusCode(401, new { Message = "User already exist", Detail = "null", StatusCode = 401 }); 
 
-                return Ok(new ApiResponse<ResponseModel.RegisterDto>
-                {
-                  Message = "Register success",
-                  Data = result,
-                  StatusCode = 200,
-                });
+                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Register success", result, 200));
             }
             catch (Exception ex)
             {
@@ -76,7 +65,7 @@ namespace EmployeeAPI.Controllers
             {
                 /*if (string.IsNullOrEmpty(dto.Username) || string.IsNullOrEmpty(dto.Password))
                     return BadRequest("Email and password cannot be null");*/
-                var user = await _authRepository.LoginAsync(dto.Username, dto.Password);
+                var user = await _authService.LoginAsync(dto.Username, dto.Password);
                 if (user == null)
                     return BadRequest(new ApiResponse<ResponseModel.LoginDto>
                     {
@@ -92,9 +81,16 @@ namespace EmployeeAPI.Controllers
                 var expires = int.Parse(jwtSection["Expire"]);
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, dto.Username),
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.GivenName, user.Fullname),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                    new Claim(ClaimTypes.GivenName, user.Fullname ?? ""),
+                    new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? ""),
+                    new Claim(ClaimTypes.StreetAddress, user.Address ?? ""),
+                    new Claim("RoleName", user.Role.ToString() ?? ""),
+                    new Claim("DateOfBirth", user.DateOfBirth.ToString("yyyy-MM-dd")),
+                    new Claim("DepartmentName", user.Department?.Name ?? ""),
+                    new Claim("PositionName", user.Position?.Name ?? ""),
+                    new Claim("BasicSalary", user.BasicSalary.ToString(CultureInfo.InvariantCulture))
                 };
                 var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
                 var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -121,6 +117,62 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        [HttpPut("id")/*, Authorize*/]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateAsync([FromForm] ResponseModel.UpdateUser dto)
+        {
+            try
+            {
+                var result = await _authService.UpdateAsync(dto);
+
+                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in UpdateAsync");
+                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in UpdateAsync");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception thrown in UpdateAsync controller method.");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
+        }
+        [HttpDelete/*, Authorize*/]
+        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
+        {
+            try
+            {
+                var result = await _authService.SoftDeleteAsync(Id);
+                /*if (result == null)
+                {
+                    return NotFound();
+                }
+                return Ok(result);*/
+                return Ok(ApiResponse<string>.ReturnResult("Soft delete staff success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
+                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
+                return BadRequest(new { Message = "Database update failed", Detail = dbEx.InnerException?.Message ?? dbEx.Message, StatusCode = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception thrown in SoftDeleteAsync controller method.");
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Staff Id", StatusCode = 500 });
+            }
+        }
+
         [HttpGet]
         public IActionResult Get([FromQuery] string password)
         {
@@ -138,7 +190,7 @@ namespace EmployeeAPI.Controllers
             return Ok(hash);
         }
 
-        [HttpGet("current")]
+        [HttpGet("current")/*, Authorize*/]
         public IActionResult GetCurrentUser()
         {
             var user = HttpContext.User;
@@ -156,6 +208,21 @@ namespace EmployeeAPI.Controllers
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var username = user.FindFirst(ClaimTypes.Name)?.Value;
             var fullname = user.FindFirst(ClaimTypes.GivenName)?.Value;
+            var phone = user.FindFirst(ClaimTypes.MobilePhone)?.Value;
+            var address = user.FindFirst(ClaimTypes.StreetAddress)?.Value;
+
+            var roleName = user.FindFirst("RoleName")?.Value;
+            var dobString = user.FindFirst("DateOfBirth")?.Value;
+            var department = user.FindFirst("DepartmentName")?.Value;
+            var position = user.FindFirst("PositionName")?.Value;
+            var salaryString = user.FindFirst("BasicSalary")?.Value;
+
+            // Chuyển đổi kiểu dữ liệu nếu cần
+            DateOnly? dateOfBirth = null;
+            if (DateOnly.TryParse(dobString, out var dobParsed))
+                dateOfBirth = dobParsed;
+
+            double.TryParse(salaryString, NumberStyles.Any, CultureInfo.InvariantCulture, out var basicSalary);
 
             return Ok(new ApiResponse<object>
             {
@@ -165,6 +232,13 @@ namespace EmployeeAPI.Controllers
                     UserId = userId,
                     Username = username,
                     Fullname = fullname,
+                    PhoneNumber = phone,
+                    Address = address,
+                    RoleName = roleName,
+                    DateOfBirth = dateOfBirth,
+                    DepartmentName = department,
+                    PositionName = position,
+                    BasicSalary = basicSalary,
                 },
                 StatusCode = 200,
             });

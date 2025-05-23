@@ -1,5 +1,4 @@
 ﻿using EmployeeAPI.Models;
-using static EmployeeAPI.Services.StaffServices.ResponseModel;
 
 namespace EmployeeAPI.Repositories.Departments
 {

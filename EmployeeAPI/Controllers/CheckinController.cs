@@ -19,7 +19,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet, Authorize]
+        [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
         {
             try
@@ -45,7 +45,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPost, Authorize]
+        [HttpPost/*, Authorize*/]
         public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)
         {
             try
@@ -79,7 +79,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPut, Authorize]
+        [HttpPut/*, Authorize*/]
         public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckin dto)
         {
             try
@@ -105,7 +105,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpDelete, Authorize]
+        [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeleteAsync(Guid id)
         {
             try
@@ -132,7 +132,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("employee"), Authorize]
+        [HttpGet("employee")/*, Authorize*/]
         public async Task<IActionResult> GetCheckinsByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
             try

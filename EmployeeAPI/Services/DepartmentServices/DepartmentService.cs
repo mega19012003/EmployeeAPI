@@ -1,10 +1,10 @@
 ﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
+using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Departments;
-using EmployeeAPI.Repositories.Staffs;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
-using static EmployeeAPI.Services.StaffServices.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.DepartmentServices
@@ -12,14 +12,14 @@ namespace EmployeeAPI.Services.DepartmentServices
     public class DepartmentService : IDepartmentService
     {
         private readonly IDepartmentRepository _repository;
-        private readonly IStaffRepository _staffRepository;
+        private readonly IAuthRepository _authRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<DepartmentService> _logger;
 
-        public DepartmentService(IDepartmentRepository repository, IStaffRepository staffRepository, AppDbContext context, ILogger<DepartmentService> logger)
+        public DepartmentService(IDepartmentRepository repository, IAuthRepository authRepository, AppDbContext context, ILogger<DepartmentService> logger)
         {
             _repository = repository;
-            _staffRepository = staffRepository;
+            _authRepository = authRepository;
             _context = context;
             _logger = logger;
         }
@@ -173,7 +173,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<PagedResult<StaffFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -181,7 +181,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 pageSize ??= 10;
 
                 var query = _context.Departments
-                    .Include(d => d.Staffs)
+                    .Include(d => d.Users)
                     .Where(d => !d.isDeleted);
 
                 if (!string.IsNullOrEmpty(positionName))
@@ -190,7 +190,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 }
 
                 var allStaffs = query
-                    .SelectMany(d => d.Staffs
+                    .SelectMany(d => d.Users
                         .Where(s => s.IsActive && !s.IsDeleted));
 
                 var totalCount = await allStaffs.CountAsync();
@@ -198,16 +198,16 @@ namespace EmployeeAPI.Services.DepartmentServices
                 var items = await allStaffs
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(st => new StaffFilter
+                    .Select(st => new UserFilter
                     {
-                        StaffId = st.Id,
-                        Name = st.Name,
+                        UserId = st.UserId,
+                        Name = st.Fullname,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
                     })
                     .ToListAsync();
 
-                return new PagedResult<StaffFilter>
+                return new PagedResult<UserFilter>
                 {
                     TotalCount = totalCount,
                     PageIndex = pageIndex.Value,

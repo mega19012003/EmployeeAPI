@@ -1,12 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using EmployeeAPI.Repositories.Staffs;
+
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Authorization;
 using EmployeeAPI.Base;
-using static EmployeeAPI.Services.StaffServices.ResponseModel;
+
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.HttpResults;
+using static EmployeeAPI.Services.AuthServices.ResponseModel;
+using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Controllers
 {
@@ -23,7 +25,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet, Authorize]
+        [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
             try
@@ -48,14 +50,14 @@ namespace EmployeeAPI.Controllers
             return Ok(position);
         }*/
 
-        [HttpPost, Authorize]
-        public async Task<IActionResult> AddPosition([FromQuery] string name)
+        [HttpPost/*, Authorize*/]
+        public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
             try
             {
                 //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
-                var result = await _positionService.AddAsync(name);
-                return Ok(ApiResponse<ResponseModel.CreateAndUpdatePosition>.ReturnResult("Create position success", result, 200));
+                var result = await _positionService.AddAsync(dto);
+                return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
             }
             catch(ArgumentException argEx)
             {
@@ -74,7 +76,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPut, Authorize]
+        [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
         {
             try
@@ -86,7 +88,7 @@ namespace EmployeeAPI.Controllers
                 if (result == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
 
-                return Ok(ApiResponse<ResponseModel.CreateAndUpdatePosition>.ReturnResult("Update position success", result, 200));
+                return Ok(ApiResponse<ResponseModel.UpdatePosition>.ReturnResult("Update position success", result, 200));
             }
             catch (ArgumentException argEx)
             {
@@ -105,7 +107,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpDelete, Authorize]
+        [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
             try
@@ -131,7 +133,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("Employee"), Authorize]
+        [HttpGet("Employee")/*, Authorize*/]
         public async Task<IActionResult> GetEmployeeByPosition(string PositionName, int? pageSize, int? pageIndex)
         {
             try
@@ -144,7 +146,7 @@ namespace EmployeeAPI.Controllers
                     return BadRequest(ApiResponse<object>.ReturnResult("Cannot find the Position name", null, 400));
                 }*/
 
-                return Ok(ApiResponse<PagedResult<StaffFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
             }
             catch (Exception ex)
             {

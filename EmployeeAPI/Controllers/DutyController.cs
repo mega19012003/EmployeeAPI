@@ -20,7 +20,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        [HttpGet, Authorize]
+        [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAll(string? SearchTerm, int? pageSize, int? pageIndex)
         {
             try
@@ -56,7 +56,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("Id"), Authorize]
+        [HttpGet("Id")/*, Authorize*/]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             try
@@ -75,7 +75,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPost, Authorize]
+        [HttpPost/*, Authorize*/]
         public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDuty dto)
         {
             try
@@ -110,7 +110,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpPut, Authorize]
+        [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDuty dto)
         {
             try
@@ -139,7 +139,7 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpDelete, Authorize]
+        [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid id)
         {
             try
