@@ -19,7 +19,7 @@ namespace EmployeeAPI.Repositories.Payrolls
         Task<int> CountAbsentPermissionCheckins(Guid userId, int month, int year);
         Task<int> CountLeaveEarlyCheckins(Guid userId, int month, int year);
         Task<int> CountOvertimeCheckins(Guid userId, int month, int year);
-        Task<int> CountOnHolidayPermissionCheckins(Guid userId, int month, int year);
+        //Task<int> CountOnHolidayPermissionCheckins(Guid userId, int month, int year);
         Task<int> CountDayWorked(Guid userId, int month, int year);
         Task<User> GetUserWithSalary(Guid userId);
         Task CreatePayrollAsync(Payroll payroll);

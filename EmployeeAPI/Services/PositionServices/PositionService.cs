@@ -223,7 +223,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }*/
 
-        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid departmentId ,Guid positionId, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -232,7 +232,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var query = _context.Positions
                     .Include(d => d.Users)
-                    .Where(d => !d.IsDeleted && d.Id == positionId);
+                    .Where(d => !d.IsDeleted && d.Id == positionId && d.Department.Id == departmentId);
 
                 var allUsers = query
                     .SelectMany(d => d.Users

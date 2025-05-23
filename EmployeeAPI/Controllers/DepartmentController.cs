@@ -27,6 +27,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Tạo phòng ban, chưa authorize
+        /// </summary>
         [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
@@ -56,17 +59,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        /*[HttpGet("{id}")]
-        public async Task<IActionResult> GetById(Guid id)
-        {
-            var department = await _departmentService.GetByIdAsync(id);
-            if (department == null)
-            {
-                return NotFound();
-            }
-            return Ok(department);
-        }*/
-
+        /// <summary>
+        /// Thêm phòng ban, chưa authorize
+        /// </summary>
         [HttpPost/*, Authorize*/]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
@@ -97,6 +92,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Cập nhật phòng ban, chưa authorize
+        /// </summary>
         [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
@@ -124,7 +122,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Xóa phòng ban, chưa authorize
+        /// </summary>
         [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
@@ -154,6 +154,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// lấy danh sách nhân viên theo phòng ban
+        /// </summary>
         [HttpGet("Employee")/*, Authorize*/]
         public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
         {
@@ -177,6 +180,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// lấy danh sách chức vụ có trong phòng ban
+        /// </summary>
         [HttpGet("List-Position")/*, Authorize*/]
         public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
         {

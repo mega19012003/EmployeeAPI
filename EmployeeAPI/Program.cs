@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Reflection;
+using System.Text;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
@@ -15,6 +16,7 @@ using EmployeeAPI.Services.PayrollServices;
 using EmployeeAPI.Services.PositionServices;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
@@ -60,6 +62,8 @@ builder.Services.AddScoped<IAuthService,  AuthService>();
 
 builder.Services.AddSwaggerGen(c =>
 {
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Employee API", Version = "v1" });
 
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme

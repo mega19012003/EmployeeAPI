@@ -20,6 +20,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Lấy danh sách công việc, chưa authorize
+        /// </summary>
         [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAll(string? SearchTerm, int? pageSize, int? pageIndex)
         {
@@ -56,6 +59,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy công việc theo id
+        /// </summary>
         [HttpGet("Id")/*, Authorize*/]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
@@ -75,6 +81,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Thêm công việc, chưa authorize
+        /// </summary>
         [HttpPost/*, Authorize*/]
         public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDuty dto)
         {
@@ -110,6 +119,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Cập nhật công việc, chưa authorize
+        /// </summary>
         [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDuty dto)
         {
@@ -139,6 +151,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Xóa công việc, chưa authorize
+        /// </summary>
         [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid id)
         {

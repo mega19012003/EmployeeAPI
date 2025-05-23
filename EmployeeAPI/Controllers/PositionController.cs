@@ -25,6 +25,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
+        /// <summary>
+        /// Lấy danh sách chức vụ, chưa authorize
+        /// </summary>
         [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
@@ -50,6 +53,9 @@ namespace EmployeeAPI.Controllers
             return Ok(position);
         }*/
 
+        /// <summary>
+        /// Thêm chức vụ trong phỏng ban, chưa authorize
+        /// </summary>
         [HttpPost/*, Authorize*/]
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
@@ -76,6 +82,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// cập nhật chức vụ trong phòng ban, chưa authorize
+        /// </summary>
         [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
         {
@@ -107,6 +116,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Xóa mềm chức vụ trong phòng ban, chưa authorize
+        /// </summary>
         [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
@@ -133,12 +145,15 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// lấy danh sách nhân viên theo chức vụ cảu 1 phòng ban, chưa authorize
+        /// </summary>
         [HttpGet("Employee")/*, Authorize*/]
-        public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetEmployeeByPosition(Guid DepartmentId, Guid PositionId, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _positionService.GetStaffByPositionAsync(PositionId, pageSize, pageIndex);
+                var pagedResult = await _positionService.GetStaffByPositionAsync(DepartmentId, PositionId, pageSize, pageIndex);
                 if (pagedResult == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position name", null, 404));
 
                 if (pagedResult.Items.Count() == 0)

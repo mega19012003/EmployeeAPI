@@ -30,7 +30,16 @@ namespace EmployeeAPI.Controllers
             _configuration = configuration;
             _logger = logger;
         }
-        //nhớ thêm authorize
+
+        /// <summary>
+        /// Đăng ký người dùng, sẽ do admin/manager tạo, chưa authorize
+        /// </summary>
+        /// /// <remarks>
+        /// RoleType enum values:
+        /// - 0 = Admin
+        /// - 1 = Manager
+        /// - 2 = Staff
+        /// </remarks>
         [HttpPost("register")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] ResponseModel.RegisterDto dto)
@@ -63,6 +72,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Đăng nhập người dùng
+        /// </summary>
         [HttpPost, Route("login")]
         public async Task<IActionResult> Login([FromBody] ResponseModel.LoginDto dto)
         {
@@ -117,6 +129,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Cập nhật thông tin người dùng, sẽ do admin/manager xử lý, chưa authorize
+        /// </summary>
         [HttpPut("id")/*, Authorize*/]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateAsync([FromForm] ResponseModel.UpdateUser dto)
@@ -143,6 +158,10 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
+
+        /// <summary>
+        /// Xóa người dùng, sẽ do admin/manager xử lý, chưa authorize
+        /// </summary>
         [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
         {
@@ -173,6 +192,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Lấy toàn bộ thông tin người dùng, chưa authorize
+        /// </summary>
         [HttpGet("GetAll"), /*, Authorize*/]
         public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
         {
@@ -202,6 +224,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Test mã hóa password
+        /// </summary>
         [HttpGet("TestEncryptPassword")]
         public IActionResult Get([FromQuery] string password)
         {
@@ -219,6 +244,9 @@ namespace EmployeeAPI.Controllers
             return Ok(hash);
         }
 
+        /// <summary>
+        /// Lấy thông tin user đang đăng nhập
+        /// </summary>
         [HttpGet("current")/*, Authorize*/]
         public IActionResult GetCurrentUser()
         {

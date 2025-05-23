@@ -158,7 +158,7 @@ namespace EmployeeAPI.Services.PayrollServices
             var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(UserId, month, year);
             var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(UserId, month, year);
             var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(UserId, month, year);
-            var onHolidayPermissionCheckins = await _payrollRepository.CountOnHolidayPermissionCheckins(UserId, month, year);
+            //var onHolidayPermissionCheckins = await _payrollRepository.CountOnHolidayPermissionCheckins(UserId, month, year);
 
             var basic = User.BasicSalary;
             var bonus30 = basic * 1.3;
@@ -169,7 +169,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
             var totalSalary = basic * validCheckins 
                                 + (bonus30 * overtimeCheckins)
-                                + (bonus50 * onHolidayPermissionCheckins)
+                                //+ (bonus50 * onHolidayPermissionCheckins)
                                 + (penalty30 * lateCheckins)
                                 + (penalty30 * leaveEarlyCheckins)
                                 + (penalty10 * absentPermissionCheckins)

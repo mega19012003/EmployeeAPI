@@ -6,9 +6,8 @@
         Late = 1,
         LeaveEarly = 2,
         Overtime = 3,
-        OnHoliday = 4,
-        Absent = 5,
-        AbsentWithPermission = 6,
-        Others = 7,
+        Absent = 4,
+        LeaveWithPermission = 5,
+        Others = 6,
     }
 }
