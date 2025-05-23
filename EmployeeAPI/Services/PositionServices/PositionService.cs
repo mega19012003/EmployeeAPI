@@ -112,11 +112,13 @@ namespace EmployeeAPI.Services.PositionServices
                 if(dto.Name == null)
                     throw new ArgumentException("Position name cannot be null or empty");
                 
+                var department = await _context.Positions.Include(p => p.Department).SingleOrDefaultAsync();
+
                 var model = new Position
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
-                    DepartmentId = dto.DepartmentId,
+                    DepartmentId = department.DepartmentId,
                 };
 
                 var entity = await _positionRepository.AddAsync(model);

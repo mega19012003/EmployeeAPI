@@ -1,0 +1,66 @@
+name: CI/CD demo
+
+on:
+  push:
+    branches:
+      - master
+
+jobs:
+  build:
+    runs-on: [ self-hosted ]
+    steps:
+      - uses: actions/checkout@v3
+      - name: Write appsettings.json
+        env:
+          APPSETTINGS: ${{ secrets.APPSETTING }}
+        run: |
+          echo '${{ secrets.APPSETTING }}' > EmployeeAPI/appsettings.json
+          cat EmployeeAPI/appsettings.json
+
+      - name: Build Docker Image
+        run: docker build -t emp:latest -f EmployeeAPI/Dockerfile .
+  
+  deploy:
+    needs: build
+    runs-on: [self-hosted]
+    env:
+      CONTAINER_NAME: empcon
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Prepare Configuration
+        run: |
+          echo '${{ secrets.APPSETTING }}' > appsettings.json
+          cat appsettings.json
+
+      - name: Deploy to Server
+        run: |
+          CNAME=${{ env.CONTAINER_NAME }}
+          # Check if the container exists
+          if [ "$(docker ps -aq -f name=$CNAME)" ]; then
+              if [ "$(docker ps -aq -f status=exited -f name=$CNAME)" ]; then
+                  echo ":: Container $CNAME exists and is exited"
+                  echo ":: Removing exited container - $CNAME"
+                  docker rm $CNAME
+              else
+                  echo ":: Container $CNAME exists and is running"
+                  echo ":: Stopping running container - $CNAME"
+                  docker stop $CNAME
+                  echo ":: Removing stopped container - $CNAME"
+                  docker rm $CNAME
+              fi
+          else
+              echo ":: No existing container named $CNAME"
+          fi
+          
+          echo ":: Running new container - $CNAME"
+          docker run -d \
+            -p 5000:8080 \
+            --name $CNAME \
+            -v "$(pwd)/appsettings.json:/app/appsettings.json:ro" \
+            super_project:latest
+
+      - name: Notify Deployment
+        run: echo "Deployment completed successfully!"
