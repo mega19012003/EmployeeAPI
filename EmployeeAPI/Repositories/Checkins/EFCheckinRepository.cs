@@ -14,16 +14,16 @@ namespace EmployeeAPI.Repositories.Checkins
             _context = context;
         }
 
-        public async Task<IEnumerable<Checkin>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize)
+        public async Task<IEnumerable<Checkin>> GetAllAsync(string? UserName, int? pageIndex, int? pageSize)
         {
             var item = _context.Checkins
                 .AsNoTracking()
                 .AsQueryable();
 
-            var result = item.Include(c => c.Staff).Where(c => c.IsDeleted == false && c.Staff.IsDeleted == false);
-            if (!string.IsNullOrEmpty(StaffName))
+            var result = item.Include(c => c.Users).Where(c => c.IsDeleted == false && c.Users.IsDeleted == false);
+            if (!string.IsNullOrEmpty(UserName))
             {
-                result = result.Where(c => c.Staff.Name.ToLower().Contains(StaffName.ToLower()));
+                result = result.Where(c => c.Users.Fullname.ToLower().Contains(UserName.ToLower()));
             }
             if (pageSize.HasValue && pageIndex.HasValue)
             {
@@ -35,7 +35,7 @@ namespace EmployeeAPI.Repositories.Checkins
         public async Task<Checkin> GetByIdAsync(Guid id)
         {
             return await _context.Checkins
-                .Include(c => c.Staff)
+                .Include(c => c.Users)
                 .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
         }
 
@@ -61,7 +61,7 @@ namespace EmployeeAPI.Repositories.Checkins
         }
 
 
-        public async Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize)
+        public async Task<IEnumerable<Checkin>> GetCheckinByUserAsync(Guid UserId, int? pageIndex, int? pageSize)
         {
             var query = _context.Checkins
                  .AsNoTracking()
@@ -75,9 +75,9 @@ namespace EmployeeAPI.Repositories.Checkins
             return await query.ToListAsync();
         }
 
-        public async Task<bool> ExistAsync(Guid staffId)
+        public async Task<bool> ExistAsync(Guid UserId)
         {
-            return await _context.Checkins.AnyAsync(c => c.StaffId == staffId && !c.IsDeleted);
+            return await _context.Checkins.AnyAsync(c => c.UserId == UserId && !c.IsDeleted);
         }
     }
 }

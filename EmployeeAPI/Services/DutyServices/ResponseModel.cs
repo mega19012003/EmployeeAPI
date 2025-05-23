@@ -36,19 +36,19 @@ namespace EmployeeAPI.Services.DutyServices
         public record DutyDetailDto
         {
             public Guid DutyDetailId { get; set; }
-            public Guid StaffId { get; set; }
-            public string StaffName { get; set; }
+            public Guid userId { get; set; }
+            public string Name { get; set; }
             public string Description { get; set; }
         }
         public record CreateDutyDetail
         {
-            public Guid StaffId { get; set; }
+            public Guid userId { get; set; }
             public string Description { get; set; }
         }
         public record UpdateDutyDetail
         {
             public Guid Id { get; set; }
-            public Guid StaffId { get; set; }
+            public Guid userId { get; set; }
             public string Description { get; set; }
         }
     }

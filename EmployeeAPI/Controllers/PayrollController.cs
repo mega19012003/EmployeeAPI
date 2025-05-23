@@ -71,7 +71,7 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var pagedResult = await _payrollService.GetPayrollByStaff(staffId, pageIndex, pageSize);
+                var pagedResult = await _payrollService.GetPayrollByUser(staffId, pageIndex, pageSize);
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by staff success", pagedResult, 200));
             }

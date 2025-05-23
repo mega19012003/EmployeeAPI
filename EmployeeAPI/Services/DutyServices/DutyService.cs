@@ -40,8 +40,8 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetails = f.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
-                        StaffId = d.StaffId,
-                        StaffName = d.Staff.Name,
+                        userId = d.UserId,
+                        Name = d.Users.Fullname,
                         Description = d.Description
                     }).ToList()
                 })
@@ -71,9 +71,9 @@ namespace EmployeeAPI.Services.DutyServices
                 DutyDetails = results.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
                     DutyDetailId = d.DutyDetailId,
-                    StaffId = d.StaffId,
+                    userId = d.UserId,
                     Description = d.Description,
-                    StaffName = d.Staff.Name ?? "ko tồn tại",
+                    Name = d.Users.Fullname ?? "ko tồn tại",
                 }).ToList()
             };
         }
@@ -87,7 +87,7 @@ namespace EmployeeAPI.Services.DutyServices
                 StartDate = DateTime.Now,
                 DutyDetails = (List<DutyDetail>)dto.DutyDetails.Select(d => new DutyDetail
                 {
-                    StaffId = d.StaffId,
+                    UserId = d.userId,
                     Description = d.Description
                 }).ToList()
             };
@@ -99,7 +99,7 @@ namespace EmployeeAPI.Services.DutyServices
                 StartDate = created.StartDate,
                 DutyDetails = created.DutyDetails.Select(d => new ResponseModel.CreateDutyDetail
                 {
-                    StaffId = d.StaffId,
+                    userId = d.UserId,
                     Description = d.Description
                 }).ToList()
             };
@@ -111,8 +111,8 @@ namespace EmployeeAPI.Services.DutyServices
             if (existingDuty == null)
                 throw new ArgumentException("Duty not found");
 
-            var existingStaff = await _context.Staffs
-                .Where(s => dto.DutyDetails.Any(d => d.StaffId == s.Id))
+            var existingStaff = await _context.Users
+                .Where(s => dto.DutyDetails.Any(d => d.userId == s.UserId))
                 .AsNoTracking()
                 .ToListAsync();
             if (existingStaff == null)
@@ -130,7 +130,7 @@ namespace EmployeeAPI.Services.DutyServices
             existingDuty.DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
             {
                 DutyDetailId = d.Id,
-                StaffId = d.StaffId,
+                UserId = d.userId,
                 Description = d.Description
             }).ToList();
 
@@ -149,7 +149,7 @@ namespace EmployeeAPI.Services.DutyServices
                 DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
                     DutyDetailId = d.DutyDetailId,
-                    StaffId = d.StaffId,
+                    userId = d.UserId,
                     Description = d.Description
                 }).ToList(),
             };

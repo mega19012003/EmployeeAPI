@@ -28,8 +28,8 @@ namespace EmployeeAPI.Services.PayrollServices
             pageSize ??= 10;
 
             var query = _context.Payrolls
-                .Include(c => c.Staff)
-                .Where(f => string.IsNullOrEmpty(name) || f.Staff.Name.ToLower().Contains(name.ToLower()))
+                .Include(c => c.Users)
+                .Where(f => string.IsNullOrEmpty(name) || f.Users.Fullname.ToLower().Contains(name.ToLower()))
                 .Where(p => !p.IsDeleted);
 
             var totalCount = await query.CountAsync();
@@ -40,8 +40,8 @@ namespace EmployeeAPI.Services.PayrollServices
                 .Select(c => new ResponseModel.PayrollDto
                 {
                     Id = c.Id,
-                    StaffId = c.StaffId,
-                    StaffName = c.Staff.Name,
+                    UserId = c.UserId,
+                    Name = c.Users.Fullname,
                     Salary = c.Salary,
                     DaysWorked = c.DaysWorked,
                     CreatedDate = c.CreatedDate,
@@ -68,7 +68,7 @@ namespace EmployeeAPI.Services.PayrollServices
             return new PayrollDto
             {
                 Id = result.Id,
-                StaffId = result.StaffId,
+                UserId = result.UserId,
                 CreatedDate = result.CreatedDate,
                 Note = result.Note,
             };
@@ -83,14 +83,14 @@ namespace EmployeeAPI.Services.PayrollServices
                 return null;
             }
             
-            exsistingPayroll.StaffId = dto.StaffId;
+            exsistingPayroll.UserId = dto.UserId;
             exsistingPayroll.Note = dto.Note;
 
             await _payrollRepository.UpdatePayroll(exsistingPayroll);
             return new ResponseModel.PayrollDto
             {
                 Id = exsistingPayroll.Id,
-                StaffId = exsistingPayroll.StaffId,
+                UserId = exsistingPayroll.UserId,
                 CreatedDate = exsistingPayroll.CreatedDate,
                 Note = exsistingPayroll.Note,
             };
@@ -105,13 +105,13 @@ namespace EmployeeAPI.Services.PayrollServices
             return "Đã xóa payroll " + id;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(Guid UserId, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
             var query = _context.Payrolls
-                .Include(c => c.Staff)
+                .Include(c => c.Users)
                 .Where(p => !p.IsDeleted);
 
             var totalCount = await query.CountAsync();
@@ -122,8 +122,8 @@ namespace EmployeeAPI.Services.PayrollServices
                 .Select(c => new ResponseModel.PayrollDto
                 {
                     Id = c.Id,
-                    StaffId = c.StaffId,
-                    StaffName = c.Staff.Name,
+                    UserId = c.UserId,
+                    Name = c.Users.Fullname,
                     Salary = c.Salary,
                     CreatedDate = c.CreatedDate,
                     Note = c.Note,
@@ -142,25 +142,25 @@ namespace EmployeeAPI.Services.PayrollServices
         ////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////
         
-        public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId)
+        public async Task<PaidPayroll> CalculatePayrollAsync(Guid UserId)
         {
             int month = DateTime.Now.Month;
             int year = DateTime.Now.Year;
-            if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
+            if (await _payrollRepository.ExistsPayrollForMonth(UserId, month, year))
                 throw new InvalidOperationException("Payroll for this month already existed");
 
-            var staff = await _payrollRepository.GetStaffWithSalary(staffId);
-            if (staff == null) throw new Exception("Cannot find staff id");
+            var User = await _payrollRepository.GetUserWithSalary(UserId);
+            if (User == null) throw new Exception("Cannot find User id");
 
-            var validCheckins = await _payrollRepository.CountValidCheckins(staffId, month, year);
-            var lateCheckins = await _payrollRepository.CountLateCheckins(staffId, month, year);
-            var absentCheckins = await _payrollRepository.CountAbsentCheckins(staffId, month, year);
-            var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(staffId, month, year);
-            var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(staffId, month, year);
-            var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(staffId, month, year);
-            var onHolidayPermissionCheckins = await _payrollRepository.CountOnHolidayPermissionCheckins(staffId, month, year);
+            var validCheckins = await _payrollRepository.CountValidCheckins(UserId, month, year);
+            var lateCheckins = await _payrollRepository.CountLateCheckins(UserId, month, year);
+            var absentCheckins = await _payrollRepository.CountAbsentCheckins(UserId, month, year);
+            var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(UserId, month, year);
+            var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(UserId, month, year);
+            var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(UserId, month, year);
+            var onHolidayPermissionCheckins = await _payrollRepository.CountOnHolidayPermissionCheckins(UserId, month, year);
 
-            var basic = staff.BasicSalary;
+            var basic = User.BasicSalary;
             var bonus30 = basic * 1.3;
             var bonus50 = basic * 1.5;
             var penalty10 = basic * 0.9;
@@ -175,12 +175,12 @@ namespace EmployeeAPI.Services.PayrollServices
                                 + (penalty10 * absentPermissionCheckins)
                                 + (penalty50 * absentCheckins);
 
-            var totalDayWorked = await _payrollRepository.CountDayWorked(staffId, month, year);
+            var totalDayWorked = await _payrollRepository.CountDayWorked(UserId, month, year);
 
             var payroll = new Payroll
             {
                 Id = Guid.NewGuid(),
-                StaffId = staffId,
+                UserId = UserId,
                 Salary = totalSalary,
                 DaysWorked = totalDayWorked,
                 CreatedDate = DateTime.Now,
@@ -192,7 +192,7 @@ namespace EmployeeAPI.Services.PayrollServices
             return new PaidPayroll
             {
                 Id = payroll.Id,
-                StaffId = staffId,
+                UserId = UserId,
                 DaysWorked = totalDayWorked,
                 Salary = totalSalary,
                 CreatedDate = payroll.CreatedDate,

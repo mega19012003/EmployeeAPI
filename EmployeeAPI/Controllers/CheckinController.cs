@@ -137,7 +137,7 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var result = await _service.GetCheckinByStaffAsync(staffId, pageIndex, pageSize);
+                var result = await _service.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
 
                 /*if (result.Items.Count() == 0)
                     return NotFound(new ApiResponse<object>

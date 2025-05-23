@@ -16,7 +16,7 @@ namespace EmployeeAPI.Repositories.Duties
             var item = _context.Duties
                 .AsNoTracking()
                 .Include(d => d.DutyDetails)
-                .ThenInclude(dd => dd.Staff)
+                .ThenInclude(dd => dd.Users)
                 .AsQueryable();
 
             if (!string.IsNullOrEmpty(SearchTerm))
@@ -32,7 +32,7 @@ namespace EmployeeAPI.Repositories.Duties
             return await _context.Duties
                 .AsNoTracking()
                 .Include(p => p.DutyDetails)
-                .ThenInclude(p => p.Staff)
+                .ThenInclude(p => p.Users)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
@@ -70,7 +70,7 @@ namespace EmployeeAPI.Repositories.Duties
             var query = _context.Duties
                 .AsNoTracking()
                 .Include(p => p.DutyDetails)
-                .ThenInclude(p => p.Staff)
+                .ThenInclude(p => p.Users)
                 .Where(p => !p.IsDeleted);
 
             if (!string.IsNullOrWhiteSpace(name))

@@ -6,13 +6,13 @@ namespace EmployeeAPI.Repositories.Checkins
 {
     public interface ICheckinRepository
     {
-        Task<IEnumerable<Checkin>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize);
+        Task<IEnumerable<Checkin>> GetAllAsync(string? name, int? pageIndex, int? pageSize);
         Task<Checkin> GetByIdAsync(Guid id);
         Task CreateAsync(Checkin checkin);
         Task UpdateAsync(Checkin checkin);
         Task<Checkin> SoftDeleteAsync(Guid id);
         //Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-        Task<IEnumerable<Checkin>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize);
-        Task<bool> ExistAsync(Guid staffId);
+        Task<IEnumerable<Checkin>> GetCheckinByUserAsync(Guid userId, int? pageIndex, int? pageSize);
+        Task<bool> ExistAsync(Guid userId);
     }
 }

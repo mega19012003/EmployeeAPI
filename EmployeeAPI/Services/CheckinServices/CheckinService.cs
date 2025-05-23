@@ -27,7 +27,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -35,8 +35,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageSize ??= 10;
 
                 var query = _context.Checkins
-                    .Include(c => c.Staff)
-                    .Where(f => string.IsNullOrEmpty(StaffName) || f.Staff.Name.ToLower().Contains(StaffName.ToLower()))
+                    .Include(c => c.Users)
+                    .Where(f => string.IsNullOrEmpty(Name) || f.Users.Fullname.ToLower().Contains(Name.ToLower()))
                     .Where(p => !p.IsDeleted);
 
                 var totalCount = await query.CountAsync();
@@ -50,8 +50,8 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckinDate = c.CheckinDate,
                         CheckinStatus = c.Status,
                         Status = c.Status.ToString(),
-                        StaffId = c.StaffId,
-                        StaffName = c.Staff.Name,
+                        userId = c.UserId,
+                        Name = c.Users.Fullname,
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinDto>
@@ -81,8 +81,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinDate = c.CheckinDate,
                     CheckinStatus = c.Status,
                     Status = c.Status.ToString(),
-                    StaffId = c.StaffId,
-                    StaffName = c.Staff.Name,
+                    userId = c.UserId,
+                    Name = c.Users.Fullname,
                 };
             }
             catch (Exception ex)
@@ -97,34 +97,34 @@ namespace EmployeeAPI.Services.CheckinServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                /*if (dto.StaffId == Guid.Empty)
-                    throw new ArgumentException("Staff id cannot be empty");*/
+                /*if (dto.userId == Guid.Empty)
+                    throw new ArgumentException("Users id cannot be empty");*/
 
-                var existStaff = await _authRepository.GetByIdAsync(dto.StaffId);
-                if (existStaff == null)
-                    throw new ArgumentException("Cannot find staff id");
+                var existUsers = await _authRepository.GetByIdAsync(dto.userId);
+                if (existUsers == null)
+                    throw new ArgumentException("Cannot find Users id");
 
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     CheckinDate = dto.CheckinDate,
                     Status = dto.CheckinStatus,
-                    StaffId = dto.StaffId,
+                    UserId = dto.userId,
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
                 await _context.SaveChangesAsync(); 
                 await transaction.CommitAsync();
 
-                var staff = await _authRepository.GetByIdAsync(dto.StaffId);
+                var Users = await _authRepository.GetByIdAsync(dto.userId);
                 return new ResponseModel.CheckinDto
                 {
                     CheckinId = checkin.Id,
                     CheckinDate = checkin.CheckinDate,
                     CheckinStatus = checkin.Status,
                     Status = checkin.Status.ToString(),
-                    StaffId = checkin.StaffId,
-                    StaffName = staff.Fullname,
+                    userId = checkin.UserId,
+                    Name = Users.Fullname,
                 };
             }
             catch (Exception ex)
@@ -147,7 +147,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 //existing.CheckinDate = dto.CheckinDate;
                 existing.Status = dto.CheckinStatus;
-                //existing.StaffId = dto.StaffId;
+                //existing.userId = dto.userId;
 
                 await _checkinRepository.UpdateAsync(existing);
 
@@ -161,8 +161,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinDate = existing.CheckinDate,
                     CheckinStatus = existing.Status,
                     Status = existing.Status.ToString(),
-                    StaffId = existing.StaffId,
-                    StaffName = existing.Staff.Name,
+                    userId = existing.UserId,
+                    Name = existing.Users.Fullname,
                 };
             }
             catch (Exception ex)
@@ -198,20 +198,20 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<PagedResult<ResponseModel.CheckinDto>> GetCheckinByStaffAsync(Guid staffId, int? pageIndex, int? pageSize )
+        public async Task<PagedResult<ResponseModel.CheckinDto>> GetCheckinByUserAsync(Guid userId, int? pageIndex, int? pageSize )
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var checkin = await _authRepository.GetByIdAsync(staffId);
+                var checkin = await _authRepository.GetByIdAsync(userId);
                 if (checkin == null)
-                    throw new ArgumentException("Cannot find staff id");
+                    throw new ArgumentException("Cannot find Users id");
 
                 var query = _context.Checkins
-                    //.Include(c => c.Staff)
-                    .Where(p => !p.IsDeleted && p.StaffId == staffId);
+                    //.Include(c => c.Users)
+                    .Where(p => !p.IsDeleted && p.UserId == userId);
 
                 var totalCount = await query.CountAsync();
 
@@ -224,8 +224,8 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckinDate = c.CheckinDate,
                         CheckinStatus = c.Status,
                         Status = c.Status.ToString(),
-                        StaffId = c.StaffId,
-                        StaffName = c.Staff.Name,
+                        userId = c.UserId,
+                        Name = c.Users.Fullname,
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinDto>
