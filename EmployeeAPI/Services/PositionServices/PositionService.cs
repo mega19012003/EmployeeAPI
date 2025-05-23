@@ -44,30 +44,35 @@ namespace EmployeeAPI.Services.PositionServices
             });
         }*/
 
-        public async Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _context.Positions
-                    .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
-                    .Where(p => !p.IsDeleted);
+                var query = _positionRepository.GetQueryable(); // sử dụng repo thay vì context
+
+                if (!string.IsNullOrEmpty(name))
+                {
+                    query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
+                }
 
                 var totalCount = await query.CountAsync();
 
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(f => new ResponseModel.PositionDTO
+                    .Select(f => new PositionDTO
                     {
                         Id = f.Id,
                         Name = f.Name,
-                        IsDeleted = f.IsDeleted
-                    }).ToListAsync();
+                        IsDeleted = f.IsDeleted,
+                        Department = f.Department.Name
+                    })
+                    .ToListAsync();
 
-                return new PagedResult<ResponseModel.PositionDTO>
+                return new PagedResult<PositionDTO>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
@@ -77,7 +82,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
             catch (Exception ex)
             {
-                _logger.LogError("An error occurred while retrieving positions. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError("Error: {Message}", ex.Message);
                 throw;
             }
         }
@@ -131,7 +136,7 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     Id = entity.Id,
                     Name = entity.Name,
-                    DepartmentId = entity.DepartmentId,
+                    Department = entity.Department.Name,
                 };
             }
             catch (Exception ex)

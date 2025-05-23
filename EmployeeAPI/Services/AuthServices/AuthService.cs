@@ -76,7 +76,6 @@ namespace EmployeeAPI.Services.AuthServices
                 return new ResponseModel.UserDto
                 {
                     userId = entity.UserId,
-                    Username = entity.Username,
                     Fullname = entity.Fullname,
                     Address = entity.Address,
                     DateOfBirth = entity.DateOfBirth,
@@ -228,12 +227,14 @@ namespace EmployeeAPI.Services.AuthServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _context.Users
-                    .Include(c => c.Department)
-                    .Include(c => c.Position)
-                    //.Where(f => string.IsNullOrEmpty(SearchTerm) || f.Fullname.ToLower().Contains(SearchTerm.ToLower()))
-                    .Where(p => !p.IsDeleted || p.IsActive);
-                
+                var query = _repository.GetAll();
+
+                if (!string.IsNullOrEmpty(SearchTerm))
+                    query = query.Where(x => x.Fullname.ToLower().Contains(SearchTerm.ToLower()));
+
+                if (departmentId.HasValue)
+                    query = query.Where(x => x.DepartmentId == departmentId.Value);
+
                 var totalCount = await query.CountAsync();
 
                 var items = await query
@@ -278,7 +279,6 @@ namespace EmployeeAPI.Services.AuthServices
             return new ResponseModel.UserDto
             {
                 userId = results.UserId,
-                Username = results.Username,
                 Fullname = results.Fullname,
                 RoleName = results.Role.ToString(),
                 DateOfBirth = results.DateOfBirth,
@@ -291,9 +291,9 @@ namespace EmployeeAPI.Services.AuthServices
             };
         }
 
-        public async Task<ResponseModel.UserDto> GetLoginUserAsync(ResponseModel.UserDto dto)
+        public async Task<ResponseModel.UserDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto)
         {
-            var result = await _repository.GetLoginUserAsync(dto.Username);
+            var result = await _repository.GetLoginUserAsync(dto.UserName);
             return new ResponseModel.UserDto
             {
                 userId = result.UserId,

@@ -9,5 +9,6 @@
         OnHoliday = 4,
         Absent = 5,
         AbsentWithPermission = 6,
+        Others = 7,
     }
 }

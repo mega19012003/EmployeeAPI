@@ -10,7 +10,7 @@ namespace EmployeeAPI.Repositories.Positions
         public Task<Position> UpdateAsync(Guid id, string Name);
         public Task<Position> SoftDeleteAsync(Guid id);
         public Task<Position> GetAllEmployee(string name);*/
-        Task<IEnumerable<Position>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
+        IQueryable<Position> GetQueryable();
         Task<Position?> GetByIdAsync(Guid id);
         Task<Position> AddAsync(Position position);
         Task<Position?> UpdateAsync(Position position);

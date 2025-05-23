@@ -30,8 +30,8 @@ namespace EmployeeAPI.Controllers
             _configuration = configuration;
             _logger = logger;
         }
-
-        [HttpPost("register-nhớ thêm authorize")]
+        //nhớ thêm authorize
+        [HttpPost("register")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] ResponseModel.RegisterDto dto)
         {
@@ -89,13 +89,8 @@ namespace EmployeeAPI.Controllers
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                     new Claim(ClaimTypes.GivenName, user.Fullname ?? ""),
-                    new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? ""),
-                    new Claim(ClaimTypes.StreetAddress, user.Address ?? ""),
                     new Claim("RoleName", user.Role.ToString() ?? ""),
-                    new Claim("DateOfBirth", user.DateOfBirth.ToString("yyyy-MM-dd")),
-                    new Claim("DepartmentName", user.Department?.Name ?? ""),
-                    new Claim("PositionName", user.Position?.Name ?? ""),
-                    new Claim("BasicSalary", user.BasicSalary.ToString(CultureInfo.InvariantCulture))
+                    new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? ""),
                 };
                 var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
                 var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -179,7 +174,7 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet("GetAll"), /*, Authorize*/]
-        public async Task<IActionResult> GettUserAsync(string? Name, Guid? departmentId, int? pageSize, int pageIndex)
+        public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -243,20 +238,16 @@ namespace EmployeeAPI.Controllers
             var username = user.FindFirst(ClaimTypes.Name)?.Value;
             var fullname = user.FindFirst(ClaimTypes.GivenName)?.Value;
             var phone = user.FindFirst(ClaimTypes.MobilePhone)?.Value;
-            var address = user.FindFirst(ClaimTypes.StreetAddress)?.Value;
 
             var roleName = user.FindFirst("RoleName")?.Value;
-            var dobString = user.FindFirst("DateOfBirth")?.Value;
-            var department = user.FindFirst("DepartmentName")?.Value;
-            var position = user.FindFirst("PositionName")?.Value;
-            var salaryString = user.FindFirst("BasicSalary")?.Value;
 
-            // Chuyển đổi kiểu dữ liệu nếu cần
-            DateOnly? dateOfBirth = null;
-            if (DateOnly.TryParse(dobString, out var dobParsed))
-                dateOfBirth = dobParsed;
 
-            double.TryParse(salaryString, NumberStyles.Any, CultureInfo.InvariantCulture, out var basicSalary);
+            //// Chuyển đổi kiểu dữ liệu nếu cần
+            //DateOnly? dateOfBirth = null;
+            //if (DateOnly.TryParse(dobString, out var dobParsed))
+            //    dateOfBirth = dobParsed;
+
+            //double.TryParse(salaryString, NumberStyles.Any, CultureInfo.InvariantCulture, out var basicSalary);
 
             return Ok(new ApiResponse<object>
             {
@@ -267,12 +258,12 @@ namespace EmployeeAPI.Controllers
                     Username = username,
                     Fullname = fullname,
                     PhoneNumber = phone,
-                    Address = address,
+                    //Address = address,
                     RoleName = roleName,
-                    DateOfBirth = dateOfBirth,
-                    DepartmentName = department,
-                    PositionName = position,
-                    BasicSalary = basicSalary,
+                    //DateOfBirth = dateOfBirth,
+                    //DepartmentName = department,
+                    //PositionName = position,
+                    //BasicSalary = basicSalary,
                 },
                 StatusCode = 200,
             });

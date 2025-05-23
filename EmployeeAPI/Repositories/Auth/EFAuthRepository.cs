@@ -87,19 +87,13 @@ namespace EmployeeAPI.Repositories.Auth
             }
         }
 
-        public async Task<IEnumerable<User>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm)
+        public IQueryable<User> GetAll()
         {
-            var results = _context.Users.AsNoTracking().Include(p => p.Department).Include(p => p.Position).AsQueryable();
-
-            if (!string.IsNullOrEmpty(SearchTerm))
-            {
-                results = results.Where(f => f.Fullname.Contains(SearchTerm));
-            }
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                results = results.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            }
-            return await results.Where(p => !p.IsDeleted && p.IsActive).ToListAsync();
+            return _context.Users
+                .AsNoTracking()
+                .Include(p => p.Department)
+                .Include(p => p.Position)
+                .Where(p => !p.IsDeleted && p.IsActive);
         }
 
         public async Task<User> GetByIdAsync(Guid id)
@@ -110,7 +104,7 @@ namespace EmployeeAPI.Repositories.Auth
 
         public async Task<User> GetLoginUserAsync(string username)
         {
-            return await _context.Users.FirstOrDefaultAsync(p => p.Username == username);
+            return await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.Username == username);
         }
 
         public async Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex)

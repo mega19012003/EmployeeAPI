@@ -10,7 +10,6 @@ namespace EmployeeAPI.Services.AuthServices
         public class UserDto
         {
             public Guid userId { get; set; }
-            public string Username { get; set; }
             public string Fullname { get; set; }
             //public RoleType Role { get; set; } //= RoleType.Employee;
             public string RoleName { get; set; }
@@ -86,9 +85,9 @@ namespace EmployeeAPI.Services.AuthServices
             public string ImageUrl { get; set; }
         }
 
-        public class TokenDto
+        public class GetUserLogin
         {
-            public string token;
+            public string UserName { get; set; }
         }
 
     }

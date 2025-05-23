@@ -12,7 +12,7 @@ namespace EmployeeAPI.Services.AuthServices
 
         Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);
         Task<ResponseModel.UserDto> GetByIdAsync(Guid id);
-        Task<ResponseModel.UserDto> GetLoginUserAsync(ResponseModel.UserDto dto);
+        Task<ResponseModel.UserDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto);
         //Task<IEnumerable<ResponseModel.UserDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
     }
 }

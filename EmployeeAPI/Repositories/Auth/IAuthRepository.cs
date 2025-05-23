@@ -11,7 +11,7 @@ namespace EmployeeAPI.Repositories.Auth
         Task<User> UpdateAsync(User user);
         Task<User> GetByIdAsync(Guid id);
         Task<User> GetLoginUserAsync(string username);
-        Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);
+        IQueryable<User> GetAll();
         //Task<User> GetByIdAsync(Guid id);
         Task<User> SoftDeleteAsync(User user);
         

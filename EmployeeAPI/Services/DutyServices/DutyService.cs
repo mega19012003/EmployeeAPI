@@ -28,7 +28,7 @@ namespace EmployeeAPI.Services.DutyServices
 
             var totalCount = await query.CountAsync();
 
-            var items = await query
+            var items = await query.AsNoTracking()
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
                 .Select(f => new ResponseModel.DutyDto
