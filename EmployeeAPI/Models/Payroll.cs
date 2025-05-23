@@ -8,8 +8,8 @@ namespace EmployeeAPI.Models
     public class Payroll
     {
         public Guid Id { get; set; }
-        public Guid StaffId { get; set; }
-        public Staff Staff { get; set; }
+        public Guid UserId { get; set; }
+        public User Users { get; set; }
         public double Salary { get; set; }
         public DateTime CreatedDate { get; set; } 
         //public DateTime CheckoutDate { get; set; } //ngày trả lương

@@ -8,7 +8,7 @@ namespace EmployeeAPI.Models
         }
 
         public DbSet<User> Users { get; set; }
-        public DbSet<Staff> Staffs { get; set; }
+        //public DbSet<Staff> Staffs { get; set; }
         public DbSet<Department> Departments { get; set; }
         public DbSet<Duty> Duties { get; set; }
         public DbSet<Checkin> Checkins { get; set; }
@@ -25,9 +25,9 @@ namespace EmployeeAPI.Models
             .HasKey(dd => new { dd.StaffId, dd.DutyId }); */
 
             modelBuilder.Entity<DutyDetail>()
-                .HasOne(dd => dd.Staff)
+                .HasOne(dd => dd.Users)
                 .WithMany(s => s.DutyDetails)
-                .HasForeignKey(dd => dd.StaffId);
+                .HasForeignKey(dd => dd.UserId);
 
             modelBuilder.Entity<DutyDetail>()
                 .HasOne(dd => dd.Duty)

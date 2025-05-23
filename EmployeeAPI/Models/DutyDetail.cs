@@ -7,9 +7,9 @@ namespace EmployeeAPI.Models
     {
         [Key]
         public Guid DutyDetailId { get; set; } = Guid.NewGuid();
-        public Guid StaffId { get; set; }
+        public Guid UserId { get; set; }
         public Guid DutyId { get; set; }
-        public Staff Staff { get; set; }
+        public User Users { get; set; }
         public Duty Duty { get; set; }
         public DateTime CreatedAt { get; set; } = DateTime.Now;
         public string Description { get; set; }
