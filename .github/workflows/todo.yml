@@ -18,7 +18,7 @@ jobs:
           cat EmployeeAPI/appsettings.json
 
       - name: Build Docker Image
-        run: docker build -t emp:latest -f EmployeeAPI/Dockerfile .
+        run: docker build -t emp:latest -f Dockerfile .
   
   deploy:
     needs: build
