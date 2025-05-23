@@ -112,6 +112,13 @@ namespace EmployeeAPI.Repositories.Auth
         {
             return await _context.Users.FirstOrDefaultAsync(p => p.Username == username);
         }
+
+        public async Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex)
+        {
+            var user = await _context.Users.Where(p => p.IsActive == true && p.IsDeleted != true).AsNoTracking().ToListAsync();
+
+            return user;
+        }
     }
 }
 

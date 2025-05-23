@@ -112,13 +112,13 @@ namespace EmployeeAPI.Services.PositionServices
                 if(dto.Name == null)
                     throw new ArgumentException("Position name cannot be null or empty");
                 
-                var department = await _context.Positions.Include(p => p.Department).SingleOrDefaultAsync();
+                //var department = await _context.Positions.Include(p => p.Department).SingleOrDefaultAsync();
 
                 var model = new Position
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
-                    DepartmentId = department.DepartmentId,
+                    DepartmentId = dto.DepartmentId,
                 };
 
                 var entity = await _positionRepository.AddAsync(model);
@@ -131,7 +131,7 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     Id = entity.Id,
                     Name = entity.Name,
-                    DepartmentName = entity.Department.Name,
+                    DepartmentId = entity.DepartmentId,
                 };
             }
             catch (Exception ex)
@@ -218,7 +218,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }*/
 
-        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -227,12 +227,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var query = _context.Positions
                     .Include(d => d.Users)
-                    .Where(d => !d.IsDeleted);
-
-                if (!string.IsNullOrEmpty(positionName))
-                {
-                    query = query.Where(d => d.Name.ToLower().Equals(positionName.ToLower()));
-                }
+                    .Where(d => !d.IsDeleted && d.Id == positionId);
 
                 var allUsers = query
                     .SelectMany(d => d.Users

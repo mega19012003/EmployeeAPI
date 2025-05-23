@@ -134,17 +134,17 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet("Employee")/*, Authorize*/]
-        public async Task<IActionResult> GetEmployeeByPosition(string PositionName, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _positionService.GetStaffByPositionAsync(PositionName, pageSize, pageIndex);
+                var pagedResult = await _positionService.GetStaffByPositionAsync(PositionId, pageSize, pageIndex);
                 if (pagedResult == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position name", null, 404));
 
-                /*if (pagedResult.Items.Count() == 0)
+                if (pagedResult.Items.Count() == 0)
                 {
                     return BadRequest(ApiResponse<object>.ReturnResult("Cannot find the Position name", null, 400));
-                }*/
+                }
 
                 return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
             }

@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
+using static EmployeeAPI.Services.PositionServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -153,12 +154,12 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet("Employee-nhớ sửa lại")/*, Authorize*/]
-        public async Task<IActionResult> GetEmployeeByDepartment(string DepartmentName, int? pageSize, int? pageIndex)
+        [HttpGet("Employee")/*, Authorize*/]
+        public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(DepartmentName, pageSize, pageIndex);
+                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(departmentId, pageSize, pageIndex);
                 if (pagedResult == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
 
@@ -174,6 +175,16 @@ namespace EmployeeAPI.Controllers
                 _logger.LogError(ex, "An error occurred while retrieving employees by department");
                 return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
+        }
+
+        [HttpGet("List-Position")/*, Authorize*/]
+        public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
+        {
+            var pagedResult = await _departmentService.GetListPositionAsync(DepartmentId, pageSize, pageIndex);
+            if (pagedResult == null)
+                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+
+            return Ok(ApiResponse<PagedResult<PositionByDepartment>>.ReturnResult("Get list staff by department success", pagedResult, 200));
         }
     }
 }

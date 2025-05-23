@@ -5,6 +5,7 @@ using EmployeeAPI.Repositories.Departments;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
+using static EmployeeAPI.Services.PositionServices.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.DepartmentServices
@@ -173,7 +174,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(Guid departmentId, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -182,12 +183,7 @@ namespace EmployeeAPI.Services.DepartmentServices
 
                 var query = _context.Departments
                     .Include(d => d.Users)
-                    .Where(d => !d.isDeleted);
-
-                if (!string.IsNullOrEmpty(positionName))
-                {
-                    query = query.Where(d => d.Name.ToLower().Contains(positionName.ToLower()));
-                }
+                    .Where(d => !d.isDeleted && d.Id == departmentId);
 
                 var allStaffs = query
                     .SelectMany(d => d.Users
@@ -220,6 +216,41 @@ namespace EmployeeAPI.Services.DepartmentServices
                 _logger.LogError(ex, "Error occurred while retrieving staff by department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
+        }
+
+        public async Task<PagedResult<PositionByDepartment>> GetListPositionAsync(Guid departmentId, int? pageSize, int? pageIndex)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.Departments
+                .Include(d => d.Positions)
+                .Where(d => !d.isDeleted);
+
+            var listPosition = query
+                .SelectMany(d => d.Positions
+                .Where(s => s.DepartmentId == departmentId && !s.IsDeleted));
+
+            var totalCount = await listPosition.CountAsync();
+
+            var items = await listPosition
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(st => new PositionByDepartment
+                {
+                    Name = st.Name,
+                    PositionId = st.Id,
+                })
+                .ToListAsync();
+
+            return new PagedResult<PositionByDepartment>
+            {
+                TotalCount = totalCount,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                Items = items
+            };
+
         }
     }
 }

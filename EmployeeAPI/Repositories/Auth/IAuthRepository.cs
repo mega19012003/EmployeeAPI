@@ -9,16 +9,11 @@ namespace EmployeeAPI.Repositories.Auth
         Task<User> GetUserByName(string username);
         Task<User> LoginAsync(string username, string password);
         Task<User> UpdateAsync(User user);
-        //Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User> GetByIdAsync(Guid id);
-        //Task<User> GetUserAsync(string username, string password, string fullname);
         Task<User> GetLoginUserAsync(string username);
-        Task<IEnumerable<User>> GetAllAsync(int? pageSize, int? pageIndex, string? SearchTerm);
+        Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);
         //Task<User> GetByIdAsync(Guid id);
-        //Task<User> AddAsync(User dto);
-        
-        //Task<Staff> SoftDeleteAsync(Guid staff);
         Task<User> SoftDeleteAsync(User user);
-        //Task<IEnumerable<User>> GetByNameAsync(string name, int? pageSize, int? pageIndex);
+        
     }
 }

@@ -12,6 +12,7 @@ using Azure;
 using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
+using static EmployeeAPI.Services.AuthServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -30,26 +31,30 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        [HttpPost("register")]
+        [HttpPost("register-nhớ thêm authorize")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> Register([FromForm] ResponseModel.RegisterDto dto)
         {
             try
             {
-                if (ModelState.IsValid == false)
+                /*if (ModelState.IsValid == false)
                     return BadRequest(ModelState);
                 if (string.IsNullOrEmpty(dto.Username))
                     return BadRequest("username  not allow null");
                 if (string.IsNullOrEmpty(dto.Password))
                     return BadRequest("password not allow null");
                 if (string.IsNullOrEmpty(dto.Fullname))
-                    return BadRequest("fullname not allow null");
+                    return BadRequest("fullname not allow null");*/
 
                 var result = await _authService.RegisterAsync(dto);
                 if (result == null)
-                    return StatusCode(401, new { Message = "User already exist", Detail = "null", StatusCode = 401 }); 
+                    return StatusCode(401, new { Message = "Register user failed", Detail = "null", StatusCode = 401 }); 
 
                 return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Register success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            { 
+                return StatusCode(400, new {Message = "Register User Failed", Detail  = argEx.Message, StatusCode = 400});
             }
             catch (Exception ex)
             {
@@ -173,7 +178,36 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        [HttpGet]
+        [HttpGet("GetAll"), /*, Authorize*/]
+        public async Task<IActionResult> GettUserAsync(string? Name, Guid? departmentId, int? pageSize, int pageIndex)
+        {
+            try
+            {
+                var pagedResult = await _authService.GetAllAsync(Name, departmentId, pageSize, pageIndex);
+                if (pagedResult == null) {
+                    return BadRequest();
+                }
+                
+                return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("Get list user success", pagedResult, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
+                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
+                return BadRequest(new { Message = "Database update failed", Detail = dbEx.InnerException?.Message ?? dbEx.Message, StatusCode = 400 });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception thrown in SoftDeleteAsync controller method.");
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Staff Id", StatusCode = 500 });
+            }
+        }
+
+        [HttpGet("Test-Encrypt-Password")]
         public IActionResult Get([FromQuery] string password)
         {
             if (string.IsNullOrWhiteSpace(password))

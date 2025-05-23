@@ -12,6 +12,6 @@ namespace EmployeeAPI.Services.PositionServices
         Task<ResponseModel.UpdatePosition> UpdateAsync(Guid id, string Name);
         Task<string> SoftDeleteAsync(Guid id);
         //Task<ResponseModel.PositionDTO> GetAllEmployee(string name);
-        Task<PagedResult<UserFilter>> GetStaffByPositionAsync(string positionName, int? pageSize, int? pageIndex);
+        Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex);
     }
 }

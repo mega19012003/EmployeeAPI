@@ -10,7 +10,7 @@ namespace EmployeeAPI.Services.AuthServices
         Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.UpdateUser dto);
         Task<string> SoftDeleteAsync(Guid id);
 
-        Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
+        Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);
         Task<ResponseModel.UserDto> GetByIdAsync(Guid id);
         Task<ResponseModel.UserDto> GetLoginUserAsync(ResponseModel.UserDto dto);
         //Task<IEnumerable<ResponseModel.UserDto>> GetByNameAsync(string name, int? pageSize, int? pageIndex);

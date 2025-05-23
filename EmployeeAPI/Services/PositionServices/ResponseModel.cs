@@ -6,7 +6,7 @@
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
-            public string DepartmentName { get; set; }
+            public Guid DepartmentId { get; set; }
             public bool IsDeleted { get; set; } = false;
         }
         public class CreatePosition
@@ -24,6 +24,12 @@
         {
             public Guid Id { get; set; }
             public bool IsDeleted { get; set; }
+        }
+
+        public class PositionByDepartment
+        {
+            public Guid PositionId { get; set; }
+            public string Name { get; set; }
         }
     }
 }

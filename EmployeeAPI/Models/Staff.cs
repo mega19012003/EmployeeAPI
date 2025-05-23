@@ -1,4 +1,4 @@
-﻿using EmployeeAPI.Models;
+﻿/*using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Models
 {
@@ -21,6 +21,6 @@ namespace EmployeeAPI.Models
         public List<Checkin> Checkins { get; set; } = new List<Checkin>();
         public List<Payroll> Payrolls { get; set; } = new List<Payroll>();
         /*public ICollection<Payroll> Payrolls { get; set; } = new List<Payroll>();
-        public ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();*/
+        public ICollection<Checkin> Checkins { get; set; } = new List<Checkin>();
     }
-}
+}*/

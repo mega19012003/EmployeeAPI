@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Security.Cryptography;
 using System.Text;
 using EmployeeAPI.Base;
 using EmployeeAPI.Models;
@@ -9,23 +10,21 @@ using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Services.FileServices;
 
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
 
 namespace EmployeeAPI.Services.AuthServices
 {
     public class AuthService : IAuthService
     {
         private readonly IAuthRepository _repository;
-        /*private readonly IPositionRepository _positionRepository;
-        private readonly IDepartmentRepository _departmentRepository;*/
+
         private readonly IFileService _fileService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public AuthService(IAuthRepository repository, IFileService fileService/*, IPositionRepository positionRepository, IDepartmentRepository departmentRepository*/, AppDbContext context, ILogger<AuthService> logger)
+        public AuthService(IAuthRepository repository, IFileService fileService, AppDbContext context, ILogger<AuthService> logger)
         {
             _repository = repository;
             _fileService = fileService;
-            /*_positionRepository = positionRepository;
-            _departmentRepository = departmentRepository;*/
             _context = context;
             _logger = logger;
         }
@@ -36,9 +35,20 @@ namespace EmployeeAPI.Services.AuthServices
             try
             {
                 var result = await _repository.GetUserByName(dto.Username);
+                if (result != null)
+                    throw new ArgumentException("User already existed");
 
-                if (result == null)
-                    return null;
+                var department = await _context.Departments
+                    .Include(d => d.Positions)  
+                    .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId);
+
+                if (department == null)
+                    throw new ArgumentException("Department not found");
+
+                bool isPositionInDepartment = department.Positions.Any(p => p.Id == dto.PositionId);
+
+                if (!isPositionInDepartment)
+                    throw new ArgumentException("Position does not belong to the specified Department");
 
                 string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
                 var imagePath = await _fileService.SaveFileAsync(dto.ImageUrl, uploadsFolder);
@@ -66,6 +76,7 @@ namespace EmployeeAPI.Services.AuthServices
                 return new ResponseModel.UserDto
                 {
                     userId = entity.UserId,
+                    Username = entity.Username,
                     Fullname = entity.Fullname,
                     Address = entity.Address,
                     DateOfBirth = entity.DateOfBirth,
@@ -93,13 +104,6 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("Invalid input");
 
-                /*return new ResponseModel.UserDto
-                {
-                    userId = user.UserId,
-                    Username = user.Username,
-                };*/
-                //return "User " + username + " đăng nhập thành công";
-
                 return user;
             }
             catch (Exception ex)
@@ -115,12 +119,23 @@ namespace EmployeeAPI.Services.AuthServices
             try
             {
                 string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-               
 
                 var existingUser = await _repository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("Cannot find User id");
 
                 var imagePaths = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+
+                var department = await _context.Departments
+                  .Include(d => d.Positions)
+                  .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId);
+
+                if (department == null)
+                    throw new ArgumentException("Department not found");
+
+                bool isPositionInDepartment = department.Positions.Any(p => p.Id == dto.PositionId);
+
+                if (!isPositionInDepartment)
+                    throw new ArgumentException("Position does not belong to the specified Department");
 
                 existingUser.Fullname = dto.Fullname;
                 existingUser.Address = dto.Address;
@@ -206,8 +221,7 @@ namespace EmployeeAPI.Services.AuthServices
         /// <param name="pageSize"></param>
         /// <returns></returns>
 
-
-        public async Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -217,7 +231,7 @@ namespace EmployeeAPI.Services.AuthServices
                 var query = _context.Users
                     .Include(c => c.Department)
                     .Include(c => c.Position)
-                    .Where(f => string.IsNullOrEmpty(name) || f.Fullname.ToLower().Contains(name.ToLower()))
+                    //.Where(f => string.IsNullOrEmpty(SearchTerm) || f.Fullname.ToLower().Contains(SearchTerm.ToLower()))
                     .Where(p => !p.IsDeleted || p.IsActive);
                 
                 var totalCount = await query.CountAsync();
@@ -264,6 +278,7 @@ namespace EmployeeAPI.Services.AuthServices
             return new ResponseModel.UserDto
             {
                 userId = results.UserId,
+                Username = results.Username,
                 Fullname = results.Fullname,
                 RoleName = results.Role.ToString(),
                 DateOfBirth = results.DateOfBirth,
