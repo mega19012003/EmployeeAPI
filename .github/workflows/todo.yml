@@ -60,7 +60,7 @@ jobs:
             -p 5000:8080 \
             --name $CNAME \
             -v "$(pwd)/appsettings.json:/app/appsettings.json:ro" \
-            super_project:latest
+            emp:latest
 
       - name: Notify Deployment
         run: echo "Deployment completed successfully!"
