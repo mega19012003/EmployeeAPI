@@ -2,6 +2,7 @@
 using EmployeeAPI.Models;
 using EmployeeAPI.Services.PositionServices;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 namespace EmployeeAPI.Services.PositionServices
 {
      public interface IPositionService

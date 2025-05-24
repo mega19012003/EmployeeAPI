@@ -2,6 +2,7 @@
 using EmployeeAPI.Models;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Services.DepartmentServices
 {

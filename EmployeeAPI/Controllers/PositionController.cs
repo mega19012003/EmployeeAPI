@@ -9,6 +9,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.HttpResults;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using EmployeeAPI.Models;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {

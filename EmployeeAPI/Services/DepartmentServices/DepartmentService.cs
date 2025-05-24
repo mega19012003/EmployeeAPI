@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.DepartmentServices

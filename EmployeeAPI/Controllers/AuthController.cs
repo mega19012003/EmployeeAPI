@@ -13,6 +13,7 @@ using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
+using EmployeeAPI.Enums;
 
 namespace EmployeeAPI.Controllers
 {
@@ -32,45 +33,58 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Đăng ký người dùng, sẽ do admin/manager tạo, chưa authorize
+        /// Đăng ký người dùng, sẽ do admin/manager tạo
         /// </summary>
         /// /// <remarks>
         /// RoleType enum values:
-        /// - 0 = Admin
-        /// - 1 = Manager
-        /// - 2 = Staff
+        /// - 1 = Admin
+        /// - 2 = Manager
+        /// - 3 = Staff
+        /// - TK admin
+        ///{
+        ///  "username": "Admin123",
+        ///  "password": "anno123",
+        ///}
+        /// - Tk manager
+        ///{
+        ///  "username": "Manager123",
+        ///  "password": "anno123",
+        ///}
+        /// - Tk employee
+        ///{
+        ///  "username": "user101",
+        ///  "password": "123456",
+        ///}
         /// </remarks>
+        [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("register")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> Register([FromForm] ResponseModel.RegisterDto dto)
+        public async Task<IActionResult> Register([FromBody] ResponseModel.RegisterDto dto)
         {
             try
             {
-                /*if (ModelState.IsValid == false)
-                    return BadRequest(ModelState);
-                if (string.IsNullOrEmpty(dto.Username))
-                    return BadRequest("username  not allow null");
-                if (string.IsNullOrEmpty(dto.Password))
-                    return BadRequest("password not allow null");
-                if (string.IsNullOrEmpty(dto.Fullname))
-                    return BadRequest("fullname not allow null");*/
-
-                var result = await _authService.RegisterAsync(dto);
-                if (result == null)
-                    return StatusCode(401, new { Message = "Register user failed", Detail = "null", StatusCode = 401 }); 
-
-                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Register success", result, 200));
+                var result = await _authService.RegisterAsync(dto, User);
+                return Ok(ApiResponse<ResponseModel.AuthDto>.ReturnResult("Register success", result, 200));
             }
-            catch (ArgumentException argEx)
-            { 
-                return StatusCode(400, new {Message = "Register User Failed", Detail  = argEx.Message, StatusCode = 400});
+            catch (DbUpdateException dbEx)
+            {
+                var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return BadRequest(new { message = "Register User Failed", detail = innerMessage, statusCode = 400 });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return StatusCode(403, new { message = "Access denied", detail = ex.Message, statusCode = 403 });
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new { message = "Register User Failed", detail = ex.Message, statusCode = 400 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while registering user");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, new { message = "Internal server error", detail = ex.Message, statusCode = 500 });
             }
         }
+
 
         /// <summary>
         /// Đăng nhập người dùng
@@ -98,11 +112,10 @@ namespace EmployeeAPI.Controllers
                 var expires = int.Parse(jwtSection["Expire"]);
                 var claims = new List<Claim>
                 {
-                    new Claim(ClaimTypes.Name, user.Username),
                     new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
-                    new Claim(ClaimTypes.GivenName, user.Fullname ?? ""),
-                    new Claim("RoleName", user.Role.ToString() ?? ""),
-                    new Claim(ClaimTypes.MobilePhone, user.PhoneNumber ?? ""),
+                    new Claim(ClaimTypes.Name, user.Username),
+                    new Claim("FullName", user.Fullname ?? ""),
+                    new Claim(ClaimTypes.Role, user.Role.ToString() ?? ""),
                 };
                 var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
                 var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -130,121 +143,6 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin người dùng, sẽ do admin/manager xử lý, chưa authorize
-        /// </summary>
-        [HttpPut("id")/*, Authorize*/]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateAsync([FromForm] ResponseModel.UpdateUser dto)
-        {
-            try
-            {
-                var result = await _authService.UpdateAsync(dto);
-
-                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentException in UpdateAsync");
-                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in UpdateAsync");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in UpdateAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
-        }
-
-        /// <summary>
-        /// Xóa người dùng, sẽ do admin/manager xử lý, chưa authorize
-        /// </summary>
-        [HttpDelete/*, Authorize*/]
-        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
-        {
-            try
-            {
-                var result = await _authService.SoftDeleteAsync(Id);
-                /*if (result == null)
-                {
-                    return NotFound();
-                }
-                return Ok(result);*/
-                return Ok(ApiResponse<string>.ReturnResult("Soft delete staff success", result, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
-                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
-                return BadRequest(new { Message = "Database update failed", Detail = dbEx.InnerException?.Message ?? dbEx.Message, StatusCode = 400 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in SoftDeleteAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Staff Id", StatusCode = 500 });
-            }
-        }
-
-        /// <summary>
-        /// Lấy toàn bộ thông tin người dùng, chưa authorize
-        /// </summary>
-        [HttpGet("GetAll"), /*, Authorize*/]
-        public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
-        {
-            try
-            {
-                var pagedResult = await _authService.GetAllAsync(Name, departmentId, pageSize, pageIndex);
-                if (pagedResult == null) {
-                    return BadRequest();
-                }
-                
-                return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("Get list user success", pagedResult, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
-                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
-                return BadRequest(new { Message = "Database update failed", Detail = dbEx.InnerException?.Message ?? dbEx.Message, StatusCode = 400 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in SoftDeleteAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Staff Id", StatusCode = 500 });
-            }
-        }
-
-        /// <summary>
-        /// Test mã hóa password
-        /// </summary>
-        [HttpGet("TestEncryptPassword")]
-        public IActionResult Get([FromQuery] string password)
-        {
-            if (string.IsNullOrWhiteSpace(password))
-                return BadRequest("Password is required");
-            var jwtSection = _configuration.GetSection("Jwt");
-
-            var key = jwtSection["Key"];
-            var keyBytes = Encoding.UTF8.GetBytes(key);
-
-            var hmac = new HMACSHA256(keyBytes);
-            var hashBytes = hmac.ComputeHash(Encoding.UTF8.GetBytes(password));
-            var hash = Convert.ToBase64String(hashBytes);
-
-            return Ok(hash);
-        }
-
-        /// <summary>
         /// Lấy thông tin user đang đăng nhập
         /// </summary>
         [HttpGet("current")/*, Authorize*/]
@@ -264,10 +162,8 @@ namespace EmployeeAPI.Controllers
 
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var username = user.FindFirst(ClaimTypes.Name)?.Value;
-            var fullname = user.FindFirst(ClaimTypes.GivenName)?.Value;
-            var phone = user.FindFirst(ClaimTypes.MobilePhone)?.Value;
-
-            var roleName = user.FindFirst("RoleName")?.Value;
+            var fullname = user.FindFirst("FullName")?.Value;
+            var role = user.FindFirst(ClaimTypes.Role)?.Value;
 
 
             //// Chuyển đổi kiểu dữ liệu nếu cần
@@ -285,9 +181,8 @@ namespace EmployeeAPI.Controllers
                     UserId = userId,
                     Username = username,
                     Fullname = fullname,
-                    PhoneNumber = phone,
                     //Address = address,
-                    RoleName = roleName,
+                    Role = role,
                     //DateOfBirth = dateOfBirth,
                     //DepartmentName = department,
                     //PositionName = position,

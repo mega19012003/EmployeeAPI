@@ -2,8 +2,8 @@
 {
     public enum RoleType
     {
-        Administrator = 0,
-        Manager = 1,
-        Employee = 2,
+        Administrator = 1,
+        Manager = 2,
+        Employee = 3,
     }
 }
