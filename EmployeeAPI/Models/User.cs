@@ -23,5 +23,7 @@ namespace EmployeeAPI.Models
         public ICollection<DutyDetail>? DutyDetails { get; set; } = new List<DutyDetail>();
         public List<Checkin>? Checkins { get; set; } = new List<Checkin>();
         public List<Payroll>? Payrolls { get; set; } = new List<Payroll>();
+        public string RefreshToken { get; set; } // lưu refresh token
+        public DateTime RefreshTokenExpiryTime { get; set; } // thời gian hết hạn refresh token
     }
 }

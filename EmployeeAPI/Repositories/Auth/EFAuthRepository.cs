@@ -17,8 +17,6 @@ namespace EmployeeAPI.Repositories.Auth
             _context = context;
         }
 
-        
-
         public async Task<User> LoginAsync(string username, string password)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
@@ -26,6 +24,12 @@ namespace EmployeeAPI.Repositories.Auth
                 return null;
 
             return user;
+        }
+
+        public async Task UpdateUserAsync(User user)
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
         }
 
         private string HashPassword(string password)
@@ -37,7 +41,6 @@ namespace EmployeeAPI.Repositories.Auth
                 return Convert.ToBase64String(hash);
             }
         }
-
         public IQueryable<User> GetAll()
         {
             return _context.Users
@@ -64,7 +67,10 @@ namespace EmployeeAPI.Repositories.Auth
             var results = await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
             return results;
         }
-
+        /*public async Task<User> GetUserByIdAsync(int userId)
+        {
+            return await _context.Users.FindAsync(userId);
+        }*/
         public async Task<User> GetLoginUserAsync(string username)
         {
             return await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.Username == username);

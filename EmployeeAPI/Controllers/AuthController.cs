@@ -128,10 +128,14 @@ namespace EmployeeAPI.Controllers
                 );
                 var jwt = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
   
-                return Ok(new ApiResponse<string>
+                return Ok(new ApiResponse<object>
                 {
                     Message = "Login success",
-                    Data = jwt,
+                    Data = new
+                    {
+                        AccessToken = jwt,
+                        RefreshToken = user.RefreshToken
+                    },
                     StatusCode = 200,
                 });
             }
@@ -141,6 +145,94 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(500, "Internal server error");
             }
         }
+
+        /// <summary>
+        /// Đăng xuất
+        /// </summary>
+        [Authorize]
+        [HttpPost, Route("logout")]
+        public async Task<IActionResult> Logout()
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (userIdClaim == null)
+                    return Unauthorized(new ApiResponse<string>
+                    {
+                        Message = "User not found in token",
+                        StatusCode = 401
+                    });
+
+                if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
+                    return BadRequest(new ApiResponse<string>
+                    {
+                        Message = "Invalid user ID",
+                        StatusCode = 400
+                    });
+
+                await _authService.LogoutAsync(userId);
+
+                return Ok(new ApiResponse<string>
+                {
+                    Message = "Logout successful",
+                    StatusCode = 200
+                });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
+                return BadRequest(new { message = "Logout User Failed", detail = innerMessage, statusCode = 400 });
+            }
+            catch (ArgumentException ex)
+            {
+                return NotFound(new ApiResponse<string>
+                {
+                    Message = ex.Message,
+                    StatusCode = 404
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred during logout");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+        /// <summary>
+        /// Làm mới token
+        /// </summary>
+        [Authorize]
+        [HttpPost, Route("refresh-token")]
+        public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
+        {
+            try
+            {
+                var newAccessToken = await _authService.RefreshTokenAsync(request.AccessToken, request.RefreshToken);
+
+                return Ok(new ApiResponse<object>
+                {
+                    Message = "Token refreshed successfully",
+                    Data = new { AccessToken = newAccessToken },
+                    StatusCode = 200
+                });
+            }
+            catch (SecurityTokenException ex)
+            {
+                return Unauthorized(new ApiResponse<string>
+                {
+                    Message = ex.Message,
+                    Data = null,
+                    StatusCode = 401
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while refreshing token");
+                return StatusCode(500, "Internal server error");
+            }
+        }
+
+
 
         /// <summary>
         /// Lấy thông tin user đang đăng nhập

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
@@ -13,19 +14,22 @@ using EmployeeAPI.Services.FileServices;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
 
 namespace EmployeeAPI.Services.AuthServices
 {
     public class AuthService : IAuthService
     {
         private readonly IAuthRepository _repository;
-
+        private readonly IConfiguration _configuration;
         private readonly IFileService _fileService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public AuthService(IAuthRepository repository, IFileService fileService, AppDbContext context, ILogger<AuthService> logger)
+        public AuthService(IAuthRepository repository, IConfiguration configuration, IFileService fileService, AppDbContext context, ILogger<AuthService> logger)
         {
             _repository = repository;
+            _configuration = configuration;
             _fileService = fileService;
             _context = context;
             _logger = logger;
@@ -147,7 +151,6 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
-
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
@@ -158,6 +161,8 @@ namespace EmployeeAPI.Services.AuthServices
             }
         }
 
+
+
         public async Task<User> LoginAsync(string username, string password)
         {
             try
@@ -166,13 +171,109 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("Invalid input");
 
+                user.RefreshToken = GenerateRefreshToken();
+                user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
+
+                await _repository.UpdateUserAsync(user); 
+
                 return user;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while adding new staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred during login");
                 throw;
             }
+        }
+        public async Task LogoutAsync(Guid userId)
+        {
+            var user = await _repository.GetByIdAsync(userId);
+            if (user == null)
+                throw new ArgumentException("User not found");
+
+            user.RefreshToken = string.Empty;
+            user.RefreshTokenExpiryTime = DateTime.UtcNow;
+
+            await _repository.UpdateUserAsync(user);
+        }
+
+        private string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+                return Convert.ToBase64String(randomBytes);
+            }
+        }
+
+        public async Task<string> RefreshTokenAsync(string accessToken, string refreshToken)
+        {
+            var principal = GetPrincipalFromExpiredToken(accessToken);
+            if (principal == null)
+                throw new SecurityTokenException("Invalid access token");
+
+            var username = principal.Identity.Name;
+            var user = await _repository.GetUserByName(username);
+
+            if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
+                throw new SecurityTokenException("Invalid refresh token");
+
+            // Tạo token mới
+            var jwt = GenerateAccessToken(user);
+
+            // tạo refresh token mới
+            user.RefreshToken = GenerateRefreshToken();
+            user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
+            await _repository.UpdateUserAsync(user);
+
+            return jwt;
+        }
+
+        private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
+        {
+            var jwtSection = _configuration.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]));
+
+            var tokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateAudience = false,
+                ValidateIssuer = false,
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = key,
+                ValidateLifetime = false 
+            };
+
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var principal = tokenHandler.ValidateToken(token, tokenValidationParameters, out var securityToken);
+            if (securityToken is JwtSecurityToken jwtToken && jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256))
+                return principal;
+
+            return null;
+        }
+
+        public string GenerateAccessToken(User user)
+        {
+            var jwtSection = _configuration.GetSection("Jwt");
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSection["Key"]));
+            var signinCredentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var claims = new List<Claim>
+            {
+                new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim("FullName", user.Fullname ?? ""),
+                new Claim(ClaimTypes.Role, user.Role.ToString() ?? ""),
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: jwtSection["Issuer"],
+                audience: jwtSection["Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(int.Parse(jwtSection["Expire"])),
+                signingCredentials: signinCredentials
+            );
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         public async Task<ResponseModel.AuthDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto)

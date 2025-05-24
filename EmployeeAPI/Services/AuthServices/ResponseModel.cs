@@ -90,6 +90,10 @@ namespace EmployeeAPI.Services.AuthServices
         {
             public string UserName { get; set; }
         }
-
+        public class RefreshTokenDto
+        {
+            public string AccessToken { get; set; }
+            public string RefreshToken { get; set; }
+        }
     }
 }
