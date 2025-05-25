@@ -98,6 +98,60 @@ namespace EmployeeAPI.Services.AuthServices
         //        throw;
         //    }
         //}
+
+        //public async Task<ResponseModel.AuthDto> RegisterAsync(ResponseModel.RegisterDto dto, ClaimsPrincipal user)
+        //{
+        //    using var transaction = await _context.Database.BeginTransactionAsync();
+        //    try
+        //    {
+        //        var currentUsername = user.Identity.Name;
+        //        var currentUser = await _repository.GetUserByName(currentUsername);
+
+        //        if (currentUser == null)
+        //            throw new UnauthorizedAccessException("Current user not found");
+
+        //        // Chỉ cho Admin hoặc Manager được đăng ký user mới
+        //        if (currentUser.Role != RoleType.Administrator && currentUser.Role != RoleType.Manager)
+        //            throw new UnauthorizedAccessException("Only Admin or Manager can register new users");
+
+        //        var existed = await _repository.GetUserByName(dto.Username);
+        //        if (existed != null)
+        //            throw new ArgumentException("User already exists");
+
+        //        var entity = new User
+        //        {
+        //            UserId = Guid.NewGuid(),
+        //            Username = dto.Username,
+        //            Password = HashPassword(dto.Password), 
+        //            Fullname = dto.Fullname,
+        //            Role = dto.Role,
+        //            PhoneNumber = "",
+        //            Address = "",
+        //            ImageUrl = "",
+        //            DepartmentId = null,
+        //            PositionId = null
+        //        };
+
+        //        _context.Users.Add(entity);
+        //        await _context.SaveChangesAsync();
+        //        await transaction.CommitAsync();
+
+        //        return new ResponseModel.AuthDto
+        //        {
+        //            userId = entity.UserId,
+        //            Username = entity.Username,
+        //            Fullname = entity.Fullname,
+        //            RoleName = entity.Role.ToString(),
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        _logger.LogError(ex, "Error occurred while registering user");
+        //        throw;
+        //    }
+        //}
+
         public async Task<ResponseModel.AuthDto> RegisterAsync(ResponseModel.RegisterDto dto, ClaimsPrincipal user)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -113,6 +167,10 @@ namespace EmployeeAPI.Services.AuthServices
                 if (currentUser.Role != RoleType.Administrator && currentUser.Role != RoleType.Manager)
                     throw new UnauthorizedAccessException("Only Admin or Manager can register new users");
 
+                // Nếu là Manager, chỉ được phép tạo user với role là Staff
+                if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
+                    throw new UnauthorizedAccessException("Manager can only register Staff users");
+
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
                     throw new ArgumentException("User already exists");
@@ -121,7 +179,7 @@ namespace EmployeeAPI.Services.AuthServices
                 {
                     UserId = Guid.NewGuid(),
                     Username = dto.Username,
-                    Password = HashPassword(dto.Password), 
+                    Password = HashPassword(dto.Password),
                     Fullname = dto.Fullname,
                     Role = dto.Role,
                     PhoneNumber = "",
@@ -150,6 +208,7 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
+
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
