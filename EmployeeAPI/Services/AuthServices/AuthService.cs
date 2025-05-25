@@ -126,7 +126,6 @@ namespace EmployeeAPI.Services.AuthServices
                     Role = dto.Role,
                     PhoneNumber = "",
                     Address = "",
-                    DateOfBirth = DateOnly.FromDateTime(DateTime.Now),
                     ImageUrl = "",
                     DepartmentId = null,
                     PositionId = null

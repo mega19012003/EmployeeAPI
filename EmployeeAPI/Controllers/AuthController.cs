@@ -35,27 +35,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Đăng ký người dùng, sẽ do admin/manager tạo
         /// </summary>
-        /// /// <remarks>
-        /// RoleType enum values:
-        /// - 1 = Admin
-        /// - 2 = Manager
-        /// - 3 = Staff
-        /// - TK admin
-        ///{
-        ///  "username": "Admin123",
-        ///  "password": "anno123",
-        ///}
-        /// - Tk manager
-        ///{
-        ///  "username": "Manager123",
-        ///  "password": "anno123",
-        ///}
-        /// - Tk employee
-        ///{
-        ///  "username": "user101",
-        ///  "password": "123456",
-        ///}
-        /// </remarks>
+
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ResponseModel.RegisterDto dto)
@@ -89,6 +69,27 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Đăng nhập người dùng
         /// </summary>
+        ///         /// /// <remarks>
+        /// RoleType enum values:
+        /// - 1 = Admin
+        /// - 2 = Manager
+        /// - 3 = Staff
+        /// - TK admin
+        ///{
+        ///  "username": "Admin123",
+        ///  "password": "anno123"
+        ///}
+        /// - Tk manager
+        ///{
+        ///  "username": "Manager123",
+        ///  "password": "anno123"
+        ///}
+        /// - Tk employee
+        ///{
+        ///  "username": "user101",
+        ///  "password": "123456"
+        ///}
+        /// </remarks>
         [HttpPost, Route("login")]
         public async Task<IActionResult> Login([FromBody] ResponseModel.LoginDto dto)
         {

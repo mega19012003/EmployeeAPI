@@ -11,7 +11,14 @@ namespace EmployeeAPI.Repositories.Users
         {
             _context = context;
         }
+        public async Task<Guid?> GetDepartmentIdByUserIdAsync(Guid userId)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.UserId == userId);
 
+            return user?.DepartmentId;
+        }
         public async Task<User> UpdateAsync(User user)
         {
             var existingUser = await _context.Users
@@ -25,7 +32,6 @@ namespace EmployeeAPI.Repositories.Users
             existingUser.Fullname = user.Fullname;
             existingUser.Address = user.Address;
             existingUser.PhoneNumber = user.PhoneNumber;
-            existingUser.DateOfBirth = user.DateOfBirth;
             existingUser.Role = user.Role;
             existingUser.BasicSalary = user.BasicSalary;
             existingUser.PositionId = user.PositionId;

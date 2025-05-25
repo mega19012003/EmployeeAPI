@@ -32,10 +32,13 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [HttpPut("id")/*, Authorize*/]
         [Consumes("multipart/form-data")]
-        public async Task<IActionResult> UpdateAsync([FromForm] ResponseModel.UpdateUser dto)
+
+        public async Task<IActionResult> UpdateAsync([FromForm] ResponseModel.AdminUpdateDto dto)
         {
             try
             {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
                 var result = await _userService.UpdateAsync(dto);
 
                 return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));

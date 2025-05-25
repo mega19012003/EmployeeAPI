@@ -5,7 +5,9 @@ namespace EmployeeAPI.Services.UserService
 {
     public interface IUserService
     {
-        Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.UpdateUser dto);
+      
+        //Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.AdminUpdateDto userRole, Guid currentUserId);
+        Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.AdminUpdateDto dto);
         Task<string> SoftDeleteAsync(Guid id);
 
         Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);

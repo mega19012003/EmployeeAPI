@@ -25,7 +25,7 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.UpdateUser dto)
+        public async Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.AdminUpdateDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -52,7 +52,7 @@ namespace EmployeeAPI.Services.UserService
                 existingUser.Fullname = dto.Fullname;
                 existingUser.Address = dto.Address;
                 existingUser.PhoneNumber = dto.PhoneNumber;
-                existingUser.DateOfBirth = dto.DateOfBirth;
+                //existingUser.DateOfBirth = dto.DateOfBirth;
                 existingUser.DepartmentId = dto.DepartmentId;
                 existingUser.PositionId = dto.PositionId;
                 existingUser.BasicSalary = dto.BasicSalary;
@@ -72,7 +72,7 @@ namespace EmployeeAPI.Services.UserService
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
                     PhoneNumber = existingUser.PhoneNumber,
-                    DateOfBirth = existingUser.DateOfBirth,
+                    //DateOfBirth = existingUser.DateOfBirth,
                     BasicSalary = existingUser.BasicSalary,
                     DepartmentName = existingUser.Department.Name,
                     PositionName = existingUser.Position.Name,
@@ -150,7 +150,7 @@ namespace EmployeeAPI.Services.UserService
                         userId = f.UserId,
                         Fullname = f.Fullname,
                         RoleName = f.Role.ToString(),
-                        DateOfBirth = f.DateOfBirth,
+ 
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
                         DepartmentName = f.Department.Name,
@@ -186,7 +186,7 @@ namespace EmployeeAPI.Services.UserService
                 userId = results.UserId,
                 Fullname = results.Fullname,
                 RoleName = results.Role.ToString(),
-                DateOfBirth = results.DateOfBirth,
+         
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
                 DepartmentName = results.Department.Name,
