@@ -6,6 +6,7 @@ using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.FileServices;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage;
 using System.Security.Cryptography;
 using System.Text;
 using static EmployeeAPI.Services.UserService.ResponseModel;
@@ -99,8 +100,32 @@ namespace EmployeeAPI.Services.UserService
 
                 var existingUser = await _repository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("User không tồn tại");
-                
-                var imagePaths = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+
+                string imagePaths = existingUser.ImageUrl; // mặc định giữ ảnh cũ
+
+                if (!string.IsNullOrWhiteSpace(dto.Fullname))
+                    existingUser.Fullname = dto.Fullname;
+
+                if (!string.IsNullOrWhiteSpace(dto.Address))
+                    existingUser.Address = dto.Address;
+
+                if (!string.IsNullOrWhiteSpace(dto.PhoneNumber))
+                    existingUser.PhoneNumber = dto.PhoneNumber;
+
+                if (dto.PositionId.HasValue)
+                    existingUser.PositionId = dto.PositionId;
+
+                /*if (dto.BasicSalary.HasValue)
+                    existingUser.BasicSalary = dto.BasicSalary.Value;/
+
+                /*if (dto.IsActive.HasValue)
+                    existingUser.IsActive = dto.IsActive.Value;*/
+
+
+                if (dto.ImageUrl != null)
+                {
+                    imagePaths = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+                }
 
                 var manager = await _repository.GetByIdAsync(managerId);
                 if (manager == null || manager.DepartmentId == null)
@@ -119,8 +144,8 @@ namespace EmployeeAPI.Services.UserService
                 // Gán DepartmentId ngầm từ Manager
                 existingUser.DepartmentId = manager.DepartmentId;
 
-                // Gán role ngầm là Staff (manager không được cấp role khác)
-                existingUser.Role = RoleType.Employee;
+                /*// Gán role ngầm là Staff (manager không được cấp role khác)
+                existingUser.Role = RoleType.Employee;*/
            
                 await _repository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
@@ -142,12 +167,14 @@ namespace EmployeeAPI.Services.UserService
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                if (transaction?.GetDbTransaction()?.Connection != null)
+                {
+                    await transaction.RollbackAsync();
+                }
                 _logger.LogError(ex, "Error occurred while updating User. Message: {Message}", ex.Message);
                 throw;
             }
         }
-
 
         public async Task<string> SoftDeleteAsync(Guid Id)
         {
@@ -215,8 +242,10 @@ namespace EmployeeAPI.Services.UserService
  
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
-                        DepartmentName = f.Department.Name,
-                        PositionName = f.Position.Name,
+                        /*DepartmentName = f.Department.Name,
+                        PositionName = f.Position.Name,*/
+                        DepartmentName = f.Department != null ? f.Department.Name : string.Empty,
+                        PositionName = f.Position != null ? f.Position.Name : string.Empty,
                         BasicSalary = f.BasicSalary,
                         ImageUrl = f.ImageUrl,
                     })
@@ -233,7 +262,7 @@ namespace EmployeeAPI.Services.UserService
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while retrieving all employee. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
+                throw;  
             }
         }
 
@@ -251,8 +280,9 @@ namespace EmployeeAPI.Services.UserService
          
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
-                DepartmentName = results.Department.Name,
-                PositionName = results.Position.Name,
+                DepartmentId = results.DepartmentId,
+                DepartmentName = results.Department?.Name ?? "No Department",
+                PositionName = results.Position?.Name ?? "No Position",
                 BasicSalary = results.BasicSalary,
                 ImageUrl = results.ImageUrl,
             };

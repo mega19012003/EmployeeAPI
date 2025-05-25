@@ -92,14 +92,14 @@ namespace EmployeeAPI.Services.UserService
             [Required]
             public Guid UserId { get; set; }
             [Required]
-            public string Fullname { get; set; }
+            public string? Fullname { get; set; }
             public string? PhoneNumber { get; set; }
             public string? Address { get; set; }
             public Guid? PositionId { get; set; }
             [Required]
             public double BasicSalary { get; set; }
             public IFormFile? ImageUrl { get; set; }
-            public bool IsActive { get; set; }
+            public bool IsActive { get; set; } = true;
         }
 
         public class UserFilter

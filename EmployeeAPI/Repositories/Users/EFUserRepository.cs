@@ -58,16 +58,16 @@ namespace EmployeeAPI.Repositories.Users
         public IQueryable<User> GetAll()
         {
             return _context.Users
-                .AsNoTracking()
-                .Include(p => p.Department)
-                .Include(p => p.Position)
-                .Where(p => !p.IsDeleted && p.IsActive);
+                .Include(u => u.Department)
+                .Include(u => u.Position)
+                .Where(u => u.IsActive && !u.IsDeleted)
+                .AsNoTracking();
         }
 
         public async Task<User> GetByIdAsync(Guid id)
         {
-            var results = await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
-            return results;
+            return await _context.Users.Include(p => p.Department).Include(p => p.Position)
+                  .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
         }
 
         public async Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex)
