@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Users;
@@ -7,6 +8,7 @@ using EmployeeAPI.Services.FileServices;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using System.Text;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Services.UserService
 {
@@ -25,7 +27,7 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.AdminUpdateDto dto)
+        public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -86,6 +88,66 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
+
+        public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+               
+
+                var existingUser = await _repository.GetByIdAsync(dto.UserId);
+                if (existingUser == null) throw new ArgumentException("User không tồn tại");
+                
+                var imagePaths = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+
+                var manager = await _repository.GetByIdAsync(managerId);
+                if (manager == null || manager.DepartmentId == null)
+                    throw new ArgumentException("Manager chưa có phòng ban, không thể update");
+
+
+                existingUser.Fullname = dto.Fullname;
+                existingUser.Address = dto.Address;
+                existingUser.PhoneNumber = dto.PhoneNumber;
+                //existingUser.DateOfBirth = dto.DateOfBirth;
+                existingUser.PositionId = dto.PositionId;
+                existingUser.BasicSalary = dto.BasicSalary;
+                existingUser.ImageUrl = imagePaths;
+                existingUser.IsActive = dto.IsActive;
+
+                // Gán DepartmentId ngầm từ Manager
+                existingUser.DepartmentId = manager.DepartmentId;
+
+                // Gán role ngầm là Staff (manager không được cấp role khác)
+                existingUser.Role = RoleType.Employee;
+           
+                await _repository.UpdateAsync(existingUser);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new UserDto
+                {
+                    userId = existingUser.UserId,
+                    Fullname = existingUser.Fullname,
+                    RoleName = existingUser.Role.ToString(),
+                    Address = existingUser.Address,
+                    PhoneNumber = existingUser.PhoneNumber,
+                    //DateOfBirth = existingUser.DateOfBirth,
+                    BasicSalary = existingUser.BasicSalary,
+                    DepartmentName = existingUser.Department.Name,
+                    PositionName = existingUser.Position.Name,
+                    ImageUrl = existingUser.ImageUrl,
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while updating User. Message: {Message}", ex.Message);
+                throw;
+            }
+        }
+
 
         public async Task<string> SoftDeleteAsync(Guid Id)
         {

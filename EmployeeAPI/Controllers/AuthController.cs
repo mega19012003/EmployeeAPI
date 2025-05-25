@@ -35,6 +35,12 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Đăng ký người dùng, sẽ do admin/manager tạo
         /// </summary>
+        /// <remarks>         
+        /// RoleType enum values:
+        /// - 1 = Admin
+        /// - 2 = Manager
+        /// - 3 = Staff
+        /// </remarks> 
 
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("register")]
@@ -69,11 +75,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Đăng nhập người dùng
         /// </summary>
-        ///         /// /// <remarks>
-        /// RoleType enum values:
-        /// - 1 = Admin
-        /// - 2 = Manager
-        /// - 3 = Staff
+        /// <remarks>
         /// - TK admin
         ///{
         ///  "username": "Admin123",

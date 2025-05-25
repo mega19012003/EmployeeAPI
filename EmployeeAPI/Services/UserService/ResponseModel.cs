@@ -69,33 +69,36 @@ namespace EmployeeAPI.Services.UserService
           
         }*/
 
-        public class UpdateUserDto
+        public class AdminUpdateDto 
         {
+            [Required]
             public Guid UserId { get; set; }
-            public string? Address { get; set; }
-            public string? PhoneNumber { get; set; }
-            public IFormFile? ImageUrl { get; set; }
-        }
-
-        public class AdminUpdateDto : UpdateUserDto
-        {
-            public RoleType RoleType { get; set; }
+            [Required]
             public string Fullname { get; set; }
+            [Required]
             public RoleType Role { get; set; }
+            public string? PhoneNumber { get; set; }
+            public string? Address { get; set; }
             public Guid? DepartmentId { get; set; }
             public Guid? PositionId { get; set; }
+            [Required]
             public double BasicSalary { get; set; }
+            public IFormFile? ImageUrl { get; set; }
             public bool IsActive { get; set; }
         }
 
-        public class ManagerUpdateDto : UpdateUserDto
+        public class ManagerUpdateDto 
         {
-            public RoleType RoleType { get; set; }
+            [Required]
+            public Guid UserId { get; set; }
+            [Required]
             public string Fullname { get; set; }
-            public RoleType Role { get; set; }
-            //public Guid? DepartmentId { get; set; }
+            public string? PhoneNumber { get; set; }
+            public string? Address { get; set; }
             public Guid? PositionId { get; set; }
+            [Required]
             public double BasicSalary { get; set; }
+            public IFormFile? ImageUrl { get; set; }
             public bool IsActive { get; set; }
         }
 

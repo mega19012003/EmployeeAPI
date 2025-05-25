@@ -28,18 +28,51 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin người dùng, sẽ do admin/manager xử lý, chưa authorize
+        /// Cập nhật thông tin người dùng, sẽ do admin chỉnh sửa hết thông tin, chưa authorize
         /// </summary>
-        [HttpPut("id")/*, Authorize*/]
+        [Authorize(Roles = "Administrator")]
+        [HttpPut("AdminUpdateUser")/*, Authorize*/]
         [Consumes("multipart/form-data")]
-
-        public async Task<IActionResult> UpdateAsync([FromForm] ResponseModel.AdminUpdateDto dto)
+        public async Task<IActionResult> AdminUpdateStaffAsync([FromForm] ResponseModel.AdminUpdateDto dto)
         {
             try
             {
                 var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                var result = await _userService.UpdateAsync(dto);
+                var result = await _userService.AdminUpdateStaffAsync(dto);
+
+                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in UpdateAsync");
+                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in UpdateAsync");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Exception thrown in UpdateAsync controller method.");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
+        }
+
+        /// <summary>
+        /// Cập nhật thông tin người dùng, sẽ do manager chỉnh, manager ko dc chỉnh role và departmentid sẽ tự gán cho staff, chưa authorize
+        /// </summary>
+        [Authorize(Roles = "Manager")]
+        [HttpPut("ManagerUpdateUser")/*, Authorize*/]
+        [Consumes("multipart/form-data")]
+        public async Task<IActionResult> ManagerUpdateStaffAsync([FromForm] ResponseModel.ManagerUpdateDto dto)
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+                var result = await _userService.ManagerUpdateStaffAsync(dto, dto.UserId);
 
                 return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
             }
