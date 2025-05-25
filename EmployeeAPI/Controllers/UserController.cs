@@ -168,6 +168,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
+        /// <summary>
+        /// Admin Lấy toàn bộ thông tin người dùng, manager lấy user theo phòng ban
+        /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("id")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid id)
