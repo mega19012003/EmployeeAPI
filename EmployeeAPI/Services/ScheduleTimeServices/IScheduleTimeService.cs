@@ -5,7 +5,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
     public interface IScheduleTimeService
     {
         Task<ScheduleTime> GetScheduleTimeAsync();
-        Task UpdateScheduleTimeAsync(ScheduleTime scheduleTime);
+        Task<ScheduleTime> UpdateScheduleTimeAsync(ScheduleTime scheduleTime);
 
     }
 }

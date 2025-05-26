@@ -7,6 +7,7 @@ using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
+using EmployeeAPI.Repositories.ScheduleTimes;
 using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
@@ -15,6 +16,7 @@ using EmployeeAPI.Services.DutyServices;
 using EmployeeAPI.Services.FileServices;
 using EmployeeAPI.Services.PayrollServices;
 using EmployeeAPI.Services.PositionServices;
+using EmployeeAPI.Services.ScheduleTimeServices;
 using EmployeeAPI.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -55,7 +57,7 @@ builder.Services.AddScoped<IAuthRepository, EFAuthRepository>();
 builder.Services.AddScoped<ICheckinRepository, EFCheckinRepository>();
 builder.Services.AddScoped<IPayrollRepository, EFPayrollRepository>();
 builder.Services.AddScoped<IUserRepository, EFUserRepository>();
-
+builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
 
 //builder.Services.AddScoped<IStaffService, StafffService>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -66,7 +68,7 @@ builder.Services.AddScoped<ICheckinService, CheckinService>();
 builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IAuthService,  AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
-
+builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
 builder.Services.AddSwaggerGen(c =>
 {
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";

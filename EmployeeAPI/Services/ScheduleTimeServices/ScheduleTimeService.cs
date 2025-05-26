@@ -16,25 +16,44 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
         }
         public async Task<ScheduleTime?> GetScheduleTimeAsync()
         {
-            return await _repository.GetScheduleTime();
+            var result = await _repository.GetScheduleTime();
+            return new ScheduleTime
+            {
+                StartTime = result.StartTime,
+                EndTime = result.EndTime,
+                LateThresholdMinutes = result.LateThresholdMinutes,
+            };
         }
 
-        public async Task UpdateScheduleTimeAsync(ScheduleTime schedule)
+        public async Task<ScheduleTime> UpdateScheduleTimeAsync(ScheduleTime newSchedule)
         {
-            var existing = await _repository.GetScheduleTime();
-            if (existing == null)
-            {
-                _context.ScheduleTimes.Add(schedule);
-            }
-            else
-            {
-                existing.StartTime = schedule.StartTime;
-                existing.LateThresholdMinutes = schedule.LateThresholdMinutes;
-                existing.EndTime = schedule.EndTime;
-                _context.ScheduleTimes.Update(existing);
-            }
+            using var trasaction = await _context.Database.BeginTransactionAsync();
+            try {
+                var existing = await _context.ScheduleTimes.FirstOrDefaultAsync();
+                if (existing == null)
+                {
+                    newSchedule.id = Guid.NewGuid();
+                    _context.ScheduleTimes.Add(newSchedule);
+                }
+                else
+                {
+                    existing.StartTime = newSchedule.StartTime;
+                    existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
+                    existing.EndTime = newSchedule.EndTime;
+                    _context.ScheduleTimes.Update(existing);
+                }
 
-            await _context.SaveChangesAsync();
+                await _context.SaveChangesAsync();
+                await trasaction.CommitAsync();
+
+                return newSchedule;
+
+            }
+            catch
+            {
+                await trasaction.RollbackAsync();
+                throw new ArgumentException("Invalid input data for schedule time update. Please check the provided values and try again.");
+            }
         }
     }
 }
