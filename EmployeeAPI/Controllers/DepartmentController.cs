@@ -128,7 +128,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa phòng ban,  do admin xử lý
+        /// Xóa phòng ban, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpDelete]
