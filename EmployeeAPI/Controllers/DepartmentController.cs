@@ -32,7 +32,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách phòng ban, manager/employee ko dc phép truy cập
         /// </summary>
-        [Authorize(Roles = "Administrtor")]
+        [Authorize(Roles = "Administartor")]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Thêm phòng ban, do admin xử lý
         /// </summary>
-        [Authorize(Roles = "Administrtor")]
+        [Authorize(Roles = "Administrator")]
         [HttpPost]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
@@ -99,7 +99,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật phòng ban,  do admin xử lý
         /// </summary>
-        [Authorize(Roles = "Administrtor")]
+        [Authorize(Roles = "Administrator")]
         [HttpPut]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
@@ -130,7 +130,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xóa phòng ban,  do admin xử lý
         /// </summary>
-        [Authorize(Roles = "Administrtor")]
+        [Authorize(Roles = "Administrator")]
         [HttpDelete]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
