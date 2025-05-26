@@ -15,6 +15,7 @@ namespace EmployeeAPI.Models
         public DbSet<Payroll> Payrolls { get; set; }
         public DbSet<DutyDetail> DutyDetail { get; set; }
         public DbSet<Position> Positions { get; set; }
+        public DbSet<ScheduleTime> ScheduleTimes { get; set; }
         //public DbSet<Fine> Fines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

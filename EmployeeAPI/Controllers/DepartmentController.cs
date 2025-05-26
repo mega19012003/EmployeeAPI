@@ -32,7 +32,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách phòng ban, manager/employee ko dc phép truy cập
         /// </summary>
-        [Authorize(Roles = "Administartor")]
+        [Authorize(Roles = "Administrator")]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
@@ -41,17 +41,6 @@ namespace EmployeeAPI.Controllers
             try
             {
                 var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
-
-                /*if (pagedResult.Items.Count() == 0)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }*/
-
                 return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("Get list department success", pagedResult, 200));
 
             }
