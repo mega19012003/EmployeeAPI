@@ -132,12 +132,15 @@ namespace EmployeeAPI.Services.PositionServices
                 await _context.SaveChangesAsync();
                 
                 await transaction.CommitAsync();
+                var result = await _context.Positions
+                    .Include(p => p.Department)
+                    .FirstOrDefaultAsync(p => p.Id == entity.Id);
 
                 return new ResponseModel.PositionDTO
                 {
-                    Id = entity.Id,
-                    Name = entity.Name,
-                    Department = entity.Department.Name,
+                    Id = result.Id,
+                    Name = result.Name,
+                    Department = result.Department.Name,
                 };
             }
             catch (Exception ex)
@@ -204,44 +207,22 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        /*public async Task<ResponseModel.PositionDTO?> GetAllEmployee(string name)
-        {
-            try
-            {
-                var entity = await _positionRepository.GetAllEmployee(name);
-                if (entity == null) return null;
-
-                return new ResponseModel.PositionDTO
-                {
-                    Id = entity.Id,
-                    Name = entity.Name
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("An error occurred while retrieving all employees. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
-            }
-        }*/
-
-        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid departmentId ,Guid positionId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid? departmentId, Guid positionId, int? pageSize, int? pageIndex)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _context.Positions
-                    .Include(d => d.Users)
-                    .Where(d => !d.IsDeleted && d.Id == positionId && d.Department.Id == departmentId);
+                var query = await _positionRepository.GetStaffByPositionAsync(positionId, pageSize, pageIndex);
 
                 var allUsers = query
                     .SelectMany(d => d.Users
-                        .Where(s => s.IsActive && !s.IsDeleted));
+                    .Where(s => s.IsActive && !s.IsDeleted));
 
-                var totalCount = await allUsers.CountAsync();
+                var totalCount = allUsers.Count();
 
-                var items = await allUsers
+                var items = allUsers
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
                     .Select(st => new UserFilter
@@ -251,7 +232,7 @@ namespace EmployeeAPI.Services.PositionServices
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 return new PagedResult<UserFilter>
                 {

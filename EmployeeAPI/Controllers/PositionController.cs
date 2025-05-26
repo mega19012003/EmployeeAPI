@@ -29,6 +29,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách chức vụ, chưa authorize
         /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpGet/*, Authorize*/]
         public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
@@ -57,6 +58,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Thêm chức vụ trong phỏng ban, chưa authorize
         /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpPost/*, Authorize*/]
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
@@ -86,6 +88,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// cập nhật chức vụ trong phòng ban, chưa authorize
         /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpPut/*, Authorize*/]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
         {
@@ -96,7 +99,7 @@ namespace EmployeeAPI.Controllers
 
                 var result = await _positionService.UpdateAsync(id, newName);
                 if (result == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
+                    return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
 
                 return Ok(ApiResponse<ResponseModel.UpdatePosition>.ReturnResult("Update position success", result, 200));
             }
@@ -147,19 +150,21 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách nhân viên theo chức vụ cảu 1 phòng ban, chưa authorize
+        /// lấy danh sách nhân viên theo chức vụ, lọc theo chức vụ của phòng ban (optional), chưa authorize
         /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("Employee")/*, Authorize*/]
-        public async Task<IActionResult> GetEmployeeByPosition(Guid DepartmentId, Guid PositionId, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, Guid? DepartmentId, int? pageSize, int? pageIndex)
         {
             try
             {
                 var pagedResult = await _positionService.GetStaffByPositionAsync(DepartmentId, PositionId, pageSize, pageIndex);
-                if (pagedResult == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position name", null, 404));
+                if (pagedResult == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
 
                 if (pagedResult.Items.Count() == 0)
                 {
-                    return BadRequest(ApiResponse<object>.ReturnResult("Cannot find the Position name", null, 400));
+                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult(
+                        "No employees found for this position", pagedResult, 200));
                 }
 
                 return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
