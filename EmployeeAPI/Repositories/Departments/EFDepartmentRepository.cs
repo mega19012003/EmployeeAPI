@@ -15,19 +15,7 @@ namespace EmployeeAPI.Repositories.Departments
         }
         public async Task<IEnumerable<Department>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
         {
-            var results = _context.Departments
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(name))
-            {
-                results = results.Where(f => f.Name.Contains(name));
-            }
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                results = results.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            }
-            return await results.Where(p => !p.isDeleted).ToListAsync();
+            return await _context.Departments.Where(p => p.isDeleted).AsNoTracking().ToListAsync();
         }
 
         public async Task<Department> GetByIdAsync(Guid id)
@@ -74,43 +62,12 @@ namespace EmployeeAPI.Repositories.Departments
         }
         public async Task<IEnumerable<Department>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
         {
-            var query = _context.Departments
-                .AsNoTracking()
-                .Include(s => s.Users)
-                .Where(s => !s.isDeleted);
-
-            if (!string.IsNullOrEmpty(positionName))
-            {
-                query = query.Where(s => s.Name.ToLower().Contains(positionName.ToLower()));
-            }
-
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                query = query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            }
-
-            return await query.ToListAsync();
+            return await _context.Departments.Include(p => p.Users.Where(u => !u.IsDeleted && u.IsActive)).Where(p => !p.isDeleted).ToListAsync();
         }
 
-        public async Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid id, int? pageSize, int? pageIndex)
+        public async Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid? id, int? pageSize, int? pageIndex)
         {
-            var query = _context.Departments
-                .AsNoTracking()
-                .Include(s => s.Positions)
-                .Where(s => !s.isDeleted);
-
-            /*if (!string.IsNullOrEmpty(positionName))
-            {
-                query = query.Where(s => s.Name.ToLower().Contains(positionName.ToLower()));
-            }
-
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                query = query.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            }*/
-
-            //return await query.ToListAsync();
-            return await _context.Departments.AsNoTracking().ToListAsync();
+            return await _context.Departments.Where(p => !p.isDeleted && p.Id == id).Include(p => p.Positions.Where(p => !p.IsDeleted)).AsNoTracking().ToListAsync();
         }
     }
 }

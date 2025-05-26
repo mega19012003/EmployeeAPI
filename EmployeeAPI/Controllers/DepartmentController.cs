@@ -7,9 +7,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
-using static EmployeeAPI.Services.AuthServices.ResponseModel;
-using static EmployeeAPI.Services.PositionServices.ResponseModel;
-using static EmployeeAPI.Services.UserService.ResponseModel;
+using System.Security.Claims;
+using EmployeeAPI.Services.UserService;
+using ResponseModel = EmployeeAPI.Services.DepartmentServices.ResponseModel;
+using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -18,20 +19,21 @@ namespace EmployeeAPI.Controllers
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentService _departmentService;
-        private readonly IAuthRepository _authRepository;
         private readonly ILogger<DepartmentController> _logger;
+        private readonly IUserService _userService;
 
-        public DepartmentController(IDepartmentService departmentService, IAuthRepository authRepository, ILogger<DepartmentController> logger)
+        public DepartmentController(IDepartmentService departmentService, IUserService userService, ILogger<DepartmentController> logger)
         {
             _departmentService = departmentService;
-            _authRepository = authRepository;
+            _userService = userService;
             _logger = logger;
         }
 
         /// <summary>
-        /// Tạo phòng ban, chưa authorize
+        /// Lấy danh sách phòng ban, manager/employee ko dc phép truy cập
         /// </summary>
-        [HttpGet/*, Authorize*/]
+        [Authorize(Roles = "Administrtor")]
+        [HttpGet]
         public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
             /*var result = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
@@ -61,9 +63,10 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Thêm phòng ban, chưa authorize
+        /// Thêm phòng ban, do admin xử lý
         /// </summary>
-        [HttpPost/*, Authorize*/]
+        [Authorize(Roles = "Administrtor")]
+        [HttpPost]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
             try
@@ -94,9 +97,10 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật phòng ban, chưa authorize
+        /// Cập nhật phòng ban,  do admin xử lý
         /// </summary>
-        [HttpPut/*, Authorize*/]
+        [Authorize(Roles = "Administrtor")]
+        [HttpPut]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
             try
@@ -124,9 +128,10 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa phòng ban, chưa authorize
+        /// Xóa phòng ban,  do admin xử lý
         /// </summary>
-        [HttpDelete/*, Authorize*/]
+        [Authorize(Roles = "Administrtor")]
+        [HttpDelete]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
             try
@@ -156,19 +161,46 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách nhân viên theo phòng ban
+        /// lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
         /// </summary>
-        [HttpGet("Employee")/*, Authorize*/]
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpGet("Employee")]
         public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(departmentId, pageSize, pageIndex);
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Unauthorized("Invalid user");
+
+                Guid? id = null;
+
+                if (userRole == "Manager")
+                {
+                    var user = await _userService.GetByIdAsync(userId);
+                    if (user == null)
+                        return Unauthorized("User not found");
+                    id = user.DepartmentId;
+
+                }
+                if (userRole == "Administrator")
+                {
+                    id = departmentId;
+                }
+
+                var pagedResult = await _departmentService.GetStaffByDepartmentAsync(id, pageSize, pageIndex);
                 if (pagedResult == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
 
-                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.UserFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
             }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "An error occurred while retrieving employees by department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Get list staffs failed", argEx.InnerException?.Message ?? argEx.Message, 400));
+            } 
             catch (DbUpdateException dbEx)
             {
                 _logger.LogError(dbEx, "An error occurred while retrieving employees by department");
@@ -182,16 +214,56 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách chức vụ có trong phòng ban
+        /// lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
         /// </summary>
-        [HttpGet("List-Position")/*, Authorize*/]
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpGet("List-Position")]
         public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
         {
-            var pagedResult = await _departmentService.GetListPositionAsync(DepartmentId, pageSize, pageIndex);
-            if (pagedResult == null)
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+            try
+            {
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-            return Ok(ApiResponse<PagedResult<PositionByDepartment>>.ReturnResult("Get list staff by department success", pagedResult, 200));
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Unauthorized("Invalid user");
+
+                Guid? id = null;
+
+                if (userRole == "Manager")
+                {
+                    var user = await _userService.GetByIdAsync(userId);
+                    if (user == null)
+                        return Unauthorized("Position not found");
+                    id = user.DepartmentId;
+
+                }
+                if (userRole == "Administrator")
+                {
+                    id = DepartmentId;
+                }
+
+                var pagedResult = await _departmentService.GetListPositionAsync(id, pageSize, pageIndex);
+                if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+
+                return Ok(ApiResponse<PagedResult<PositionByDepartment>>.ReturnResult("Get list posistion by department success", pagedResult, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "An error occurred while retrieving position by department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Get list position failed", argEx.InnerException?.Message ?? argEx.Message, 400));
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred while retrieving position by department");
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving position by department");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
         }
     }
 }

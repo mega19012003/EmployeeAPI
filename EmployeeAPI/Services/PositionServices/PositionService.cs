@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Base;
+﻿using System.Security.Claims;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Positions;
@@ -14,16 +15,23 @@ namespace EmployeeAPI.Services.PositionServices
     public class PositionService : IPositionService
     {
         private readonly IPositionRepository _positionRepository;
+        private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly IDepartmentRepository _departmentRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<PositionService> _logger;
 
-        public PositionService(IPositionRepository PositionRepository, IDepartmentRepository departmentRepository, AppDbContext context, ILogger<PositionService> logger)
+        public PositionService( IPositionRepository PositionRepository, 
+                                IDepartmentRepository departmentRepository, 
+                                IHttpContextAccessor httpContextAccessor,
+                                AppDbContext context, 
+                                ILogger<PositionService> logger)
         {
             _positionRepository = PositionRepository;
             _departmentRepository = departmentRepository;
             _context = context;
+            _httpContextAccessor = httpContextAccessor;
             _logger = logger;
+
         }
 
         /*public async Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
@@ -45,18 +53,23 @@ namespace EmployeeAPI.Services.PositionServices
             });
         }*/
 
-        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, Guid? departmentId,int? pageIndex, int? pageSize)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _positionRepository.GetQueryable(); // sử dụng repo thay vì context
+                var query = _positionRepository.GetQueryable(); 
 
                 if (!string.IsNullOrEmpty(name))
                 {
                     query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
+                }
+
+                if (departmentId.HasValue)
+                {
+                    query = query.Where(f => f.DepartmentId == departmentId.Value);
                 }
 
                 var totalCount = await query.CountAsync();
@@ -117,14 +130,38 @@ namespace EmployeeAPI.Services.PositionServices
             {
                 if(dto.Name == null)
                     throw new ArgumentException("Position name cannot be null or empty");
-                
+
                 //var department = await _context.Positions.Include(p => p.Department).SingleOrDefaultAsync();
+
+                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
+                var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    throw new UnauthorizedAccessException("Invalid user ID");
+
+                Guid departmentId;
+
+                if (userRole == "Manager")
+                {
+                    var user = await _context.Users.FindAsync(userId);
+                    if (user == null || user.DepartmentId == null)
+                        throw new Exception("Manager does not have department, Please contact admin to add Department");
+
+                    departmentId = user.DepartmentId.Value;
+                }
+                else
+                {
+                    if (dto.DepartmentId == null)
+                        throw new ArgumentException("Admin must input department Id");
+
+                    departmentId = dto.DepartmentId.Value;
+                }
 
                 var model = new Position
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
-                    DepartmentId = dto.DepartmentId,
+                    DepartmentId = departmentId,
                 };
 
                 var entity = await _positionRepository.AddAsync(model);
@@ -218,7 +255,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var allUsers = query
                     .SelectMany(d => d.Users
-                    .Where(s => s.IsActive && !s.IsDeleted));
+                    .Where(s => s.IsActive && !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));
 
                 var totalCount = allUsers.Count();
 
@@ -229,6 +266,7 @@ namespace EmployeeAPI.Services.PositionServices
                     {
                         UserId = st.UserId,
                         Name = st.Fullname,
+                        Position = st.Position.Name,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
                     })

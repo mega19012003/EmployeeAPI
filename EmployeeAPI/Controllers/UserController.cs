@@ -30,15 +30,15 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật thông tin người dùng, sẽ do admin chỉnh sửa hết thông tin
         /// </summary>
-        [Authorize(Roles = "Administrator")]
+        //[Authorize(Roles = "Administrator")]
         [HttpPut("AdminUpdateUser")/*, Authorize*/]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> AdminUpdateStaffAsync([FromForm] ResponseModel.AdminUpdateDto dto)
         {
             try
             {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+               /* var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
                 var result = await _userService.AdminUpdateStaffAsync(dto);
 
                 return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
@@ -213,7 +213,5 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(500, new { Message = "Internal server error", Detail = ex.ToString() });
             }
         }
-
-
     }
 }

@@ -36,35 +36,48 @@ namespace EmployeeAPI.Services.UserService
                 string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
                 var existingUser = await _repository.GetByIdAsync(dto.UserId);
-                if (existingUser == null) throw new ArgumentException("Cannot find User id");
+                if (existingUser == null) throw new ArgumentException("User không tồn tại");
 
-                var imagePaths = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+                if (dto.ImageUrl != null)
+                {
+                    existingUser.ImageUrl = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+                }
 
-                var department = await _context.Departments
-                  .Include(d => d.Positions)
-                  .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId);
-
-                if (department == null)
-                    throw new ArgumentException("Department not found");
-
-                bool isPositionInDepartment = department.Positions.Any(p => p.Id == dto.PositionId);
-
-                if (!isPositionInDepartment)
-                    throw new ArgumentException("Position does not belong to the specified Department");
-
-                existingUser.Fullname = dto.Fullname;
-                existingUser.Address = dto.Address;
-                existingUser.PhoneNumber = dto.PhoneNumber;
-                //existingUser.DateOfBirth = dto.DateOfBirth;
-                existingUser.DepartmentId = dto.DepartmentId;
-                existingUser.PositionId = dto.PositionId;
-                existingUser.BasicSalary = dto.BasicSalary;
-                existingUser.ImageUrl = imagePaths;
+                if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
+                if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
+                if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
+                if (dto.BasicSalary != default) existingUser.BasicSalary = (double)dto.BasicSalary;
                 existingUser.IsActive = dto.IsActive;
 
-                await _repository.UpdateAsync(existingUser);
+                if (dto.DepartmentId.HasValue)
+                {
+                    existingUser.DepartmentId = dto.DepartmentId;
 
+                    if (dto.PositionId.HasValue)
+                    {
+                        var department = await _context.Departments
+                            .Include(d => d.Positions)
+                            .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId.Value);
+
+                        if (department == null)
+                            throw new ArgumentException("Department does not existed");
+
+                        bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+                        if (!isValidPosition)
+                            throw new ArgumentException("Position does not existed in department");
+                    }
+                }
+                if (dto.PositionId.HasValue)
+                {
+                    existingUser.PositionId = dto.PositionId;
+                }
+
+                await _repository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
+
+                // Load lại navigation properties để lấy tên Department và Position
+                await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
+                await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
 
                 await transaction.CommitAsync();
 
@@ -75,22 +88,82 @@ namespace EmployeeAPI.Services.UserService
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
                     PhoneNumber = existingUser.PhoneNumber,
-                    //DateOfBirth = existingUser.DateOfBirth,
                     BasicSalary = existingUser.BasicSalary,
-                    DepartmentName = existingUser.Department.Name,
-                    PositionName = existingUser.Position.Name,
+                    DepartmentName = existingUser.Department?.Name,
+                    PositionName = existingUser.Position?.Name,
                     ImageUrl = existingUser.ImageUrl,
                 };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while updating User. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Lỗi khi cập nhật nhân viên. Message: {Message}", ex.Message);
                 throw;
             }
         }
 
         public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
+
+                var existingUser = await _repository.GetByIdAsync(dto.UserId);
+                if (existingUser == null) throw new ArgumentException("User không tồn tại");
+
+                var manager = await _repository.GetByIdAsync(managerId);
+                if (manager == null || manager.DepartmentId == null)
+                    throw new ArgumentException("Manager không có phòng ban. Vui lòng liên hệ admin để thêm phòng ban.");
+
+                if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
+                if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
+                if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
+                if (dto.PositionId.HasValue) existingUser.PositionId = dto.PositionId.Value;
+                //if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
+                //if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
+
+                if (dto.ImageUrl != null)
+                {
+                    existingUser.ImageUrl = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+                }
+
+                // Gán department từ manager
+                existingUser.DepartmentId = manager.DepartmentId;
+
+                // Lưu thay đổi
+                await _repository.UpdateAsync(existingUser);
+                await _context.SaveChangesAsync();
+
+                // Load lại navigation properties để lấy tên phòng ban và chức vụ
+                await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
+                await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
+
+                await transaction.CommitAsync();
+
+                return new UserDto
+                {
+                    userId = existingUser.UserId,
+                    Fullname = existingUser.Fullname,
+                    RoleName = existingUser.Role.ToString(),
+                    Address = existingUser.Address,
+                    PhoneNumber = existingUser.PhoneNumber,
+                    BasicSalary = existingUser.BasicSalary,
+                    DepartmentName = existingUser.Department?.Name,
+                    PositionName = existingUser.Position?.Name,
+                    ImageUrl = existingUser.ImageUrl,
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Lỗi khi cập nhật nhân viên. Message: {Message}", ex.Message);
+                throw;
+            }
+        }
+
+
+        /*public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -115,11 +188,11 @@ namespace EmployeeAPI.Services.UserService
                 if (dto.PositionId.HasValue)
                     existingUser.PositionId = dto.PositionId;
 
-                /*if (dto.BasicSalary.HasValue)
-                    existingUser.BasicSalary = dto.BasicSalary.Value;/
+                //if (dto.BasicSalary.HasValue)
+                //    existingUser.BasicSalary = dto.BasicSalary.Value;
 
-                /*if (dto.IsActive.HasValue)
-                    existingUser.IsActive = dto.IsActive.Value;*/
+                //if (dto.IsActive.HasValue)
+                //    existingUser.IsActive = dto.IsActive.Value;
 
 
                 if (dto.ImageUrl != null)
@@ -129,7 +202,7 @@ namespace EmployeeAPI.Services.UserService
 
                 var manager = await _repository.GetByIdAsync(managerId);
                 if (manager == null || manager.DepartmentId == null)
-                    throw new ArgumentException("Manager chưa có phòng ban, không thể update");
+                    throw new ArgumentException("Manager does not have department, please contect admin to add department");
 
 
                 existingUser.Fullname = dto.Fullname;
@@ -144,8 +217,8 @@ namespace EmployeeAPI.Services.UserService
                 // Gán DepartmentId ngầm từ Manager
                 existingUser.DepartmentId = manager.DepartmentId;
 
-                /*// Gán role ngầm là Staff (manager không được cấp role khác)
-                existingUser.Role = RoleType.Employee;*/
+                //// Gán role ngầm là Staff (manager không được cấp role khác)
+                //existingUser.Role = RoleType.Employee;
            
                 await _repository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
@@ -174,7 +247,7 @@ namespace EmployeeAPI.Services.UserService
                 _logger.LogError(ex, "Error occurred while updating User. Message: {Message}", ex.Message);
                 throw;
             }
-        }
+        }*/
 
         public async Task<string> SoftDeleteAsync(Guid Id)
         {

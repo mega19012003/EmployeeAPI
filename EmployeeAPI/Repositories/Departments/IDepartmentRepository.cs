@@ -11,6 +11,6 @@ namespace EmployeeAPI.Repositories.Departments
         Task SoftDeleteAsync(Guid id);
         Task<IEnumerable<Department>> GetDepartmentByName(string name);
         Task<IEnumerable<Department>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex);
-        Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid id, int? pageSize, int? pageIndex);
+        Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid? id, int? pageSize, int? pageIndex);
     }
 }

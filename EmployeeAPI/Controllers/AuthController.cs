@@ -33,7 +33,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Đăng ký người dùng, sẽ do admin/manager tạo
+        /// Đăng ký người dùng, sẽ do admin/manager tạo, Manger chỉ dc phep tạo user với role là employee
         /// </summary>
         /// <remarks>         
         /// RoleType enum values:
@@ -81,9 +81,19 @@ namespace EmployeeAPI.Controllers
         ///  "username": "Admin123",
         ///  "password": "anno123"
         ///}
-        /// - Tk manager
+        /// - Tk manager Thu ngân
         ///{
         ///  "username": "Manager123",
+        ///  "password": "anno123"
+        ///}
+        /// - Tk manager It
+        ///{
+        ///  "username": "Manager456",
+        ///  "password": "anno123"
+        ///}
+        /// - Tk manager sửa chữa
+        ///{
+        ///  "username": "Manager789",
         ///  "password": "anno123"
         ///}
         /// - Tk employee
@@ -240,6 +250,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy thông tin user đang đăng nhập
         /// </summary>
+        [Authorize]
         [HttpGet("current")/*, Authorize*/]
         public IActionResult GetCurrentUser()
         {

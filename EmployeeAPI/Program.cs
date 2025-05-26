@@ -45,6 +45,8 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
+builder.Services.AddHttpContextAccessor();
+
 //builder.Services.AddScoped<IStaffRepository, EFStaffRepository>();
 builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
@@ -53,6 +55,7 @@ builder.Services.AddScoped<IAuthRepository, EFAuthRepository>();
 builder.Services.AddScoped<ICheckinRepository, EFCheckinRepository>();
 builder.Services.AddScoped<IPayrollRepository, EFPayrollRepository>();
 builder.Services.AddScoped<IUserRepository, EFUserRepository>();
+
 
 //builder.Services.AddScoped<IStaffService, StafffService>();
 builder.Services.AddScoped<IFileService, FileService>();

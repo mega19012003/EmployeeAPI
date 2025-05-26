@@ -7,9 +7,12 @@ using EmployeeAPI.Base;
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http.HttpResults;
-using static EmployeeAPI.Services.AuthServices.ResponseModel;
 using EmployeeAPI.Models;
 using static EmployeeAPI.Services.UserService.ResponseModel;
+using System.Security.Claims;
+using EmployeeAPI.Services.UserService;
+using ResponseModel = EmployeeAPI.Services.PositionServices.ResponseModel;
+using static EmployeeAPI.Services.PositionServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -19,15 +22,17 @@ namespace EmployeeAPI.Controllers
     {
         private readonly IPositionService _positionService;
         private readonly ILogger<PositionController> _logger;
+        private readonly IUserService _userService;
 
-        public PositionController(IPositionService positionService, ILogger<PositionController> logger)
+        public PositionController(IPositionService positionService, IUserService userService, ILogger<PositionController> logger)
         {
             _positionService = positionService;
+            _userService = userService;
             _logger = logger;
         }
 
         /// <summary>
-        /// Lấy danh sách chức vụ, chưa authorize
+        /// Lấy danh sách chức vụ, manager lấy danh sách theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet/*, Authorize*/]
@@ -35,7 +40,24 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var result = await _positionService.GetAllAsync(name, pageIndex, pageSize);
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Unauthorized("Invalid user");
+
+                Guid? departmentId = null;
+
+                if (userRole == "Manager")
+                {
+                    var user = await _userService.GetByIdAsync(userId);
+                    if (user == null)
+                        return Unauthorized("User not found");
+                    departmentId = user.DepartmentId;
+
+                }
+
+                var result = await _positionService.GetAllAsync(name, departmentId, pageIndex, pageSize);
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
             }
@@ -56,7 +78,7 @@ namespace EmployeeAPI.Controllers
         }*/
 
         /// <summary>
-        /// Thêm chức vụ trong phỏng ban, chưa authorize
+        /// Thêm chức vụ trong phỏng ban, manager ko cần thiết nhập department id
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost/*, Authorize*/]
@@ -121,8 +143,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa mềm chức vụ trong phòng ban, chưa authorize
+        /// Xóa mềm chức vụ trong phòng ban
         /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete/*, Authorize*/]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
@@ -150,22 +173,37 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách nhân viên theo chức vụ, lọc theo chức vụ của phòng ban (optional), chưa authorize
+        /// lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("Employee")/*, Authorize*/]
-        public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, Guid? DepartmentId, int? pageSize, int? pageIndex)
+        [HttpGet("Employee")]
+        public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _positionService.GetStaffByPositionAsync(DepartmentId, PositionId, pageSize, pageIndex);
-                if (pagedResult == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
-                if (pagedResult.Items.Count() == 0)
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Unauthorized("Invalid user");
+
+                Guid? departmentId = null;
+
+                if (userRole == "Manager")
                 {
-                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult(
-                        "No employees found for this position", pagedResult, 200));
+                    var user = await _userService.GetByIdAsync(userId);
+                    if (user == null)
+                        return Unauthorized("User not found");
+
+                    departmentId = user.DepartmentId;
                 }
+
+                var pagedResult = await _positionService.GetStaffByPositionAsync(departmentId, PositionId, pageSize, pageIndex);
+                if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
+
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No employees found for this position", pagedResult, 200));
 
                 return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
             }
@@ -175,5 +213,6 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Position name", StatusCode = 500 });
             }
         }
+
     }
 }

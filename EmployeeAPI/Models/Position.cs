@@ -10,6 +10,6 @@ namespace EmployeeAPI.Models
         [JsonIgnore]
         public ICollection<User> Users { get; set; } = new List<User>();
         public Department Department { get; set; }
-        public Guid DepartmentId { get; set; }
+        public Guid? DepartmentId { get; set; }
     }
 }

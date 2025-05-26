@@ -1,4 +1,6 @@
-﻿namespace EmployeeAPI.Services.PositionServices
+﻿using static EmployeeAPI.Services.UserService.ResponseModel;
+
+namespace EmployeeAPI.Services.PositionServices
 {
     public class ResponseModel
     {
@@ -12,7 +14,7 @@
         public class CreatePosition
         {
             //public Guid PositionId { get; set; }
-            public Guid DepartmentId { get; set; }
+            public Guid? DepartmentId { get; set; }
             public string Name { get; set; }
         }
         public class UpdatePosition
@@ -26,10 +28,13 @@
             public bool IsDeleted { get; set; }
         }
 
-        public class PositionByDepartment
+        public class UserFilter
         {
-            public Guid PositionId { get; set; }
+            public Guid UserId { get; set; }
             public string Name { get; set; }
+            public string Position {  get; set; }
+            public double BasicSalary { get; set; }
+            public string ImageUrl { get; set; }
         }
     }
 }

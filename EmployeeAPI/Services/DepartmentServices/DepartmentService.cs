@@ -1,27 +1,26 @@
-﻿using EmployeeAPI.Base;
+﻿using System.Security.Claims;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Departments;
+using EmployeeAPI.Services.UserService;
 using Microsoft.EntityFrameworkCore;
-using static EmployeeAPI.Services.AuthServices.ResponseModel;
+
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
-using static EmployeeAPI.Services.PositionServices.ResponseModel;
-using static EmployeeAPI.Services.UserService.ResponseModel;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
+
 
 namespace EmployeeAPI.Services.DepartmentServices
 {
     public class DepartmentService : IDepartmentService
     {
         private readonly IDepartmentRepository _repository;
-        private readonly IAuthRepository _authRepository;
+        //private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppDbContext _context;
         private readonly ILogger<DepartmentService> _logger;
 
-        public DepartmentService(IDepartmentRepository repository, IAuthRepository authRepository, AppDbContext context, ILogger<DepartmentService> logger)
+        public DepartmentService(IDepartmentRepository repository, AppDbContext context, ILogger<DepartmentService> logger)
         {
             _repository = repository;
-            _authRepository = authRepository;
             _context = context;
             _logger = logger;
         }
@@ -31,6 +30,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
+
                 var query = _context.Departments
                     .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
                     .Where(p => !p.isDeleted);
@@ -175,20 +175,44 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(Guid departmentId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(Guid? departmentId, int? pageSize, int? pageIndex)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
+                var result = await _repository.GetByIdAsync(departmentId.Value);
+                if (result == null)
+                {
+                    throw new ArgumentException("Cannot find department id");
+                }
+                /*var currentUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var role = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Role).Value;
 
+                var currentUser = await _context.Users.FindAsync(Guid.Parse(currentUserId));
+
+                if (role == "Manager")
+                {
+                    if (departmentId.HasValue && departmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Mananager cannot use other departmentId");
+
+                    departmentId = currentUser.DepartmentId;
+                }
+
+                else if (role == "Admin")
+                {
+                    if (!departmentId.HasValue)
+                        throw new ArgumentException("Admi must input departmentId");
+                }
+                */
                 var query = _context.Departments
                     .Include(d => d.Users)
                     .Where(d => !d.isDeleted && d.Id == departmentId);
+                
 
                 var allStaffs = query
                     .SelectMany(d => d.Users
-                        .Where(s => s.IsActive && !s.IsDeleted));
+                    .Where(s => s.IsActive && !s.IsDeleted));
 
                 var totalCount = await allStaffs.CountAsync();
 
@@ -201,6 +225,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                         Name = st.Fullname,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
+                        Department = st.Department.Name
                     })
                     .ToListAsync();
 
@@ -219,30 +244,32 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<PagedResult<PositionByDepartment>> GetListPositionAsync(Guid departmentId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<PositionByDepartment>> GetListPositionAsync(Guid? departmentId, int? pageSize, int? pageIndex)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            var query = _context.Departments
-                .Include(d => d.Positions)
-                .Where(d => !d.isDeleted);
+            var result = await _repository.GetByIdAsync(departmentId.Value);
+            if (result == null)
+            {
+                throw new ArgumentException("Cannot find department id");
+            }
 
-            var listPosition = query
-                .SelectMany(d => d.Positions
-                .Where(s => s.DepartmentId == departmentId && !s.IsDeleted));
+            var query = await _repository.GetPositionsByDepartmentAsync(departmentId, pageSize, pageIndex);
+            var lstPosition = query.SelectMany(d => d.Positions).ToList();
 
-            var totalCount = await listPosition.CountAsync();
+            var totalCount = query.Count();
 
-            var items = await listPosition
+            var items = lstPosition
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
-                .Select(st => new PositionByDepartment
+                .Select(p => new PositionByDepartment
                 {
-                    Name = st.Name,
-                    PositionId = st.Id,
+                    PositionId = p.Id,
+                    PositionName = p.Name,
+                    DepartmentName = p.Department.Name,
                 })
-                .ToListAsync();
+                .ToList();
 
             return new PagedResult<PositionByDepartment>
             {
@@ -251,7 +278,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 PageSize = pageSize.Value,
                 Items = items
             };
-
         }
+
     }
 }
