@@ -15,20 +15,7 @@ namespace EmployeeAPI.Repositories.Payrolls
 
         public async Task<IEnumerable<Payroll>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            var result = _context.Payrolls
-                .AsNoTracking()
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(name))
-            {
-                result = result.Where(p => p.Users.Fullname.Contains(name));
-            }
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                result = result.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            }
-
-            return await result.Include(p => p.Users).Where(p => p.Users.IsDeleted == false && p.IsDeleted == false).ToListAsync(); 
+            return await _context.Payrolls.Include(p => p.Users).Where(p => p.Users.IsDeleted == false && p.IsDeleted == false).AsNoTracking().ToListAsync(); 
         }
 
         public async Task<Payroll> GetPayrollById(Guid id)
@@ -36,20 +23,14 @@ namespace EmployeeAPI.Repositories.Payrolls
             return await _context.Payrolls
                 .AsNoTracking()
                 .Include(p => p.Users)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
-        /*public async Task CreatePayroll(Payroll payroll)
-        {
-            var result = _context.Payrolls.Add(payroll);
-            await _context.SaveChangesAsync();
-        }*/
-
-        public async Task UpdatePayroll(Payroll payroll)
-        {
-            _context.Payrolls.Update(payroll);
-            await _context.SaveChangesAsync();
-        }
+        //public async Task UpdatePayroll(Payroll payroll)
+        //{
+        //    _context.Payrolls.Update(payroll);
+        //    await _context.SaveChangesAsync();
+        //}
 
         public async Task<Payroll> SoftDeletePayroll(Guid id)
         {
@@ -76,6 +57,7 @@ namespace EmployeeAPI.Repositories.Payrolls
         /// ////////////////////////////////////////////////
         /// </summary>
 
+
         public async Task<bool> ExistsPayrollForMonth(Guid UserId, int month, int year)
         {
             return await _context.Payrolls.AnyAsync(p => p.UserId == UserId &&
@@ -84,68 +66,56 @@ namespace EmployeeAPI.Repositories.Payrolls
                                                          !p.IsDeleted);
         }
 
-        public async Task<int> CountValidCheckins(Guid UserId, int month, int year)
+        private async Task<int> CountCheckinsByStatus(Guid userId, CheckinStatus status, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.OnTime &&
+            return await _context.Checkins.CountAsync(c => c.UserId == userId &&
+                                                           c.Status == status &&
                                                            c.CheckinDate.Month == month &&
                                                            c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
+                                                           !c.IsDeleted);
         }
 
-        public async Task<int> CountLateCheckins(Guid UserId, int month, int year)
+        public Task<int> CountValidCheckins(Guid userId, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.Late &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
+            return CountCheckinsByStatus(userId, CheckinStatus.OnTime, month, year);
         }
 
-        public async Task<int> CountAbsentCheckins(Guid UserId, int month, int year)
+        public Task<int> CountLateCheckins(Guid userId, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.Absent &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
+            return CountCheckinsByStatus(userId, CheckinStatus.Late, month, year);
         }
 
-        public async Task<int> CountAbsentPermissionCheckins(Guid UserId, int month, int year)
+        public Task<int> CountAbsentCheckins(Guid userId, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.LeaveWithPermission &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
+            return CountCheckinsByStatus(userId, CheckinStatus.Absent, month, year);
         }
 
-        /*public async Task<int> CountLeaveEarlyCheckins(Guid UserId, int month, int year)
+        public Task<int> CountAbsentPermissionCheckins(Guid UserId, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.LeaveEarly &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
-        }*/
-
-        public async Task<int> CountOvertimeCheckins(Guid UserId, int month, int year)
-        {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.Overtime &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
+            return CountCheckinsByStatus(UserId, CheckinStatus.LeaveWithPermission, month, year);
         }
 
-        /*public async Task<int> CountOnHolidayPermissionCheckins(Guid UserId, int month, int year)
+        public Task<int> CountOvertimeCheckins(Guid UserId, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.Status == CheckinStatus.OnHoliday &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           c.IsDeleted == false);
-        }*/
+            return CountCheckinsByStatus(UserId, CheckinStatus.Overtime, month, year);
+        }
+
+        public Task<int> CountothersCheckins(Guid UserId, int month, int year)
+        {
+            return CountCheckinsByStatus(UserId, CheckinStatus.Overtime, month, year);
+        }
+
+
+
+
+        //public async Task<int> CountValidCheckins(Guid UserId, int month, int year)
+        //{
+        //    return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
+        //                                                   c.Status == CheckinStatus.OnTime &&
+        //                                                   c.CheckinDate.Month == month &&
+        //                                                   c.CheckinDate.Year == year &&
+        //                                                   c.IsDeleted == false);
+        //}
 
         public async Task<User> GetUserWithSalary(Guid UserId)
         {

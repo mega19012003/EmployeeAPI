@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.PayrollServices
             public DateTime CheckoutDate { get; set; } //ngày trả lương
             public string Note { get; set; }
             public DateTime CreatedDate { get; set; }
-            public bool isPaid { get; set; }
+            //public bool isPaid { get; set; }
             public int DaysWorked { get; set; } //ngày công
         }
     }

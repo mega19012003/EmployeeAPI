@@ -3,11 +3,13 @@ using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Payrolls;
+using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 using static EmployeeAPI.Services.PayrollServices.ResponseModel;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.PayrollServices
 {
@@ -15,27 +17,54 @@ namespace EmployeeAPI.Services.PayrollServices
     {
         private readonly IPayrollRepository _payrollRepository;
         private readonly ICheckinRepository _checkinRepository;
+        private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
-        public PayrollService(IPayrollRepository payrollRepository, ICheckinRepository checkinRepository, AppDbContext context)
+        public PayrollService(IPayrollRepository payrollRepository, IUserRepository userRepository, ICheckinRepository checkinRepository, AppDbContext context)
         {
             _payrollRepository = payrollRepository;
+            _userRepository = userRepository;
             _checkinRepository = checkinRepository;
             _context = context;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
             var query = _context.Payrolls
-                .Include(c => c.Users)
-                .Where(f => string.IsNullOrEmpty(name) || f.Users.Fullname.ToLower().Contains(name.ToLower()))
+                .Include(p => p.Users)
                 .Where(p => !p.IsDeleted);
+
+            if (!currentUserRoles.Contains("Administrator"))
+            {
+       
+            }
+            else if (currentUserRoles.Contains("Manager"))
+            {
+                var manager = await _context.Users.FindAsync(currentUserId);
+                if (manager == null)
+                    throw new ArgumentException("Manager not found");
+
+                var departmentId = manager.DepartmentId;
+
+                query = query.Where(p => p.Users.DepartmentId == departmentId);
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Access Denied");
+            }
+
+            if (!string.IsNullOrEmpty(name))
+            {
+                var nameLower = name.ToLower();
+                query = query.Where(p => p.Users.Fullname.ToLower().Contains(nameLower));
+            }
 
             var totalCount = await query.CountAsync();
 
             var items = await query
+                .OrderByDescending(p => p.CreatedDate)
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
                 .Select(c => new ResponseModel.PayrollDto
@@ -59,22 +88,23 @@ namespace EmployeeAPI.Services.PayrollServices
             };
         }
 
-        public async Task<ResponseModel.PayrollDto> GetPayrollById(Guid id)
-        {
-            var result = await _payrollRepository.GetPayrollById(id);
-            if (result == null)
-            {
-                return null;
-            }
-            return new PayrollDto
-            {
-                Id = result.Id,
-                UserId = result.UserId,
-                CreatedDate = result.CreatedDate,
-                Note = result.Note,
-            };
 
-        }
+        //public async Task<ResponseModel.PayrollDto> GetPayrollById(Guid id)
+        //{
+        //    var result = await _payrollRepository.GetPayrollById(id);
+        //    if (result == null)
+        //    {
+        //        return null;
+        //    }
+        //    return new PayrollDto
+        //    {
+        //        Id = result.Id,
+        //        UserId = result.UserId,
+        //        CreatedDate = result.CreatedDate,
+        //        Note = result.Note,
+        //    };
+
+        //}
 
         /*public async Task<ResponseModel.PayrollDto> UpdatePayroll(ResponseModel.UpdatePayroll dto)
         {
@@ -97,8 +127,34 @@ namespace EmployeeAPI.Services.PayrollServices
             };
         }*/
 
-        public async Task<string> SoftDeletePayroll(Guid id)
+        public async Task<string> SoftDeletePayroll(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
+            var existing = await _payrollRepository.GetPayrollById(id);
+            if (existing == null)
+                throw new ArgumentException("Cannot find checkin id");
+
+            var employee = await _userRepository.GetByIdAsync(existing.UserId);
+            if (employee == null)
+                throw new ArgumentException("Cannot find employee for this checkin");
+
+            var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+            if (currentUser == null)
+                throw new ArgumentException("Cannot find current user");
+
+            if (currentUserRoles.Contains("Administrator"))
+            {
+
+            }
+            else if (currentUserRoles.Contains("Manager"))
+            {
+                if (currentUser.DepartmentId != employee.DepartmentId)
+                    throw new UnauthorizedAccessException("Manager cannot delete payroll of an employeee from other department");
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Access denied");
+            }
+
             var result = await _payrollRepository.SoftDeletePayroll(id);
             if (result == null) return null;
             /*result.IsDeleted = true;
@@ -106,18 +162,52 @@ namespace EmployeeAPI.Services.PayrollServices
             return "Đã xóa payroll " + id;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(Guid UserId, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(
+    Guid staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
+            // Lấy user (employee) muốn xem payroll
+            var employee = await _userRepository.GetByIdAsync(staffId);
+            if (employee == null)
+                throw new ArgumentException("Cannot find employee");
+
+            // Lấy người đang thực hiện yêu cầu (current user)
+            var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+            if (currentUser == null)
+                throw new ArgumentException("Cannot find current user");
+
+            // Kiểm tra phân quyền
+            if (currentUserRoles.Contains("Administrator"))
+            {
+                // OK - có quyền xem mọi payroll
+            }
+            else if (currentUserRoles.Contains("Manager"))
+            {
+                if (currentUser.DepartmentId != employee.DepartmentId)
+                    throw new UnauthorizedAccessException("Manager cannot access payroll of employee from other department");
+            }
+            else if (currentUserRoles.Contains("Employee"))
+            {
+                if (currentUserId != staffId)
+                    throw new UnauthorizedAccessException("Employee can only view their own payroll");
+                staffId = currentUserId; // Chỉ lấy payroll của chính mình nếu là employee
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("Access denied");
+            }
+
+            // Truy vấn tất cả payroll của employee (theo staffId)
             var query = _context.Payrolls
-                .Include(c => c.Users)
-                .Where(p => !p.IsDeleted);
+                .Where(p => p.UserId == staffId && !p.IsDeleted)
+                .Include(p => p.Users); // Nếu cần lấy tên người dùng
 
             var totalCount = await query.CountAsync();
 
             var items = await query
+                .OrderByDescending(p => p.CreatedDate)
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
                 .Select(c => new ResponseModel.PayrollDto
@@ -129,7 +219,8 @@ namespace EmployeeAPI.Services.PayrollServices
                     CreatedDate = c.CreatedDate,
                     Note = c.Note,
                     IsDeleted = c.IsDeleted,
-                }).ToListAsync();
+                })
+                .ToListAsync();
 
             return new PagedResult<ResponseModel.PayrollDto>
             {
@@ -140,11 +231,75 @@ namespace EmployeeAPI.Services.PayrollServices
             };
         }
 
+
+        //public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(Guid UserId, int? pageIndex, int? pageSize)
+        //{
+        //    pageIndex ??= 1;
+        //    pageSize ??= 10;
+
+        //    var query = _context.Payrolls
+        //        .Include(c => c.Users)
+        //        .Where(p => !p.IsDeleted);
+
+        //    var totalCount = await query.CountAsync();
+
+        //    var items = await query
+        //        .Skip((pageIndex.Value - 1) * pageSize.Value)
+        //        .Take(pageSize.Value)
+        //        .Select(c => new ResponseModel.PayrollDto
+        //        {
+        //            Id = c.Id,
+        //            UserId = c.UserId,
+        //            Name = c.Users.Fullname,
+        //            Salary = c.Salary,
+        //            CreatedDate = c.CreatedDate,
+        //            Note = c.Note,
+        //            IsDeleted = c.IsDeleted,
+        //        }).ToListAsync();
+
+        //    return new PagedResult<ResponseModel.PayrollDto>
+        //    {
+        //        Items = items,
+        //        PageIndex = pageIndex.Value,
+        //        PageSize = pageSize.Value,
+        //        TotalCount = totalCount
+        //    };
+        //}
+
         ////////////////////////////////////////////////////////
         ////////////////////////////////////////////////////////
-        
-        public async Task<PaidPayroll> CalculatePayrollAsync(Guid UserId)
+
+
+        public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
+            // Lấy thông tin người dùng cần chấm công
+            var staff = await _context.Users
+                .Include(u => u.Department)
+                .FirstOrDefaultAsync(u => u.UserId == staffId);
+
+            if (staff == null)
+                throw new Exception("Cannot find staff id");
+
+            // Nếu là Manager thì chỉ được chấm công cho nhân viên trong phòng ban của mình
+            if (currentUserRoles.Contains("Manager"))
+            {
+                var currentUser = await _context.Users
+                    .Include(u => u.Department)
+                    .FirstOrDefaultAsync(u => u.UserId == currentUserId);
+
+                if (currentUser == null)
+                    throw new Exception("Cannot find current user");
+
+                if (staff.DepartmentId != currentUser.DepartmentId)
+                    throw new UnauthorizedAccessException("You can only calculate payrolls for employees in your department");
+            }
+
+            // Check nếu đã tồn tại bảng lương tháng này
+            int month = DateTime.Now.Month;
+            int year = DateTime.Now.Year;
+
+            if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
+                throw new InvalidOperationException("Payroll for this month already exists");
 
             var configs = await _context.CheckinStatusConfigs.ToListAsync();
 
@@ -153,54 +308,31 @@ namespace EmployeeAPI.Services.PayrollServices
                 return configs.First(c => c.Id == (int)status).SalaryMultiplier;
             }
 
-            int month = DateTime.Now.Month;
-            int year = DateTime.Now.Year;
-            if (await _payrollRepository.ExistsPayrollForMonth(UserId, month, year))
-                throw new InvalidOperationException("Payroll for this month already existed");
+            var validCheckins = await _payrollRepository.CountValidCheckins(staffId, month, year);
+            var lateCheckins = await _payrollRepository.CountLateCheckins(staffId, month, year);
+            var absentCheckins = await _payrollRepository.CountAbsentCheckins(staffId, month, year);
+            var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(staffId, month, year);
+            var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(staffId, month, year);
 
-            var User = await _payrollRepository.GetUserWithSalary(UserId);
-            if (User == null) throw new Exception("Cannot find User id");
+            var basic = staff.BasicSalary;
 
-            var validCheckins = await _payrollRepository.CountValidCheckins(UserId, month, year);
-            var lateCheckins = await _payrollRepository.CountLateCheckins(UserId, month, year);
-            var absentCheckins = await _payrollRepository.CountAbsentCheckins(UserId, month, year);
-            var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(UserId, month, year);
-            //var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(UserId, month, year);
-            var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(UserId, month, year);
-            //var onHolidayPermissionCheckins = await _payrollRepository.CountOnHolidayPermissionCheckins(UserId, month, year);
-
-            var basic = User.BasicSalary;
-            /*var bonus30 = basic * 1.3;
-            var bonus50 = basic * 1.5;
-            var penalty10 = basic * 0.9;
-            var penalty30 = basic * 0.7;
-            var penalty50 = basic * 0.5;
-
-            var totalSalary = basic * validCheckins 
-                                + (bonus30 * overtimeCheckins)
-                                //+ (bonus50 * onHolidayPermissionCheckins)
-                                + (penalty30 * lateCheckins)
-                                + (penalty30 * leaveEarlyCheckins)
-                                + (penalty10 * absentPermissionCheckins)
-                                + (penalty50 * absentCheckins);*/
             double totalSalary =
                 validCheckins * basic * GetMultiplier(CheckinStatus.OnTime) +
                 lateCheckins * basic * GetMultiplier(CheckinStatus.Late) +
                 absentCheckins * basic * GetMultiplier(CheckinStatus.Absent) +
                 absentPermissionCheckins * basic * GetMultiplier(CheckinStatus.LeaveWithPermission) +
-                //leaveEarlyCheckins * basic * GetMultiplier(CheckinStatus.LeaveEarly) +
                 overtimeCheckins * basic * GetMultiplier(CheckinStatus.Overtime);
 
-            var totalDayWorked = await _payrollRepository.CountDayWorked(UserId, month, year);
+            var totalDayWorked = await _payrollRepository.CountDayWorked(staffId, month, year);
 
             var payroll = new Payroll
             {
                 Id = Guid.NewGuid(),
-                UserId = UserId,
+                UserId = staffId,
                 Salary = totalSalary,
                 DaysWorked = totalDayWorked,
                 CreatedDate = DateTime.Now,
-                Note = $"Lương tháng {month}/{year}",
+                Note = $"Lương tháng {month}/{year}"
             };
 
             await _payrollRepository.CreatePayrollAsync(payroll);
@@ -208,7 +340,7 @@ namespace EmployeeAPI.Services.PayrollServices
             return new PaidPayroll
             {
                 Id = payroll.Id,
-                UserId = UserId,
+                UserId = staffId,
                 DaysWorked = totalDayWorked,
                 Salary = totalSalary,
                 CreatedDate = payroll.CreatedDate,

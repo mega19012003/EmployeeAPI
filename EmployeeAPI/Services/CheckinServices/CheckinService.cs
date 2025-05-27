@@ -31,7 +31,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _context = context;
             _logger = logger;
         }
-        //
+        
         public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize)
         {
             try
@@ -219,7 +219,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 else
                 {
                     // Người dùng khác không có quyền update checkin
-                    throw new UnauthorizedAccessException("Bạn không có quyền cập nhật checkin");
+                    throw new UnauthorizedAccessException("Access denied");
                 }
 
                 existing.Status = dto.CheckinStatus;
