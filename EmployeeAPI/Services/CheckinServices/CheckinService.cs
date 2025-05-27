@@ -351,51 +351,5 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
-
-        //public async Task<PagedResult<ResponseModel.CheckinDto>> GetCheckinByUserAsync(Guid userId, int? pageIndex, int? pageSize )
-        //{
-        //    try
-        //    {
-        //        pageIndex ??= 1;
-        //        pageSize ??= 10;
-
-        //        var checkin = await _userRepository.GetByIdAsync(userId);
-        //        if (checkin == null)
-        //            throw new ArgumentException("Cannot find Users id");
-
-        //        var query = _context.Checkins
-        //            //.Include(c => c.Users)
-        //            .Where(p => !p.IsDeleted && p.UserId == userId);
-
-        //        var totalCount = await query.CountAsync();
-
-        //        var items = await query
-        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
-        //            .Take(pageSize.Value)
-        //            .Select(c => new ResponseModel.CheckinDto
-        //            {
-        //                CheckinId = c.Id,
-        //                CheckinDate = c.CheckinDate,
-        //                CheckinStatus = c.Status,
-        //                Status = c.Status.ToString(),
-        //                userId = c.UserId,
-        //                Name = c.Users.Fullname,
-        //            }).ToListAsync();
-
-        //        return new PagedResult<ResponseModel.CheckinDto>
-        //        {
-        //            Items = items,
-        //            PageIndex = pageIndex.Value,
-        //            PageSize = pageSize.Value,
-        //            TotalCount = totalCount
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error occurred while retrieving checkon. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-        //        throw;
-        //    }
-        //}
     }
 }
