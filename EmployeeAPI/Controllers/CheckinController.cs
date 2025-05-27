@@ -202,7 +202,6 @@ namespace EmployeeAPI.Controllers
 
                 var result = await _service.GetCheckinByUserAsync(currentUserId, currentUserRoles, staffId, pageIndex, pageSize);
                 //var result = await _service.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
-
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by staff success", result, 200));
 
             }
