@@ -23,7 +23,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// lấy toàn bộ danh sách chấm công, chưa authorize
         /// </summary>
-        [HttpGet/*, Authorize*/]
+        [HttpGet]
         public async Task<IActionResult> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
             try
@@ -42,7 +42,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Tình chấm công cho nhân viên
         /// </summary>
-        [HttpPost("calculate")/*, Authorize*/]
+        [HttpPost("calculate")]
         public async Task<IActionResult> CalculatePayroll(Guid staffId)
         {
             try
@@ -60,7 +60,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xóa chấm công, chưa authorize
         /// </summary>
-        [HttpDelete/*, Authorize*/]
+        [HttpDelete]
         public async Task<IActionResult> DeletePayroll(Guid id)
         {
             try
@@ -78,7 +78,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách chấm công cho nhân viên, chưa authorize
         /// </summary>
-        [HttpGet("Employee")/*, Authorize*/]
+        [HttpGet("Employee")]
         public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
             try

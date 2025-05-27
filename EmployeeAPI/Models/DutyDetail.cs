@@ -7,11 +7,11 @@ namespace EmployeeAPI.Models
     {
         [Key]
         public Guid DutyDetailId { get; set; } = Guid.NewGuid();
-        public Guid UserId { get; set; }
         public Guid DutyId { get; set; }
-        public User Users { get; set; }
         public Duty Duty { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.Now;
+        public Guid UserId { get; set; }
+        public User Users { get; set; }
         public string Description { get; set; }
+        //public string note { get; set; } = string.Empty;
     }
 }

@@ -120,14 +120,14 @@ namespace EmployeeAPI.Repositories.Payrolls
                                                            c.IsDeleted == false);
         }
 
-        public async Task<int> CountLeaveEarlyCheckins(Guid UserId, int month, int year)
+        /*public async Task<int> CountLeaveEarlyCheckins(Guid UserId, int month, int year)
         {
             return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
                                                            c.Status == CheckinStatus.LeaveEarly &&
                                                            c.CheckinDate.Month == month &&
                                                            c.CheckinDate.Year == year &&
                                                            c.IsDeleted == false);
-        }
+        }*/
 
         public async Task<int> CountOvertimeCheckins(Guid UserId, int month, int year)
         {

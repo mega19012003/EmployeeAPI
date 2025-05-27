@@ -16,20 +16,9 @@ namespace EmployeeAPI.Repositories.Checkins
 
         public async Task<IEnumerable<Checkin>> GetAllAsync(string? UserName, int? pageIndex, int? pageSize)
         {
-            var item = _context.Checkins
+            return await _context.Checkins
                 .AsNoTracking()
-                .AsQueryable();
-
-            var result = item.Include(c => c.Users).Where(c => c.IsDeleted == false && c.Users.IsDeleted == false);
-            if (!string.IsNullOrEmpty(UserName))
-            {
-                result = result.Where(c => c.Users.Fullname.ToLower().Contains(UserName.ToLower()));
-            }
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                result = result.Skip((pageIndex.Value - 1) * pageSize.Value).Take(pageSize.Value);
-            }
-            return await result.AsNoTracking().ToListAsync();
+                .AsQueryable().ToListAsync();
         }
 
         public async Task<Checkin> GetByIdAsync(Guid id)

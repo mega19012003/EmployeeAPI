@@ -16,7 +16,7 @@ namespace EmployeeAPI.Models
         public string Note { get; set; }
         public bool IsDeleted { get; set; } = false;
         public int DaysWorked { get; set; } //ngày công
-        public SalaryRule SalaryRule { get; set; }
+        public CheckinStatusConfig SalaryRule { get; set; }
         public CheckinStatus CheckinStatus { get; set; }
         //public bool IsPaid { get; set; } = false; //đã trả lương
         //public List<Checkin> Checkins { get; set; } = new List<Checkin>();

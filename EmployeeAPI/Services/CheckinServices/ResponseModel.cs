@@ -1,5 +1,8 @@
-﻿using EmployeeAPI.Enums;
+﻿using System;
+using System.Text.Json.Serialization;
+using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
+using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 
 namespace EmployeeAPI.Services.CheckinServices
 {
@@ -10,15 +13,19 @@ namespace EmployeeAPI.Services.CheckinServices
             public Guid CheckinId { get; set; }
             public Guid userId { get; set; }
             public string Name { get; set; }
-            public DateTime CheckinDate { get; set; }
+            public DateTime CheckinDate { get; set; } = DateTime.Now;
             public CheckinStatus CheckinStatus { get; set; }
             public string Status { get; set; } 
         }
         public record CreateCheckin
         {
             //public Guid Id { get; set; }
+            [JsonIgnore]
             public Guid userId { get; set; }
-            public DateTime CheckinDate { get; set; }
+
+            public DateTime? CheckinDate { get; set; } = DateTime.Now;
+           
+            [JsonIgnore]
             public CheckinStatus CheckinStatus { get; set; }
         }
 
@@ -28,7 +35,7 @@ namespace EmployeeAPI.Services.CheckinServices
             //public Guid userId { get; set; }
             //public DateTime CheckinDate { get; set; }
             public CheckinStatus CheckinStatus { get; set; }
-            public string Status { get; set; }
+            //public string Status { get; set; }
         }
 
     }

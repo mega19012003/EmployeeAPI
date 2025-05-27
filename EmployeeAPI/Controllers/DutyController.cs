@@ -23,7 +23,8 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách công việc, chưa authorize
         /// </summary>
-        [HttpGet/*, Authorize*/]
+        
+        [HttpGet]
         public async Task<IActionResult> GetAll(string? SearchTerm, int? pageSize, int? pageIndex)
         {
             try
@@ -62,7 +63,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy công việc theo id
         /// </summary>
-        [HttpGet("Id")/*, Authorize*/]
+        [HttpGet("Id")]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             try
@@ -84,7 +85,8 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Thêm công việc, chưa authorize
         /// </summary>
-        [HttpPost/*, Authorize*/]
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpPost]
         public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDuty dto)
         {
             try
@@ -122,7 +124,8 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật công việc, chưa authorize
         /// </summary>
-        [HttpPut/*, Authorize*/]
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpPut]
         public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDuty dto)
         {
             try
@@ -154,7 +157,8 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xóa công việc, chưa authorize
         /// </summary>
-        [HttpDelete/*, Authorize*/]
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpDelete]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid id)
         {
             try

@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Base;
+﻿using System.Security.Claims;
+using EmployeeAPI.Base;
 using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -20,9 +21,10 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy toàn bộ danh sách checkin, chưa authorize cho admin/manager và employee
+        /// lấy toàn bộ danh sách checkin
         /// </summary>
-        [HttpGet/*, Authorize*/]
+        [Authorize(Roles = "Administrator")]
+        [HttpGet]
         public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
         {
             try
@@ -52,20 +54,30 @@ namespace EmployeeAPI.Controllers
         /// Tạo checkin cho user, chưa authorize
         /// </summary>
         /// <remarks>
-        /// CheckinStatus enum values:
-        /// OnTime = 0 (đúng giờ)
-        /// Late = 1 (Đi trễ hơn 15 phút)
-        /// LeaveEarly = 2 (Về sớm)
-        /// Overtime = 3 (làm tăng ca)
-        /// Absent = 4 (Vắng)
-        /// LeaveWithPermission = 5 (Vắng có phép)
-        /// Others = 6 (lí do khác)
+        /// - CheckinStatus enum values:
+        /// - OnTime = 0 (đúng giờ)
+        /// - Late = 1 (Đi trễ hơn 15 phút)
+        /// - LeaveEarly = 2 (Về sớm)
+        /// - Overtime = 3 (làm tăng ca)
+        /// - Absent = 4 (Vắng)
+        /// - LeaveWithPermission = 5 (Vắng có phép)
+        /// - Others = 6 (lí do khác)
         /// </remarks>
-        [HttpPost/*, Authorize*/]
+        [Authorize]
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)
         {
             try
             {
+                // Lấy userId từ Claims (ngầm định user đã đăng nhập)
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized(new { Message = "User ID not found in token." });
+                }
+
+                dto.userId = userId;
+
                 var created = await _service.CreateAsync(dto);
                 if (created == null)
                 {
@@ -81,7 +93,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "An error occurred while creating a checkin");
-                return StatusCode(400, new { Message = "Staff not found", Detail = argEx.Message, StatusCode = 400});
+                return StatusCode(400, new { Message = "Checkin Failed", Detail = argEx.Message, StatusCode = 400});
             }
             catch (DbUpdateException dbEx)
             {
@@ -98,13 +110,19 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật thông tin checkin, nếu thông tin checkin bị sai hoặc nhân viên lách luật, chưa authorize
         /// </summary>
-        [HttpPut/*, Authorize*/]
+        [Authorize(Roles = "Administrator,Manager")]
+        [HttpPut]
         public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckin dto)
         {
             try
             {
-                //if (!ModelState.IsValid) return BadRequest(ModelState);
-                var updated = await _service.UpdateAsync(dto);
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var updated = await _service.UpdateAsync(dto, currentUserId, currentUserRoles);
                 return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("", updated, 200));
             }
             catch (ArgumentException argEx)
@@ -127,12 +145,20 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xóa checkin, nếu thông tin checkin ko có so với sự thật, chưa authorize
         /// </summary>
-        [HttpDelete/*, Authorize*/]
+        [Authorize(Roles = "Administrator,Manager")]
+        [HttpDelete]
         public async Task<IActionResult> SoftDeleteAsync(Guid id)
         {
             try
             {
-                var result = await _service.DeleteAsync(id);
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var result = await _service.DeleteAsync(id, currentUserId, currentUserRoles);
+                //var result = await _service.DeleteAsync(id);
                 if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find Staff id", result, 200));
 
                 return Ok(ApiResponse<string>.ReturnResult("Delete Checkin Success", result, 200));
@@ -141,6 +167,11 @@ namespace EmployeeAPI.Controllers
             {
                 _logger.LogError(argEx, "An error occurred while deleting a checkin");
                 return StatusCode(400, new { Message = "Checkin not found", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (UnauthorizedAccessException unAuthEx)
+            {
+                _logger.LogWarning(unAuthEx, "Unauthorized access while deleting checkin");
+                return StatusCode(403, new { Message = "Access Denied", Detail = unAuthEx.Message, StatusCode = 403 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -157,25 +188,23 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách checkin của user, hưa authorize cho admin/manager và employee
         /// </summary>
-        [HttpGet("employee")/*, Authorize*/]
+        [Authorize]
+        [HttpGet("employee")]
         public async Task<IActionResult> GetCheckinsByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
             try
             {
-                var result = await _service.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
 
-                /*if (result.Items.Count() == 0)
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });*/
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var result = await _service.GetCheckinByUserAsync(currentUserId, currentUserRoles, staffId, pageIndex, pageSize);
+                //var result = await _service.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by staff success", result, 200));
 
-                /*if (checkins == null) return NotFound();
-                return Ok(checkins);*/
             }
             catch (ArgumentException argEx)
             {

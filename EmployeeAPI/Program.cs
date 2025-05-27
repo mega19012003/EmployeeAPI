@@ -3,6 +3,7 @@ using System.Text;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
+using EmployeeAPI.Repositories.CheckinStatusConfigs;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Payrolls;
@@ -11,6 +12,7 @@ using EmployeeAPI.Repositories.ScheduleTimes;
 using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
+using EmployeeAPI.Services.CheckinStatusConfigServices;
 using EmployeeAPI.Services.DepartmentServices;
 using EmployeeAPI.Services.DutyServices;
 using EmployeeAPI.Services.FileServices;
@@ -58,6 +60,7 @@ builder.Services.AddScoped<ICheckinRepository, EFCheckinRepository>();
 builder.Services.AddScoped<IPayrollRepository, EFPayrollRepository>();
 builder.Services.AddScoped<IUserRepository, EFUserRepository>();
 builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
+builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfigRepository>();
 
 //builder.Services.AddScoped<IStaffService, StafffService>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -69,6 +72,8 @@ builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IAuthService,  AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
+builder.Services.AddScoped<ICheckinStatusConfigService, CheckinStatusConfigService>();
+
 builder.Services.AddSwaggerGen(c =>
 {
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";

@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Payrolls;
@@ -144,6 +145,14 @@ namespace EmployeeAPI.Services.PayrollServices
         
         public async Task<PaidPayroll> CalculatePayrollAsync(Guid UserId)
         {
+
+            var configs = await _context.CheckinStatusConfigs.ToListAsync();
+
+            double GetMultiplier(CheckinStatus status)
+            {
+                return configs.First(c => c.Id == (int)status).SalaryMultiplier;
+            }
+
             int month = DateTime.Now.Month;
             int year = DateTime.Now.Year;
             if (await _payrollRepository.ExistsPayrollForMonth(UserId, month, year))
@@ -156,12 +165,12 @@ namespace EmployeeAPI.Services.PayrollServices
             var lateCheckins = await _payrollRepository.CountLateCheckins(UserId, month, year);
             var absentCheckins = await _payrollRepository.CountAbsentCheckins(UserId, month, year);
             var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(UserId, month, year);
-            var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(UserId, month, year);
+            //var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(UserId, month, year);
             var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(UserId, month, year);
             //var onHolidayPermissionCheckins = await _payrollRepository.CountOnHolidayPermissionCheckins(UserId, month, year);
 
             var basic = User.BasicSalary;
-            var bonus30 = basic * 1.3;
+            /*var bonus30 = basic * 1.3;
             var bonus50 = basic * 1.5;
             var penalty10 = basic * 0.9;
             var penalty30 = basic * 0.7;
@@ -173,7 +182,14 @@ namespace EmployeeAPI.Services.PayrollServices
                                 + (penalty30 * lateCheckins)
                                 + (penalty30 * leaveEarlyCheckins)
                                 + (penalty10 * absentPermissionCheckins)
-                                + (penalty50 * absentCheckins);
+                                + (penalty50 * absentCheckins);*/
+            double totalSalary =
+                validCheckins * basic * GetMultiplier(CheckinStatus.OnTime) +
+                lateCheckins * basic * GetMultiplier(CheckinStatus.Late) +
+                absentCheckins * basic * GetMultiplier(CheckinStatus.Absent) +
+                absentPermissionCheckins * basic * GetMultiplier(CheckinStatus.LeaveWithPermission) +
+                //leaveEarlyCheckins * basic * GetMultiplier(CheckinStatus.LeaveEarly) +
+                overtimeCheckins * basic * GetMultiplier(CheckinStatus.Overtime);
 
             var totalDayWorked = await _payrollRepository.CountDayWorked(UserId, month, year);
 

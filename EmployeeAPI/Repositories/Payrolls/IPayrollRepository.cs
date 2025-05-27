@@ -17,7 +17,7 @@ namespace EmployeeAPI.Repositories.Payrolls
         Task<int> CountLateCheckins(Guid userId, int month, int year);
         Task<int> CountAbsentCheckins(Guid userId, int month, int year);
         Task<int> CountAbsentPermissionCheckins(Guid userId, int month, int year);
-        Task<int> CountLeaveEarlyCheckins(Guid userId, int month, int year);
+        //Task<int> CountLeaveEarlyCheckins(Guid userId, int month, int year);
         Task<int> CountOvertimeCheckins(Guid userId, int month, int year);
         //Task<int> CountOnHolidayPermissionCheckins(Guid userId, int month, int year);
         Task<int> CountDayWorked(Guid userId, int month, int year);

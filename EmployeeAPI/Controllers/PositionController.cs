@@ -69,14 +69,6 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-        /*[HttpGet("id"), Authorize]
-        public async Task<IActionResult> GetPositionById(Guid id)
-        {
-            var position = await _positionService.GetByIdAsync(id);
-            if (position == null) return NotFound();
-            return Ok(position);
-        }*/
-
         /// <summary>
         /// Thêm chức vụ trong phỏng ban, manager ko cần thiết nhập department id
         /// </summary>

@@ -4,6 +4,7 @@ using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250526133112_add-checkin-status")]
+    partial class addcheckinstatus
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -142,9 +145,6 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<Guid>("AssignedById")
-                        .HasColumnType("uniqueidentifier");
-
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
@@ -158,14 +158,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<Guid?>("UserId")
-                        .HasColumnType("uniqueidentifier");
-
                     b.HasKey("Id");
-
-                    b.HasIndex("AssignedById");
-
-                    b.HasIndex("UserId");
 
                     b.ToTable("Duties");
                 });
@@ -175,6 +168,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("DutyDetailId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("Description")
                         .IsRequired()
@@ -349,33 +345,18 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("Users");
                 });
 
-            modelBuilder.Entity("EmployeeAPI.Models.Duty", b =>
-                {
-                    b.HasOne("EmployeeAPI.Models.User", "AssignedBy")
-                        .WithMany()
-                        .HasForeignKey("AssignedById")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("EmployeeAPI.Models.User", null)
-                        .WithMany("AssignedDuties")
-                        .HasForeignKey("UserId");
-
-                    b.Navigation("AssignedBy");
-                });
-
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.Duty", "Duty")
                         .WithMany("DutyDetails")
                         .HasForeignKey("DutyId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("EmployeeAPI.Models.User", "Users")
                         .WithMany("DutyDetails")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Restrict)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Duty");
@@ -448,8 +429,6 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>
                 {
-                    b.Navigation("AssignedDuties");
-
                     b.Navigation("Checkins");
 
                     b.Navigation("DutyDetails");

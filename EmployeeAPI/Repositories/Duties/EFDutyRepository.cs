@@ -13,7 +13,7 @@ namespace EmployeeAPI.Repositories.Duties
         }
         public async Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
-            var item = _context.Duties
+            /*var item = _context.Duties
                 .AsNoTracking()
                 .Include(d => d.DutyDetails)
                 .ThenInclude(dd => dd.Users)
@@ -23,8 +23,12 @@ namespace EmployeeAPI.Repositories.Duties
             {
                 item = item.Where(m => m.Name.ToLower().Contains(SearchTerm.ToLower()));
             }
-            var result = await item.Skip((int)(pageSize * (pageIndex - 1))).Take((int)pageSize).Where(p => !p.IsDeleted).ToListAsync();
-            return result;
+            var result = await item.Skip((int)(pageSize * (pageIndex - 1))).Take((int)pageSize).Where(p => !p.IsDeleted).ToListAsync();*/
+            return _context.Duties
+                .AsNoTracking()
+                .Include(d => d.DutyDetails)
+                .ThenInclude(dd => dd.Users)
+                .AsQueryable();
         }
 
         public async Task<Duty> GetByIdAsync(Guid id)
@@ -67,7 +71,7 @@ namespace EmployeeAPI.Repositories.Duties
         }
         public async Task<IEnumerable<Duty>> GetDutyByName(string name, int? pageSize, int? pageIndex)
         {
-            var query = _context.Duties
+           /* var query = _context.Duties
                 .AsNoTracking()
                 .Include(p => p.DutyDetails)
                 .ThenInclude(p => p.Users)
@@ -82,12 +86,12 @@ namespace EmployeeAPI.Repositories.Duties
             {
                 int skip = (pageIndex.Value - 1) * pageSize.Value;
                 query = query.Skip(skip).Take(pageSize.Value);
-            }
-            return await query.ToListAsync();
+            }*/
+            return _context.Duties
+                .AsNoTracking()
+                .Include(p => p.DutyDetails)
+                .ThenInclude(p => p.Users)
+                .Where(p => !p.IsDeleted);
         }
-        /*public async Task<Duty> GetUnfinishedDuty(string status)
-        {
-            return null;// await _context.Duties.FirstOrDefaultAsync(d => d.Status == status);
-        }*/
     }
 }

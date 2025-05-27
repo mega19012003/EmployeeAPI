@@ -11,9 +11,12 @@ namespace EmployeeAPI.Services.CheckinServices
         Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex);
         Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id);
         Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto);
-        Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);
-        Task<string> DeleteAsync(Guid id);
+        Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto, Guid currentUserId, IList<string> currentUserRoles);
+        //Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);
+        Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
+        //Task<string> DeleteAsync(Guid id);
         //Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-        Task<PagedResult<CheckinDto>> GetCheckinByUserAsync(Guid staffId, int? pageIndex, int? pageSize);
+        //Task<PagedResult<CheckinDto>> GetCheckinByUserAsync(Guid staffId, int? pageIndex, int? pageSize);
+        Task<PagedResult<ResponseModel.CheckinDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize);
     }
 }

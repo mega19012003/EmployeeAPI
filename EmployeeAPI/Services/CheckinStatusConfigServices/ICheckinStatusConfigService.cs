@@ -1,0 +1,14 @@
+﻿using EmployeeAPI.Models;
+
+namespace EmployeeAPI.Services.CheckinStatusConfigServices
+{
+    public interface ICheckinStatusConfigService
+    {
+        Task<List<CheckinStatusConfig>> GetAllConfigsAsync();
+
+        Task<CheckinStatusConfig?> GetConfigAsync(int id);
+
+        Task UpdateConfigAsync(CheckinStatusConfig updatedConfig);
+
+    }
+}

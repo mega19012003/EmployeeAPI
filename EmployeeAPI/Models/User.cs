@@ -19,10 +19,15 @@ namespace EmployeeAPI.Models
         public bool IsActive { get; set; } = true;
         public bool IsDeleted { get; set; } = false;
         public string? ImageUrl { get; set; }
-        public ICollection<DutyDetail>? DutyDetails { get; set; } = new List<DutyDetail>();
+        // 1. Người giao việc (manager)
+        public ICollection<Duty> AssignedDuties { get; set; } = new List<Duty>();
+
+        // 2. Người được giao việc (employee)
+        public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
         public List<Checkin>? Checkins { get; set; } = new List<Checkin>();
         public List<Payroll>? Payrolls { get; set; } = new List<Payroll>();
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; } 
+        //public string note { get; set; } = string.Empty;
     }
 }
