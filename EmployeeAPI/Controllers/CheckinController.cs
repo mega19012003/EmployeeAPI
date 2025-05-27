@@ -21,7 +21,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy toàn bộ danh sách checkin
+        /// lấy toàn bộ danh sách checkin, chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
@@ -51,7 +51,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Tạo checkin cho user, chưa authorize
+        /// Tạo checkin cho user
         /// </summary>
         /// <remarks>
         /// - CheckinStatus enum values:
@@ -108,7 +108,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin checkin, nếu thông tin checkin bị sai hoặc nhân viên lách luật, chưa authorize
+        /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPut]
@@ -143,7 +143,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa checkin, nếu thông tin checkin ko có so với sự thật, chưa authorize
+        /// Xóa checkin, nếu thông tin checkin ko có so với sự thật, manager chỉ dc xóa checkin của nhân viên trong cùng phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpDelete]
@@ -186,7 +186,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách checkin của user, hưa authorize cho admin/manager và employee
+        /// Lấy danh sách checkin của user, manager hci3 lấy dc danh sách checkin của nhân viên trong cùng phòng ban, employee chỉ dc phép lấy danh sách của chính mình
         /// </summary>
         [Authorize]
         [HttpGet("employee")]
