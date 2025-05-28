@@ -17,6 +17,9 @@ namespace EmployeeAPI.Controllers
             _allowedIPService = allowedIPService;
             _logger = logger;
         }
+        /// <summary>
+        /// (đang fix)
+        /// </summary>
 
         [HttpGet]
         public async Task<IActionResult> GetAllAllowedIP(string? ip, int? pageIndex, int? pageSize)
@@ -33,7 +36,9 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-
+        /// <summary>
+        /// (đang fix)
+        /// </summary>
         [HttpPost]
         public async Task<IActionResult> AddAllowedIP([FromBody] AllowedIP model)
         {
