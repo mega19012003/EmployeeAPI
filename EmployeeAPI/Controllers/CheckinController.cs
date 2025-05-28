@@ -66,7 +66,8 @@ namespace EmployeeAPI.Controllers
                 dto.userId = userId;
 
                 // Lấy IP client từ HttpContext
-                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                //var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
                 //dto.IpAddress = ip ?? "Unknown";
 
                 var created = await _checkinService.CreateAsync(dto, ip);

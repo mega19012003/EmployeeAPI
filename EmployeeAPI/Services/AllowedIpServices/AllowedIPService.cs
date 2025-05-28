@@ -22,7 +22,38 @@ namespace EmployeeAPI.Services.AllowedIpServices
             return await _allowedIPRepository.IsIpAllowedAsync(ipAddress);
         }
 
-        public async Task<AllowedIP> AddAllowedIPAsync(string ipAddress)
+        public async Task<PagedResult<ResponseModel.IPDto>> GetAllAllowedIPsAsync(string? ip, int? pageIndex, int? pageSize)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.AllowedIPs.AsQueryable();
+
+            if (!string.IsNullOrEmpty(ip))
+            {
+                query = query.Where(f => f.IPAddress.ToLower().Contains(ip.ToLower()));
+            }
+
+            var totalCount = await query.CountAsync();
+            var items = await query.Skip((pageIndex.Value - 1) * pageSize.Value)
+                                   .Take(pageSize.Value)
+                                   .Select(f => new ResponseModel.IPDto
+                                   {
+                                       AllowedIPId = f.AllowedIPId,
+                                       IPAddress = f.IPAddress
+                                   })
+                                   .ToListAsync();
+
+            return new PagedResult<ResponseModel.IPDto>
+            {
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
+        }
+
+        public async Task<ResponseModel.IPDto> AddAllowedIPAsync(string ipAddress)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -44,7 +75,10 @@ namespace EmployeeAPI.Services.AllowedIpServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return allowedIP;
+                return new ResponseModel.IPDto {
+                    AllowedIPId = allowedIP.AllowedIPId,
+                    IPAddress = allowedIP.IPAddress
+                };
             }
             catch (Exception ex)
             {
@@ -53,30 +87,64 @@ namespace EmployeeAPI.Services.AllowedIpServices
             }
         }
 
-        public async Task<PagedResult<AllowedIP>> GetAllAllowedIPsAsync(string? ip, int? pageIndex, int? pageSize)
+        public async Task<ResponseModel.IPDto> UpdateAllowedIPAsync(ResponseModel.IPDto dto)
         {
-            pageIndex ??= 1;
-            pageSize ??= 10;
-
-            var query = _context.AllowedIPs.AsQueryable();
-
-            if (!string.IsNullOrEmpty(ip))
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                query = query.Where(f => f.IPAddress.ToLower().Contains(ip.ToLower()));
+                if (dto.AllowedIPId == null)
+                    throw new ArgumentException("Allowed IP cannot be null");
+
+                /*var existingIPs = await _allowedIPRepository.GetAllAllowedIPsAsync();
+                if (!existingIPs.Any(p => p.AllowedIPId == allowedIP.AllowedIPId))
+                    throw new InvalidOperationException($"Allowed IP with ID {allowedIP.AllowedIPId} does not exist.");*/
+
+                var query = await _allowedIPRepository.GetAllowedIPAsync(dto.AllowedIPId);
+                if (query.AllowedIPId == null)
+                    throw new Exception($"IP address {dto.IPAddress} does not existed");
+
+
+                query.IPAddress = dto.IPAddress;
+
+                //_context.AllowedIPs.Update(allowedIP);
+                await _allowedIPRepository.UpdateAllowedIpAsync(query);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+                return new ResponseModel.IPDto
+                {
+                    AllowedIPId = query.AllowedIPId,
+                    IPAddress = query.IPAddress
+                };
             }
-
-            var totalCount = await query.CountAsync();
-            var items = await query.Skip((pageIndex.Value - 1) * pageSize.Value)
-                                   .Take(pageSize.Value)
-                                   .ToListAsync();
-
-            return new PagedResult<AllowedIP>
+            catch (Exception ex)
             {
-                Items = items,
-                PageIndex = pageIndex.Value,
-                PageSize = pageSize.Value,
-                TotalCount = totalCount
-            };
+                await transaction.RollbackAsync();
+                throw new Exception($"Error: {ex.Message}", ex);
+            }
+        }
+
+        public async Task<string> DeleteAllowedIPAsync(Guid id)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var query = await _allowedIPRepository.GetAllowedIPAsync(id);
+                if (query.AllowedIPId == null)
+                    throw new Exception($"IP address {id} does not exist");
+
+                query.isDeleted = true;
+
+                await _allowedIPRepository.DeleteAllowedIPAsync(id);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "Đã xóa ip: " + id + " thành công";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                throw new Exception($"Error: {ex.Message}", ex);
+            }
         }
 
     }
