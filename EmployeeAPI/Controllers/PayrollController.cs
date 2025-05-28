@@ -104,11 +104,11 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
+        /// Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
         /// </summary>
         [Authorize]
         [HttpGet("Employee")]
-        public async Task<IActionResult> GetPayrollByStaff(Guid? staffId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -118,7 +118,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var pagedResult = await _payrollService.GetPayrollByUser(staffId.Value, currentUserId, currentRoles, pageIndex, pageSize);
+                var pagedResult = await _payrollService.GetPayrollByUser(staffId, currentUserId, currentRoles, pageIndex, pageSize);
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by staff success", pagedResult, 200));
             }
