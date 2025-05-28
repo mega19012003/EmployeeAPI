@@ -56,8 +56,6 @@ namespace EmployeeAPI.Repositories.Payrolls
         /// <summary>
         /// ////////////////////////////////////////////////
         /// </summary>
-
-
         public async Task<bool> ExistsPayrollForMonth(Guid UserId, int month, int year)
         {
             return await _context.Payrolls.AnyAsync(p => p.UserId == UserId &&
@@ -84,6 +82,11 @@ namespace EmployeeAPI.Repositories.Payrolls
         {
             return CountCheckinsByStatus(userId, CheckinStatus.Late, month, year);
         }
+
+        //public Task<int> CountLeaveEarlyCheckins(Guid UserId, int month, int year)
+        //{
+        //    return CountCheckinsByStatus(UserId, CheckinStatus.LeaveEarly, month, year);
+        //}
 
         public Task<int> CountAbsentCheckins(Guid userId, int month, int year)
         {

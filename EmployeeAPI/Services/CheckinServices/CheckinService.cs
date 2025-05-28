@@ -169,8 +169,21 @@ namespace EmployeeAPI.Services.CheckinServices
                 var currentTimeOnly = TimeOnly.FromDateTime(vnCheckinDate);
 
                 // 7. Xác định trạng thái OnTime hay Late
-                var status = currentTimeOnly <= lateTime ? CheckinStatus.OnTime : CheckinStatus.Late;
+                //var status = currentTimeOnly <= lateTime ? CheckinStatus.OnTime : CheckinStatus.Late;
+                CheckinStatus status;
 
+                if (currentTimeOnly > schedule.EndTime)
+                {
+                    status = CheckinStatus.Overtime;
+                }
+                else if (currentTimeOnly <= lateTime)
+                {
+                    status = CheckinStatus.OnTime;
+                }
+                else
+                {
+                    status = CheckinStatus.Late;
+                }
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
