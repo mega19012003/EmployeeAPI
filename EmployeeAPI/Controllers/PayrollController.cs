@@ -104,7 +104,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
+        /// (đang fix) Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
         /// </summary>
         [Authorize]
         [HttpGet("Employee")]

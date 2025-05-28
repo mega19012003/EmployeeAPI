@@ -189,7 +189,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Lấy danh sách checkin của user, manager chỉ lấy dc danh sách checkin của nhân viên trong cùng phòng ban, employee chỉ dc phép lấy danh sách của chính mình
+        /// Lấy danh sách checkin của user, manager chỉ lấy dc danh sách checkin của nhân viên trong cùng phòng ban, employee chỉ dc phép lấy danh sách của chính mình
         /// </summary>
         [Authorize]
         [HttpGet("employee")]
