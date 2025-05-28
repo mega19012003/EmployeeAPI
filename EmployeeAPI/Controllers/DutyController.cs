@@ -21,7 +21,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách công việc, chưa authorize
+        /// (đang fix) Lấy danh sách công việc, chưa authorize
         /// </summary>
         
         [HttpGet]
@@ -61,7 +61,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy công việc theo id
+        /// (đang fix) Lấy công việc theo id
         /// </summary>
         [HttpGet("Id")]
         public async Task<IActionResult> GetByIdAsync(Guid id)
@@ -83,7 +83,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Thêm công việc, chưa authorize
+        /// (đang fix) Thêm công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
@@ -122,7 +122,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật công việc, chưa authorize
+        /// (đang fix) Cập nhật công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
@@ -155,7 +155,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa công việc, chưa authorize
+        /// (đang fix) Xóa công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete]

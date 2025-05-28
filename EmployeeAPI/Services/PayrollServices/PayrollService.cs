@@ -17,13 +17,15 @@ namespace EmployeeAPI.Services.PayrollServices
     {
         private readonly IPayrollRepository _payrollRepository;
         private readonly ICheckinRepository _checkinRepository;
+        private readonly ILogger<PayrollService> _logger;
         private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
-        public PayrollService(IPayrollRepository payrollRepository, IUserRepository userRepository, ICheckinRepository checkinRepository, AppDbContext context)
+        public PayrollService(IPayrollRepository payrollRepository, IUserRepository userRepository, ICheckinRepository checkinRepository, ILogger<PayrollService> logger, AppDbContext context)
         {
             _payrollRepository = payrollRepository;
             _userRepository = userRepository;
             _checkinRepository = checkinRepository;
+            _logger = logger;
             _context = context;
         }
 
@@ -162,73 +164,66 @@ namespace EmployeeAPI.Services.PayrollServices
             return "Đã xóa payroll " + id;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(
-    Guid staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
-            pageIndex ??= 1;
-            pageSize ??= 10;
-
-            // Lấy user (employee) muốn xem payroll
-            var employee = await _userRepository.GetByIdAsync(staffId);
-            if (employee == null)
-                throw new ArgumentException("Cannot find employee");
-
-            // Lấy người đang thực hiện yêu cầu (current user)
-            var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-            if (currentUser == null)
-                throw new ArgumentException("Cannot find current user");
-
-            // Kiểm tra phân quyền
-            if (currentUserRoles.Contains("Administrator"))
+            try
             {
-                // OK - có quyền xem mọi payroll
-            }
-            else if (currentUserRoles.Contains("Manager"))
-            {
-                if (currentUser.DepartmentId != employee.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager cannot access payroll of employee from other department");
-            }
-            else if (currentUserRoles.Contains("Employee"))
-            {
-                if (currentUserId != staffId)
-                    throw new UnauthorizedAccessException("Employee can only view their own payroll");
-                staffId = currentUserId; // Chỉ lấy payroll của chính mình nếu là employee
-            }
-            else
-            {
-                throw new UnauthorizedAccessException("Access denied");
-            }
-
-            // Truy vấn tất cả payroll của employee (theo staffId)
-            var query = _context.Payrolls
-                .Where(p => p.UserId == staffId && !p.IsDeleted)
-                .Include(p => p.Users); // Nếu cần lấy tên người dùng
-
-            var totalCount = await query.CountAsync();
-
-            var items = await query
-                .OrderByDescending(p => p.CreatedDate)
-                .Skip((pageIndex.Value - 1) * pageSize.Value)
-                .Take(pageSize.Value)
-                .Select(c => new ResponseModel.PayrollDto
+                // Gán ngầm staffId nếu user là employee
+                if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
                 {
-                    Id = c.Id,
-                    UserId = c.UserId,
-                    Name = c.Users.Fullname,
-                    Salary = c.Salary,
-                    CreatedDate = c.CreatedDate,
-                    Note = c.Note,
-                    IsDeleted = c.IsDeleted,
-                })
-                .ToListAsync();
+                    staffId = currentUserId;
+                }
+                else
+                {
+                    // Nếu admin hoặc manager thì staffId phải có giá trị
+                    if (staffId == null || staffId == Guid.Empty)
+                        throw new ArgumentException("Please input staffId");
+                }
 
-            return new PagedResult<ResponseModel.PayrollDto>
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                // Kiểm tra user được lấy có tồn tại không
+                var user = await _userRepository.GetByIdAsync(staffId.Value);
+                if (user == null)
+                    throw new ArgumentException("Cannot find user id");
+
+                // Manager chỉ lấy được dữ liệu trong phòng ban của mình
+                if (currentUserRoles.Contains("Manager") && user.DepartmentId != (await _userRepository.GetByIdAsync(currentUserId)).DepartmentId)
+                    throw new UnauthorizedAccessException("Manager cannot access payroll from other departments");
+
+                var query = _context.Payrolls
+                    .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
+                    .Include(p => p.Users); 
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(c => new ResponseModel.PayrollDto
+                    {
+                        Id = c.Id,
+                        CreatedDate = c.CreatedDate,
+                        UserId = c.UserId,
+                        Salary = c.Salary,
+                        Note = c.Note,
+                        Name = c.Users.Fullname ?? "null",
+                    }).ToListAsync();
+
+                return new PagedResult<ResponseModel.PayrollDto>
+                {
+                    Items = items,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
             {
-                Items = items,
-                PageIndex = pageIndex.Value,
-                PageSize = pageSize.Value,
-                TotalCount = totalCount
-            };
+                _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
         }
 
 

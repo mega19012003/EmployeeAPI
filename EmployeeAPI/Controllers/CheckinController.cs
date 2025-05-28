@@ -189,11 +189,11 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách checkin của user, manager hci3 lấy dc danh sách checkin của nhân viên trong cùng phòng ban, employee chỉ dc phép lấy danh sách của chính mình
+        /// (đang fix) Lấy danh sách checkin của user, manager chỉ lấy dc danh sách checkin của nhân viên trong cùng phòng ban, employee chỉ dc phép lấy danh sách của chính mình
         /// </summary>
         [Authorize]
         [HttpGet("employee")]
-        public async Task<IActionResult> GetCheckinsByStaff(Guid staffId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetCheckinsByUser(Guid staffId, int? pageIndex, int? pageSize)
         {
             try
             {
