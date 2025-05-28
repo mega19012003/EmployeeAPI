@@ -108,7 +108,7 @@ namespace EmployeeAPI.Services.AuthServices
             {
                 var user = await _repository.LoginAsync(username, password);
                 if (user == null)
-                    throw new ArgumentException("Invalid input");
+                    throw new Exception("Wrong Username or Password ");
 
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 

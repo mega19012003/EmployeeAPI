@@ -1,6 +1,7 @@
 ﻿using System.Reflection;
 using System.Text;
 using EmployeeAPI.Models;
+using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.CheckinStatusConfigs;
@@ -10,6 +11,7 @@ using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.ScheduleTimes;
 using EmployeeAPI.Repositories.Users;
+using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.CheckinStatusConfigServices;
@@ -61,6 +63,7 @@ builder.Services.AddScoped<IPayrollRepository, EFPayrollRepository>();
 builder.Services.AddScoped<IUserRepository, EFUserRepository>();
 builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
 builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfigRepository>();
+builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
 
 //builder.Services.AddScoped<IStaffService, StafffService>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -73,6 +76,7 @@ builder.Services.AddScoped<IAuthService,  AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
 builder.Services.AddScoped<ICheckinStatusConfigService, CheckinStatusConfigService>();
+builder.Services.AddScoped<IAllowedIPService, AllowedIPService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

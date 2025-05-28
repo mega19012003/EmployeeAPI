@@ -31,7 +31,6 @@ namespace EmployeeAPI.Repositories.Auth
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
-
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())

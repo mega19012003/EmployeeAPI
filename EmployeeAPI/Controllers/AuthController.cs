@@ -155,7 +155,12 @@ namespace EmployeeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while logging in user");
-                return StatusCode(500, "Internal server error");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Message = "Internal server error",
+                    Data = ex.Message,
+                    StatusCode = 500
+                });
             }
         }
 

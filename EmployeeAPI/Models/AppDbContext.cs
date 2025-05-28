@@ -18,6 +18,7 @@ namespace EmployeeAPI.Models
         public DbSet<Position> Positions { get; set; }
         public DbSet<ScheduleTime> ScheduleTimes { get; set; }
         public DbSet<CheckinStatusConfig> CheckinStatusConfigs { get; set; }
+        public DbSet<AllowedIP> AllowedIPs { get; set; }
         //public DbSet<Fine> Fines { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)

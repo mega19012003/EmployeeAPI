@@ -27,6 +27,8 @@ namespace EmployeeAPI.Services.CheckinServices
            
             [JsonIgnore]
             public CheckinStatus CheckinStatus { get; set; }
+            //[JsonIgnore]
+            //public string IpAddress { get; set; }
         }
 
         public record UpdateCheckin

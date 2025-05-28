@@ -1,5 +1,7 @@
 ﻿using System.Security.Claims;
+using Azure.Core;
 using EmployeeAPI.Base;
+using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,12 +13,14 @@ namespace EmployeeAPI.Controllers
     [Route("api/[controller]")]
     public class CheckinController : ControllerBase
     {
-        private readonly ICheckinService _service;
+        private readonly ICheckinService _checkinService;
         private readonly ILogger<CheckinController> _logger;
+        private readonly IAllowedIPService _allowedIPService;
 
-        public CheckinController(ICheckinService service, ILogger<CheckinController> logger)
+        public CheckinController(ICheckinService checkinService, ILogger<CheckinController> logger, IAllowedIPService allowedIPService)
         {
-            _service = service;
+            _allowedIPService = allowedIPService;
+            _checkinService = checkinService;
             _logger = logger;
         }
 
@@ -29,18 +33,7 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var pagedResult = await _service.GetAllAsync(StaffName, pageIndex, pageSize);
-
-                /*if (pagedResult.Items.Count() == 0)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }*/
-
+                var pagedResult = await _checkinService.GetAllAsync(StaffName, pageIndex, pageSize);
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin success", pagedResult, 200));
             }
             catch (Exception ex)
@@ -63,6 +56,7 @@ namespace EmployeeAPI.Controllers
             try
             {
                 // Lấy userId từ Claims (ngầm định user đã đăng nhập)
+
                 var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
                 {
@@ -71,15 +65,15 @@ namespace EmployeeAPI.Controllers
 
                 dto.userId = userId;
 
-                var created = await _service.CreateAsync(dto);
+                // Lấy IP client từ HttpContext
+                var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+                //dto.IpAddress = ip ?? "Unknown";
+
+                var created = await _checkinService.CreateAsync(dto, ip);
                 if (created == null)
                 {
                     return BadRequest();
                 }
-                /*if (created == null)
-                {
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find Staff id", null, 400));
-                }*/
 
                 return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkin create success", created, 200));
             }
@@ -125,7 +119,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var updated = await _service.UpdateAsync(dto, currentUserId, currentUserRoles);
+                var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
                 return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("", updated, 200));
             }
             catch (ArgumentException argEx)
@@ -160,8 +154,8 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _service.DeleteAsync(id, currentUserId, currentUserRoles);
-                //var result = await _service.DeleteAsync(id);
+                var result = await _checkinService.DeleteAsync(id, currentUserId, currentUserRoles);
+                //var result = await _checkinService.DeleteAsync(id);
                 if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find Staff id", result, 200));
 
                 return Ok(ApiResponse<string>.ReturnResult("Delete Checkin Success", result, 200));
@@ -203,8 +197,8 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _service.GetCheckinByUserAsync(currentUserId, currentUserRoles, staffId, pageIndex, pageSize);
-                //var result = await _service.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
+                var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, staffId, pageIndex, pageSize);
+                //var result = await _checkinService.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by staff success", result, 200));
 
             }

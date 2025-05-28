@@ -4,6 +4,7 @@ using Azure;
 using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
+using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.Users;
@@ -18,16 +19,16 @@ namespace EmployeeAPI.Services.CheckinServices
     public class CheckinService : ICheckinService
     {
         private readonly ICheckinRepository _checkinRepository;
-        private readonly IAuthRepository _authRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IAllowedIPRepository _allowedIPRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<CheckinService> _logger;
 
-        public CheckinService(ICheckinRepository checkinRepository, IAuthRepository authRepository, IUserRepository userRepository, AppDbContext context, ILogger<CheckinService> logger)
+        public CheckinService(ICheckinRepository checkinRepository, IUserRepository userRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger)
         {
             _checkinRepository = checkinRepository;
             _userRepository = userRepository;
-            _authRepository = authRepository;
+            _allowedIPRepository = allowedIPRepository;
             _context = context;
             _logger = logger;
         }
@@ -97,11 +98,16 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto)
+        public async Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto, string ip)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var isAllowed = await _allowedIPRepository.IsIpAllowedAsync(ip);
+                if (!isAllowed)
+                    throw new UnauthorizedAccessException($"IP address {ip} is not allowed to check in.");
+
+
                 var existUsers = await _userRepository.GetByIdAsync(dto.userId);
                 if (existUsers == null)
                     throw new ArgumentException("Cannot find Users id");
