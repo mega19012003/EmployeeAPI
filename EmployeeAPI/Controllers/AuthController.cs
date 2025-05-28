@@ -273,9 +273,9 @@ namespace EmployeeAPI.Controllers
             }
 
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var username = user.FindFirst(ClaimTypes.Name)?.Value;
-            var fullname = user.FindFirst("FullName")?.Value;
-            var role = user.FindFirst(ClaimTypes.Role)?.Value;
+            //var username = user.FindFirst(ClaimTypes.Name)?.Value;
+            //var fullname = user.FindFirst("FullName")?.Value;
+            //var role = user.FindFirst(ClaimTypes.Role)?.Value;
             var tokeVersion = user.FindFirst("TokenVersion")?.Value;
 
             var userEntity = await _authService.GetUserById(Guid.Parse(userId));
@@ -300,16 +300,27 @@ namespace EmployeeAPI.Controllers
                 });
             }
 
+            var userData = new
+            {
+                userEntity.UserId,
+                userEntity.Username,
+                userEntity.Fullname,
+                Role = userEntity.Role.ToString(),
+                userEntity.PhoneNumber,
+                userEntity.Address,
+                userEntity.PositionId,
+                PositionName = userEntity.Position.Name, // Renamed property to avoid duplicate name
+                userEntity.DepartmentId,
+                DepartmentName = userEntity.Department.Name, // Renamed property to avoid duplicate name
+                userEntity.BasicSalary,
+                userEntity.IsActive,
+                userEntity.IsDeleted,
+                userEntity.ImageUrl
+            };
             return Ok(new ApiResponse<object>
             {
                 Message = "Get login user success",
-                Data = new
-                {
-                    UserId = userId,
-                    Username = username,
-                    Fullname = fullname,
-                    Role = role,
-                },
+                Data = userData,
                 StatusCode = 200,
             });
         }
