@@ -101,7 +101,13 @@ namespace EmployeeAPI.Services.AuthServices
         }
 
 
-
+        public async Task<User> GetUserById(Guid userId)
+        {
+            var user = await _repository.GetByIdAsync(userId);
+            if (user == null)
+                throw new ArgumentException("User not found");
+            return user;
+        }
         public async Task<User> LoginAsync(string username, string password)
         {
             try
@@ -129,6 +135,7 @@ namespace EmployeeAPI.Services.AuthServices
             if (user == null)
                 throw new ArgumentException("User not found");
 
+            user.TokenVersion++;
             user.RefreshToken = string.Empty;
             user.RefreshTokenExpiryTime = DateTime.UtcNow;
 

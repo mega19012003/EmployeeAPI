@@ -37,9 +37,9 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         /// <remarks>         
         /// RoleType enum values:
-        /// - 1 = Admin
+        /// - 1 = Administrator
         /// - 2 = Manager
-        /// - 3 = Staff
+        /// - 3 = Employee
         /// </remarks> 
 
         [Authorize(Roles = "Administrator,Manager")]
@@ -129,6 +129,7 @@ namespace EmployeeAPI.Controllers
                     new Claim(ClaimTypes.Name, user.Username),
                     new Claim("FullName", user.Fullname ?? ""),
                     new Claim(ClaimTypes.Role, user.Role.ToString() ?? ""),
+                    new Claim("TokenVersion", user.TokenVersion.ToString() ?? ""),
                 };
                 var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
                 var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
@@ -257,7 +258,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet("current")/*, Authorize*/]
-        public IActionResult GetCurrentUser()
+        public async Task<IActionResult> GetCurrentUser()
         {
             var user = HttpContext.User;
 
@@ -275,14 +276,29 @@ namespace EmployeeAPI.Controllers
             var username = user.FindFirst(ClaimTypes.Name)?.Value;
             var fullname = user.FindFirst("FullName")?.Value;
             var role = user.FindFirst(ClaimTypes.Role)?.Value;
+            var tokeVersion = user.FindFirst("TokenVersion")?.Value;
 
+            var userEntity = await _authService.GetUserById(Guid.Parse(userId));
+            if (userEntity == null)
+            {
+                return Unauthorized(new ApiResponse<string>
+                {
+                    Message = "User not found",
+                    Data = null,
+                    StatusCode = 401,
+                });
+            }
 
-            //// Chuyển đổi kiểu dữ liệu nếu cần
-            //DateOnly? dateOfBirth = null;
-            //if (DateOnly.TryParse(dobString, out var dobParsed))
-            //    dateOfBirth = dobParsed;
-
-            //double.TryParse(salaryString, NumberStyles.Any, CultureInfo.InvariantCulture, out var basicSalary);
+            // So sánh TokenVersion trong token với tokenVersion trong DB
+            if (tokeVersion != userEntity.TokenVersion.ToString())
+            {
+                return Unauthorized(new ApiResponse<string>
+                {
+                    Message = "Token is no longer valid",
+                    Data = null,
+                    StatusCode = 401,
+                });
+            }
 
             return Ok(new ApiResponse<object>
             {
@@ -292,16 +308,10 @@ namespace EmployeeAPI.Controllers
                     UserId = userId,
                     Username = username,
                     Fullname = fullname,
-                    //Address = address,
                     Role = role,
-                    //DateOfBirth = dateOfBirth,
-                    //DepartmentName = department,
-                    //PositionName = position,
-                    //BasicSalary = basicSalary,
                 },
                 StatusCode = 200,
             });
         }
-
     }
 }

@@ -28,6 +28,7 @@ namespace EmployeeAPI.Models
         public List<Payroll>? Payrolls { get; set; } = new List<Payroll>();
         public string? RefreshToken { get; set; }
         public DateTime? RefreshTokenExpiryTime { get; set; } 
+        public int TokenVersion { get; set; } = 0;
         //public string note { get; set; } = string.Empty;
     }
 }

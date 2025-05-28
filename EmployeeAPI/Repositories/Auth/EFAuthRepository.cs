@@ -25,7 +25,6 @@ namespace EmployeeAPI.Repositories.Auth
 
             return user;
         }
-
         public async Task UpdateUserAsync(User user)
         {
             _context.Users.Update(user);
@@ -66,15 +65,16 @@ namespace EmployeeAPI.Repositories.Auth
             var results = await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
             return results;
         }
-        /*public async Task<User> GetUserByIdAsync(int userId)
-        {
-            return await _context.Users.FindAsync(userId);
-        }*/
         public async Task<User> GetLoginUserAsync(string username)
         {
             return await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.Username == username);
         }
-
+        
+        
+        /*public async Task<User> GetUserByIdAsync(int userId)
+                {
+                    return await _context.Users.FindAsync(userId);
+                }*/
         //public async Task<User> UpdateAsync(User user)
         //{
         //    var existingUser = await _context.Users

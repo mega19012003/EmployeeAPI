@@ -8,6 +8,7 @@ namespace EmployeeAPI.Services.AuthServices
 {
     public interface IAuthService
     {
+        Task<User> GetUserById(Guid userId);
         Task<string> RefreshTokenAsync(string accessToken, string refreshToken);
         Task<ResponseModel.AuthDto> RegisterAsync(ResponseModel.RegisterDto dto, ClaimsPrincipal user);
         Task<User> LoginAsync(string username, string password);
