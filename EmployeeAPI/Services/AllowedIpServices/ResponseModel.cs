@@ -1,4 +1,6 @@
-﻿namespace EmployeeAPI.Repositories.AllowedIPs
+﻿using System.Text.Json.Serialization;
+
+namespace EmployeeAPI.Repositories.AllowedIPs
 {
     public class ResponseModel
     {
@@ -8,10 +10,17 @@
             public string IPAddress { get; set; } = string.Empty;
         }
 
-        /*public class updateIPDto
+        public class AddIPDto
+        {
+            [JsonIgnore]
+            public Guid AllowedIPId { get; set; }
+            public string IPAddress { get; set; } = string.Empty;
+        }
+
+        public class updateIPDto
         {
             public Guid AllowedIPId { get; set; }
             public string IPAddress { get; set; } = string.Empty;
-        }*/
+        }
     }
 }

@@ -1,7 +1,9 @@
 ﻿using EmployeeAPI.Enums;
+using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Models
 {
+    [Index(nameof(Username), IsUnique = true)]
     public class User
     {
         public Guid UserId { get; set; }

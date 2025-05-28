@@ -103,10 +103,6 @@ namespace EmployeeAPI.Services.CheckinServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var isAllowed = await _allowedIPRepository.IsIpAllowedAsync(ip);
-                if (!isAllowed)
-                    throw new UnauthorizedAccessException($"IP address {ip} is not allowed to check in.");
-
 
                 var existUsers = await _userRepository.GetByIdAsync(dto.userId);
                 if (existUsers == null)
@@ -123,18 +119,30 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (dto.CheckinDate.HasValue)
                 {
-                    // dto.CheckinDate giả sử là giờ VN
-                    vnCheckinDate = dto.CheckinDate.Value;
+                    var inputDate = dto.CheckinDate.Value;
 
-                    // Chuyển giờ VN sang UTC để lưu
-                    utcCheckinDate = TimeZoneInfo.ConvertTimeToUtc(vnCheckinDate, vnTimeZone);
+                    if (inputDate.Kind == DateTimeKind.Utc)
+                    {
+                        // Nếu client gửi giờ UTC, convert sang giờ VN để xử lý
+                        vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(inputDate, vnTimeZone);
+                        utcCheckinDate = inputDate; // Giữ nguyên UTC để lưu DB
+                    }
+                    else if (inputDate.Kind == DateTimeKind.Local)
+                    {
+                        // Nếu local, convert local sang UTC
+                        utcCheckinDate = inputDate.ToUniversalTime();
+                        vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(utcCheckinDate, vnTimeZone);
+                    }
+                    else
+                    {
+                        // Unspecified (không có Kind), giả định đây là giờ VN
+                        vnCheckinDate = inputDate;
+                        utcCheckinDate = TimeZoneInfo.ConvertTimeToUtc(vnCheckinDate, vnTimeZone);
+                    }
                 }
                 else
                 {
-                    // Nếu không nhập thì lấy giờ hiện tại
                     utcCheckinDate = DateTime.UtcNow;
-
-                    // Chuyển UTC về VN để tính toán status
                     vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(utcCheckinDate, vnTimeZone);
                 }
 

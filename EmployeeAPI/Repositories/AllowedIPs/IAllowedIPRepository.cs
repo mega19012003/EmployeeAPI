@@ -5,11 +5,10 @@ namespace EmployeeAPI.Repositories.AllowedIPs
 {
     public interface IAllowedIPRepository
     {
-        Task <IEnumerable<AllowedIP>> GetAllAllowedIPsAsync();
-        Task<AllowedIP> GetAllowedIPAsync (Guid IPId);
-        Task<bool> IsIpAllowedAsync(string ipAddress);
-        Task AddAllowedIPAsync(string ipAddress);
-        Task UpdateAllowedIpAsync(AllowedIP model);
-        Task DeleteAllowedIPAsync(Guid IPId);
+        Task<List<AllowedIP>> GetAllAsync();
+        Task<AllowedIP> GetByIdAsync(Guid id);
+        Task AddAsync(AllowedIP entity);
+        Task DeleteAsync(Guid id);
+        Task<bool> ExistsAsync(string ip);
     }
 }

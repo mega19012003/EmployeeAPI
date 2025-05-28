@@ -309,9 +309,9 @@ namespace EmployeeAPI.Controllers
                 userEntity.PhoneNumber,
                 userEntity.Address,
                 userEntity.PositionId,
-                PositionName = userEntity.Position != null ? userEntity.Position.Name : "No position",
+                PositionName = userEntity.Position?.Name, // nếu Position hoặc Name null thì trả về null luôn
                 userEntity.DepartmentId,
-                DepartmentName = userEntity.Department != null ? userEntity.Department.Name : "No department",
+                DepartmentName = userEntity.Department?.Name,
                 userEntity.BasicSalary,
                 userEntity.IsActive,
                 userEntity.IsDeleted,

@@ -12,37 +12,33 @@ namespace EmployeeAPI.Repositories.AllowedIPs
         {
             _context = context;
         }
-        public async Task<IEnumerable<AllowedIP>> GetAllAllowedIPsAsync()
+        public async Task<List<AllowedIP>> GetAllAsync()
         {
-            return await _context.AllowedIPs/*.Where(p => !p.isDeleted)*/.ToListAsync();
+            return await _context.AllowedIPs.ToListAsync();
         }
-        public async Task<AllowedIP> GetAllowedIPAsync(Guid IPId)
+
+        public async Task<AllowedIP> GetByIdAsync(Guid id)
         {
-            return await _context.AllowedIPs.FirstOrDefaultAsync(ip => ip.AllowedIPId == IPId && !ip.isDeleted);
+            return await _context.AllowedIPs.FindAsync(id);
         }
-        public async Task<bool> IsIpAllowedAsync(string ipAddress)
+
+        public async Task AddAsync(AllowedIP entity)
         {
-            return await _context.AllowedIPs.AnyAsync(ip => ip.IPAddress == ipAddress);
+            await _context.AllowedIPs.AddAsync(entity);
         }
-        public async Task AddAllowedIPAsync(string ipAddress)
+
+        public async Task DeleteAsync(Guid id)
         {
-            var allowedIP = new AllowedIP { IPAddress = ipAddress };
-            _context.AllowedIPs.Add(allowedIP);
-            //await _context.SaveChangesAsync();
-        }
-        public async Task UpdateAllowedIpAsync(AllowedIP allowedIP)
-        {
-            _context.AllowedIPs.Update(allowedIP);
-            //await _context.SaveChangesAsync();
-        }
-        public async Task DeleteAllowedIPAsync(Guid IPId)
-        {
-            var allowedIP = await _context.AllowedIPs.FirstOrDefaultAsync(ip => ip.AllowedIPId == IPId);
-            if (allowedIP != null)
+            var entity = await _context.AllowedIPs.FindAsync(id);
+            if (entity != null)
             {
-                _context.AllowedIPs.Update(allowedIP);
-                //await _context.SaveChangesAsync();
+                _context.AllowedIPs.Remove(entity);
             }
+        }
+
+        public async Task<bool> ExistsAsync(string ip)
+        {
+            return await _context.AllowedIPs.AnyAsync(a => a.IPAddress == ip);
         }
     }
 }

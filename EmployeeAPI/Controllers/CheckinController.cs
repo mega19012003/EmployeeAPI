@@ -68,6 +68,12 @@ namespace EmployeeAPI.Controllers
                 // Lấy IP client từ HttpContext
                 //var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
                 var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
+
+                var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
+                if (!isAllowed)
+                {
+                    return StatusCode(403, new { Message = $"IP address {ip} is not allowed to check in.", Data = ip });
+                }
                 //dto.IpAddress = ip ?? "Unknown";
 
                 var created = await _checkinService.CreateAsync(dto, ip);
