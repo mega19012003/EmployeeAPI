@@ -309,9 +309,9 @@ namespace EmployeeAPI.Controllers
                 userEntity.PhoneNumber,
                 userEntity.Address,
                 userEntity.PositionId,
-                PositionName = userEntity.Position.Name, // Renamed property to avoid duplicate name
+                PositionName = userEntity.Position != null ? userEntity.Position.Name : "chưa có chức vụ",
                 userEntity.DepartmentId,
-                DepartmentName = userEntity.Department.Name, // Renamed property to avoid duplicate name
+                DepartmentName = userEntity.Department != null ? userEntity.Department.Name : "chưa có phòng ban",
                 userEntity.BasicSalary,
                 userEntity.IsActive,
                 userEntity.IsDeleted,
