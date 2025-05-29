@@ -225,65 +225,81 @@ namespace EmployeeAPI.Services.DutyServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while adding duty. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
-        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.CreateDuty dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                if (currentUser == null) throw new ArgumentException("Cannot find current user");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
-
                     var assignedUsers = await _context.Users
                         .Where(u => userIdsToAssign.Contains(u.UserId))
                         .ToListAsync();
 
-                    var anyInvalidUser = assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId);
-                    if (anyInvalidUser)
-                        throw new UnauthorizedAccessException("Manager can only assign users from the same department");
-                }
+                    if (assignedUsers.Count != userIdsToAssign.Count)
+                        throw new Exception("Cannot asign employee form other department");
 
-                else if (!currentUserRoles.Contains("Administrator"))
+                    if (assignedUsers.Any(u => u.IsDeleted))
+                        throw new Exception("Cannot assign duty to deleted users");
+
+                    if (currentUserRoles.Contains("Manager") && assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
+                        throw new Exception("Manager can only assign users from the same department");
+                }
+                else if (currentUserRoles.Contains("Administrator"))
+                {
+                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
+
+                    var assignedUsers = await _context.Users.Where(u => userIdsToAssign.Contains(u.UserId)).ToListAsync();
+
+                    var anyDeletedUser = assignedUsers.Any(u => u.IsDeleted);
+                    if (anyDeletedUser) throw new Exception("Cannot assign duty to deleted users");
+                }
+                else
                 {
                     throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
                 }
 
-                var duty = new Duty
-                {
-                    Id = DutyId,
-                    DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
-                    {
-                        UserId = d.userId,
-                        Description = d.Description
-                    }).ToList()
-                };
+                // Lấy duty hiện có từ database
+                var duty = await _context.Duties
+                    .Include(d => d.DutyDetails)
+                    .FirstOrDefaultAsync(d => d.Id == DutyId);
 
-                var created = await _dutyRepository.AddAsync(duty);
+                if (duty == null)
+                    throw new Exception("Duty not found");
+
+                // Thêm DutyDetail mới, tránh thêm trùng UserId
+                var existingUserIds = duty.DutyDetails.Select(dd => dd.UserId).ToHashSet();
+                foreach (var detailDto in dto.DutyDetails)
+                {
+                    if (!existingUserIds.Contains(detailDto.userId))
+                    {
+                        _context.DutyDetail.Add(new DutyDetail
+                        {
+                            UserId = detailDto.userId,
+                            Description = detailDto.Description,
+                            DutyId = duty.Id
+                        });
+                    }
+                }
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var result = await _context.Duties
-                   .Include(d => d.AssignedBy)
-                   .Include(d => d.DutyDetails)
-                       .ThenInclude(dd => dd.Users)
-                   .FirstOrDefaultAsync(d => d.Id == created.Id);
+                var result = await _context.Duties.Include(d => d.AssignedBy).Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).FirstOrDefaultAsync(d => d.Id == duty.Id);
 
-                if (result == null)
-                    throw new Exception("Cannot load result info after creation");
+                if (result == null) throw new Exception("Cannot load result info after creation");
 
                 return new ResponseModel.DutyDto
                 {
                     Id = result.Id,
-                    Name = result.Name,
-                    AssignedById = result.AssignedById,
+                    Name = result.Name ?? null,
                     AssignedBy = result.AssignedBy?.Fullname,
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
@@ -297,7 +313,8 @@ namespace EmployeeAPI.Services.DutyServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred while adding the duty detail", ex);
+                _logger.LogError(ex, "Error occurred while deleting duty. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
 
@@ -310,74 +327,60 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                if (currentUserRoles.Contains("Manager"))
-                {
-                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
+                var existingDuty = await _context.Duties
+                    .Include(d => d.DutyDetails)
+                    .ThenInclude(dd => dd.Users)
+                    .Include(d => d.AssignedBy)
+                    .FirstOrDefaultAsync(d => d.Id == dto.Id);
 
-                    var assignedUsers = await _context.Users
-                        .Where(u => userIdsToAssign.Contains(u.UserId))
-                        .ToListAsync();
-
-                    var anyInvalidUser = assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId);
-                    if (anyInvalidUser)
-                        throw new UnauthorizedAccessException("Manager can only assign users from the same department");
-                }
-
-                else if (!currentUserRoles.Contains("Administrator"))
-                {
-                    throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
-                }
-
-                var existingDuty = await _dutyRepository.GetDutyByIdAsync(dto.Id);
                 if (existingDuty == null)
                     throw new ArgumentException("Duty not found");
 
-                var existingStaff = await _context.Users
-                    .Where(s => dto.DutyDetails.Any(d => d.userId == s.UserId))
-                    .AsNoTracking()
-                    .ToListAsync();
-                if (existingStaff == null)
-                    throw new ArgumentException("Staff not found");
-
-                var existingDutyDetails = await _context.DutyDetail
-                    .Where(d => dto.DutyDetails.Any(dd => dd.Id == d.DutyDetailId))
-                    .AsNoTracking()
-                    .ToListAsync();
-                if (existingDutyDetails == null)
-                    throw new ArgumentException("DutyDetail not found");
+                if (currentUserRoles.Contains("Administrator"))
+                {
+               
+                }
+                else if (currentUserRoles.Contains("Manager"))
+                {
+                    // Manager: chỉ được sửa nếu chính họ là người được assign
+                    var isManagerAssigned = existingDuty.AssignedById.Equals(currentUserId);
+                    if (!isManagerAssigned)
+                        throw new UnauthorizedAccessException("Manager can only update duties assigned to themselves");
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException("You do not have permission to update this duty");
+                }
 
                 existingDuty.Name = dto.Name;
                 existingDuty.IsCompleted = dto.IsCompleted;
-                //existingDuty.DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
-                //{
-                //    DutyDetailId = d.Id,
-                //    UserId = d.userId,
-                //    Description = d.Description
-                //}).ToList();
 
-                var result = await _dutyRepository.UpdateDutyAsync(existingDuty);
+                await _dutyRepository.UpdateDutyAsync(existingDuty);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return new ResponseModel.DutyDto
                 {
-                    Id = result.Id,
-                    Name = dto.Name,
-                    IsCompleted = dto.IsCompleted,
-                    StartDate = result.StartDate,
-                    DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    Id = existingDuty.Id,
+                    AssignedById = existingDuty.AssignedById,
+                    Name = existingDuty.Name,
+                    IsCompleted = existingDuty.IsCompleted,
+                    StartDate = existingDuty.StartDate,
+                    AssignedBy = existingDuty.AssignedBy?.Fullname,
+                    DutyDetails = existingDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
-                        Name = existingStaff.FirstOrDefault(s => s.UserId == d.UserId)?.Fullname,
-                        Description = d.Description
+                        Name = d.Users?.Fullname,
+                        Description = d.Description ?? null
                     }).ToList(),
                 };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred while updating the duty", ex);
+                _logger.LogError(ex, "An error occurred while updating the duty. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
         public async Task<ResponseModel.DutyDetailDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto, Guid currentUserId, IList<string> currentUserRoles)
@@ -389,45 +392,35 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                if (currentUserRoles.Contains("Manager"))
+                var existingDutyDetail = await _context.DutyDetail.Include(dd => dd.Users).Where(dd => !dd.Users.IsDeleted).FirstOrDefaultAsync(d => d.DutyDetailId == dto.DutyDetailId && !d.IsDeleted);
+                if (existingDutyDetail == null)
+                    throw new ArgumentException("Duty detail not found");
+
+                if (currentUserRoles.Contains("Administrator"))
+                {
+                    // Do nothing, allow update
+                }
+                else if (currentUserRoles.Contains("Manager"))
                 {
                     var userIdsToAssign = dto.userId;
 
-                    var assignedUsers = await _context.Users
-                        .Where(u => userIdsToAssign.Equals(u.UserId))
-                        .ToListAsync();
+                    var userToAssign = await _context.Users.FirstOrDefaultAsync(p => p.UserId == dto.userId);
+                    if (userToAssign == null)
+                        throw new ArgumentException("Cannot assign this employee");
 
-                    var anyInvalidUser = assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId);
-                    if (anyInvalidUser)
+                    if(userToAssign.DepartmentId != currentUser.DepartmentId)
                         throw new UnauthorizedAccessException("Manager can only assign users from the same department");
                 }
-
-                else if (!currentUserRoles.Contains("Administrator"))
+                else
                 {
                     throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
                 }
 
-                var existingDuty = await _context.DutyDetail.FirstOrDefaultAsync(d => d.DutyDetailId == dto.Id && !d.IsDeleted);
-                if (existingDuty == null)
-                    throw new ArgumentException("Duty not found");
+                existingDutyDetail.DutyDetailId = dto.DutyDetailId;
+                existingDutyDetail.UserId = dto.userId;
+                existingDutyDetail.Description = dto.Description;
 
-                var existingStaff = await _context.Users
-                    .AsNoTracking()
-                    .ToListAsync();
-                if (existingStaff == null)
-                    throw new ArgumentException("Staff not found");
-
-                var existingDutyDetails = await _context.DutyDetail
-                    .AsNoTracking()
-                    .ToListAsync();
-                if (existingDutyDetails == null)
-                    throw new ArgumentException("DutyDetail not found");
-
-                existingDuty.DutyDetailId = dto.Id;
-                existingDuty.UserId = dto.userId;
-                existingDuty.Description = dto.Description;
-
-                var result = await _dutyRepository.UpdateDutyDetailAsync(existingDuty);
+                var result = await _dutyRepository.UpdateDutyDetailAsync(existingDutyDetail);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -435,25 +428,26 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     DutyDetailId = result.DutyDetailId,
                     userId = result.UserId,
-                    Name = existingStaff.FirstOrDefault(s => s.UserId == result.UserId)?.Fullname,
+                    Name = result.Users?.Fullname,
                     Description = result.Description
                 };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred while updating the duty detail", ex);
+                _logger.LogError(ex, "An error occurred while updating the duty detail. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
 
-        public async Task<string> SoftDeleteDutyAsync(Guid Id)
+        public async Task<string> SoftDeleteDutyAsync(Guid dutyId)
         {
             var entity = await _context.Duties
-                .Include(d => d.DutyDetails) 
-                .FirstOrDefaultAsync(p => p.Id == Id && !p.IsDeleted);
+                .Include(d => d.DutyDetails)
+                .FirstOrDefaultAsync(d => d.Id == dutyId && !d.IsDeleted);
 
             if (entity == null)
-                throw new ArgumentException("Cannot find duty id");
+                throw new ArgumentException("Cannot find duty with id " + dutyId);
 
             entity.IsDeleted = true;
 
@@ -464,15 +458,23 @@ namespace EmployeeAPI.Services.DutyServices
 
             await _context.SaveChangesAsync();
 
-            return "Đã xóa công việc " + entity.Name;
+            return $"Đã xóa công việc '{entity.Name}' và tất cả chi tiết công việc liên quan.";
         }
-        public async Task<string> SoftDeleteDutyDetailAsync(Guid Id)
-        {
-            var entity = await _dutyRepository.SoftDeleteDutyDetailAsync(Id);
-            if (entity == null)
-                throw new ArgumentException("Cannot find duty detail id");
 
-            return "Đã xóa chi tiết công việc" + entity.DutyDetailId;
+        public async Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId)
+        {
+            var entity = await _context.DutyDetail
+                .FirstOrDefaultAsync(d => d.DutyDetailId == dutyDetailId && !d.IsDeleted);
+
+            if (entity == null)
+                throw new ArgumentException("Cannot find duty detail with id " + dutyDetailId);
+
+            entity.IsDeleted = true;
+
+            await _context.SaveChangesAsync();
+
+            return $"Đã xóa chi tiết công việc với ID '{entity.DutyDetailId}'.";
         }
+
     }
 }

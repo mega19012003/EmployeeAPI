@@ -125,7 +125,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost("DutyDetail")]
-        public async Task<IActionResult> AddDutyDetailAsync(ResponseModel.CreateDuty dto, Guid id)
+        public async Task<IActionResult> AddDutyDetailAsync(ResponseModel.GetDutyDto dto)
         {
             try
             {
@@ -135,7 +135,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _dutyService.AddDutyDetailAsync(dto, id, currentUserId, currentUserRoles);
+                var result = await _dutyService.AddDutyDetailAsync(dto, dto.Id, currentUserId, currentUserRoles);
 
                 return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty detail success", result, 200));
             }
