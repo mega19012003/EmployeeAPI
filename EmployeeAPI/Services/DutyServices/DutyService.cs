@@ -24,8 +24,7 @@ namespace EmployeeAPI.Services.DutyServices
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            var query = _context.Duties
-                .Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).Where(d => !d.IsDeleted);
+            var query = _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).Where(d => !d.IsDeleted);
 
             if (currentUserRoles.Contains("Administrator"))
             {
@@ -40,10 +39,9 @@ namespace EmployeeAPI.Services.DutyServices
                 //query = query.Where(d => d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
                 query = query.Where(d => d.AssignedById == currentUserId); 
             }
-            else
+            else if (currentUserRoles.Contains("Employee"))
             {
-                query = query.Where(d =>
-                    d.DutyDetails.Any(dd => dd.UserId == currentUserId));
+                query = query.Where(d => d.DutyDetails.Any(dd => dd.UserId == currentUserId));
             }
 
             if (!string.IsNullOrWhiteSpace(name))

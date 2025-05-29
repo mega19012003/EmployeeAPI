@@ -31,7 +31,7 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật thông tin người dùng, sẽ do admin chỉnh sửa hết thông tin
         /// </summary>
         //[Authorize(Roles = "Administrator")]
-        [HttpPut("AdminUpdateUser")/*, Authorize*/]
+        [HttpPut("AdminUpdateUser")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> AdminUpdateStaffAsync([FromForm] ResponseModel.AdminUpdateDto dto)
         {
@@ -64,7 +64,7 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật thông tin người dùng, sẽ do manager chỉnh, manager ko dc chỉnh role và departmentid sẽ tự gán cho staff
         /// </summary>
         [Authorize(Roles = "Manager")]
-        [HttpPut("ManagerUpdateUser")/*, Authorize*/]
+        [HttpPut("ManagerUpdateUser")]
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> ManagerUpdateStaffAsync([FromForm] ResponseModel.ManagerUpdateDto dto)
         {
@@ -97,7 +97,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa người dùng, sẽ do admin/manager xử lý
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete/*, Authorize*/]
+        [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
         {
             try
@@ -131,7 +131,7 @@ namespace EmployeeAPI.Controllers
         /// Admin Lấy toàn bộ thông tin người dùng, manager lấy danh sách theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("GetAll")]
+        [HttpGet]
         public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
         {
             try
@@ -169,7 +169,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Admin Lấy toàn bộ thông tin người dùng, manager lấy user theo phòng ban
+        /// Admin có thể lấy thông tin của nhiều người dùng, manager chỉ có thể lấy thông tin user theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("id")] 

@@ -149,7 +149,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa checkin, nếu thông tin checkin ko có so với sự thật, manager chỉ dc xóa checkin của nhân viên trong cùng phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
-        [HttpDelete]
+        [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteAsync(Guid id)
         {
             try

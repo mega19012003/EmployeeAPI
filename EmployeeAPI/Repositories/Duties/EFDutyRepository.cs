@@ -47,46 +47,24 @@ namespace EmployeeAPI.Repositories.Duties
         public async Task<Duty> UpdateDutyAsync(Duty duty)
         {
             var existingDuty = await _context.Duties.Include(d => d.DutyDetails).FirstOrDefaultAsync(p => p.Id == duty.Id && !p.IsDeleted);
-            //if (existingDuty == null) return null;
-            //existingDuty.Name = duty.Name;
-            //existingDuty.IsCompleted = duty.IsCompleted;
-
-            //await _context.SaveChangesAsync();
-
             return existingDuty;
         }
 
         public async Task<DutyDetail> UpdateDutyDetailAsync(DutyDetail duty)
         {
             var existingDuty = await _context.DutyDetail.FirstOrDefaultAsync(p => p.DutyDetailId == duty.DutyDetailId);
-            //if (existingDuty == null) return null;
-            //existingDuty.Name = duty.Name;
-            //existingDuty.IsCompleted = duty.IsCompleted;
-
-            //await _context.SaveChangesAsync();
-
             return existingDuty;
         }
 
         public async Task<Duty> SoftDeleteDutyAsync(Guid id)
         {
            var entity = await _context.Duties.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
-            //if (entity == null) return null;
-
-            //entity.IsDeleted = true;
-            //_context.Duties.Update(entity);
-            //await _context.SaveChangesAsync();
             return entity;
         }
 
         public async Task<DutyDetail> SoftDeleteDutyDetailAsync(Guid id)
         {
             var entity = await _context.DutyDetail.FirstOrDefaultAsync(p => p.DutyDetailId == id && !p.IsDeleted);
-            //if (entity == null) return null;
-
-            //entity.IsDeleted = true;
-            //_context.Duties.Update(entity);
-            //await _context.SaveChangesAsync();
             return entity;
         }
 

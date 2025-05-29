@@ -22,9 +22,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailLấy danh sách công việc, chưa authorize
+        /// Lấy danh sách công việc
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? name, int? pageSize, int? pageIndex)
         {
@@ -59,7 +59,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailLấy công việc theo id
+        /// Lấy công việc theo id
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("Id")]
@@ -85,7 +85,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailThêm công việc, chưa authorize
+        /// Thêm công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
@@ -121,7 +121,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailThêm chi tiết công việc, chưa authorize
+        /// Thêm chi tiết công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost("DutyDetail")]
@@ -157,7 +157,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailCập nhật công việc, chưa authorize
+        /// Cập nhật công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
@@ -197,7 +197,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailCập nhật chi tiết công việc, chưa authorize
+        /// Cập nhật chi tiết công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut("DutyDetail")]
@@ -237,10 +237,10 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// DetailXóa công việc, chưa authorize
+        /// Xóa công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete]
+        [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteDutyAsync([FromForm] Guid id)
         {
             try
@@ -270,7 +270,7 @@ namespace EmployeeAPI.Controllers
             }
         }
         /// <summary>
-        /// DetailXóa chi tiết công việc, chưa authorize
+        /// Xóa chi tiết công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("DutyDetail")]

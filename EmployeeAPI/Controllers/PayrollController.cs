@@ -76,7 +76,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa chấm công, do admin/manager xử lý
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
-        [HttpDelete]
+        [HttpDelete("id")]
         public async Task<IActionResult> DeletePayroll(Guid id)
         {
             try
@@ -107,7 +107,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
         /// </summary>
         [Authorize]
-        [HttpGet("Employee")]
+        [HttpGet("employee")]
         public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
             try

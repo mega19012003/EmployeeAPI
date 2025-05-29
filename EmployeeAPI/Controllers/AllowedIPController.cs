@@ -62,7 +62,7 @@ namespace EmployeeAPI.Controllers
         ///  Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
-        [HttpDelete]
+        [HttpDelete("id")]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _allowedIPService.DeleteAsync(id);

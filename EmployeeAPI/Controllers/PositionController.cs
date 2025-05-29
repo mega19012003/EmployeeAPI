@@ -35,7 +35,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy danh sách chức vụ, manager lấy danh sách theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet/*, Authorize*/]
+        [HttpGet]
         public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
             try
@@ -73,7 +73,7 @@ namespace EmployeeAPI.Controllers
         /// Thêm chức vụ trong phỏng ban, manager ko cần thiết nhập department id
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpPost/*, Authorize*/]
+        [HttpPost]
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
             try
@@ -103,7 +103,7 @@ namespace EmployeeAPI.Controllers
         /// cập nhật chức vụ trong phòng ban, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpPut/*, Authorize*/]
+        [HttpPut]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
         {
             try
@@ -138,7 +138,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa mềm chức vụ trong phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete/*, Authorize*/]
+        [HttpDelete("id")]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
             try
@@ -168,7 +168,7 @@ namespace EmployeeAPI.Controllers
         /// lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("Employee")]
+        [HttpGet("employee")]
         public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
         {
             try

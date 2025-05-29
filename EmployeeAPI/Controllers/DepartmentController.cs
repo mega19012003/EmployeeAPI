@@ -120,7 +120,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa phòng ban, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Administrator")]
-        [HttpDelete]
+        [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
             try
@@ -153,7 +153,7 @@ namespace EmployeeAPI.Controllers
         /// lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("Employee")]
+        [HttpGet("employee")]
         public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
         {
             try
@@ -206,7 +206,7 @@ namespace EmployeeAPI.Controllers
         /// lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("List-Position")]
+        [HttpGet("position")]
         public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
         {
             try
