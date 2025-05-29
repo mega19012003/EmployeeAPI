@@ -22,7 +22,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Lấy danh sách công việc, chưa authorize
+        /// DetailLấy danh sách công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
@@ -59,7 +59,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Lấy công việc theo id
+        /// DetailLấy công việc theo id
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("Id")]
@@ -85,7 +85,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Thêm công việc, chưa authorize
+        /// DetailThêm công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
@@ -121,7 +121,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Thêm chi tiết công việc, chưa authorize
+        /// DetailThêm chi tiết công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost("DutyDetail")]
@@ -157,7 +157,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Cập nhật công việc, chưa authorize
+        /// DetailCập nhật công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
@@ -197,7 +197,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Cập nhật chi tiết công việc, chưa authorize
+        /// DetailCập nhật chi tiết công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut("DutyDetail")]
@@ -237,7 +237,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Xóa công việc, chưa authorize
+        /// DetailXóa công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete]
@@ -250,7 +250,7 @@ namespace EmployeeAPI.Controllers
                     return Unauthorized("UserId invalid");
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-                var result = await _dutyService.SoftDeleteDutyAsync(id);
+                var result = await _dutyService.SoftDeleteDutyAsync(id, currentUserId, currentUserRoles);
                 return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
             }
             catch (ArgumentException argEx)
@@ -270,7 +270,7 @@ namespace EmployeeAPI.Controllers
             }
         }
         /// <summary>
-        /// (đang fix) Xóa chi tiết công việc, chưa authorize
+        /// DetailXóa chi tiết công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("DutyDetail")]
@@ -283,7 +283,7 @@ namespace EmployeeAPI.Controllers
                     return Unauthorized("UserId invalid");
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-                var result = await _dutyService.SoftDeleteDutyDetailAsync(id);
+                var result = await _dutyService.SoftDeleteDutyDetailAsync(id, currentUserId, currentUserRoles);
                 return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
             }
             catch (ArgumentException argEx)
