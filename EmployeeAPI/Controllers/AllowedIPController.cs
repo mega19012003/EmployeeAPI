@@ -34,7 +34,7 @@ namespace EmployeeAPI.Controllers
         /// (Đang fix) Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
-        [HttpGet]
+        [HttpGet("id")]
         public async Task<IActionResult> GetById(Guid id)
         {
             var ip = await _allowedIPService.GetByIdAsync(id);
