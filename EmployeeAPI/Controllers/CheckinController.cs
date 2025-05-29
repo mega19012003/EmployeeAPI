@@ -108,11 +108,10 @@ namespace EmployeeAPI.Controllers
         /// - CheckinStatus enum values:
         /// - OnTime = 0 (đúng giờ)
         /// - Late = 1 (Đi trễ hơn 15 phút)
-        /// - LeaveEarly = 2 (Về sớm)
-        /// - Overtime = 3 (làm tăng ca)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
+        /// - Overtime = 2 (làm tăng ca)
+        /// - Absent = 3 (Vắng)
+        /// - LeaveWithPermission = 4 (Vắng có phép)
+        /// - Others = 5 (lí do khác)
         /// </remarks>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPut]
