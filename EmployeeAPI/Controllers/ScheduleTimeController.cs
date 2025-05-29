@@ -17,7 +17,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy thời gian biểu hiện tại, dùng cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ
+        /// Lấy thời gian biểu hiện tại, dùng cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ, chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
@@ -31,7 +31,7 @@ namespace EmployeeAPI.Controllers
             return Ok(result);
         }
         /// <summary>
-        /// Cập nhật gian biểu 
+        /// Cập nhật gian biểu, chỉ có admin dc phép dùng
         /// </summary>
         /// <remarks>
         /// { "startTime": "08:00:00",

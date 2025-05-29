@@ -47,7 +47,7 @@ namespace EmployeeAPI.Controllers
         /// Tạo checkin cho user
         /// </summary>
         ///<remarks>
-        /// Nhập dateTime theo dạng "yyyy-MM-ddTHH:mm:ss" (ví dụ: "2000-01-01T08:00:00" )
+        /// Nhập dateTime theo dạng "yyyy-MM-ddTHH:mm:ss" (ví dụ: "2000-01-01T08:00:00" ) hoặc excute luôn cũng dc
         /// </remarks>
         [Authorize]
         [HttpPost]

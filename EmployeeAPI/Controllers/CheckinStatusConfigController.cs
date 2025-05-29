@@ -17,7 +17,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy tất cả cấu hình trạng thái checkin
+        /// Lấy tất cả cấu hình trạng thái checkin, chỉ có admin dc phép dùng
         /// </summary>
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]
@@ -29,7 +29,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật cấu hình
+        /// Cập nhật cấu hình, chỉ có admin dc phép dùng
         /// </summary>
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]
