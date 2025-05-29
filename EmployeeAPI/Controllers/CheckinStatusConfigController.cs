@@ -1,5 +1,6 @@
 ﻿using EmployeeAPI.Models;
 using EmployeeAPI.Services.CheckinStatusConfigServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeAPI.Controllers
@@ -19,6 +20,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy tất cả cấu hình trạng thái checkin
         /// </summary>
         /// <returns></returns>
+        [Authorize(Roles = "Administrator")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -30,6 +32,7 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật cấu hình
         /// </summary>
         /// <returns></returns>
+        [Authorize(Roles = "Administrator")]
         [HttpPut]
         public async Task<IActionResult> Update(int id, [FromBody] CheckinStatusConfig updated)
         {

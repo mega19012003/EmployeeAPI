@@ -252,7 +252,6 @@ namespace EmployeeAPI.Controllers
         }
 
 
-
         /// <summary>
         /// Lấy thông tin user đang đăng nhập
         /// </summary>
@@ -273,9 +272,6 @@ namespace EmployeeAPI.Controllers
             }
 
             var userId = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //var username = user.FindFirst(ClaimTypes.Name)?.Value;
-            //var fullname = user.FindFirst("FullName")?.Value;
-            //var role = user.FindFirst(ClaimTypes.Role)?.Value;
             var tokeVersion = user.FindFirst("TokenVersion")?.Value;
 
             var userEntity = await _authService.GetUserById(Guid.Parse(userId));
@@ -289,16 +285,16 @@ namespace EmployeeAPI.Controllers
                 });
             }
 
-            // So sánh TokenVersion trong token với tokenVersion trong DB
-            if (tokeVersion != userEntity.TokenVersion.ToString())
-            {
-                return Unauthorized(new ApiResponse<string>
-                {
-                    Message = "Token is no longer valid",
-                    Data = null,
-                    StatusCode = 401,
-                });
-            }
+            //// So sánh TokenVersion trong token với tokenVersion trong DB
+            //if (tokeVersion != userEntity.TokenVersion.ToString())
+            //{
+            //    return Unauthorized(new ApiResponse<string>
+            //    {
+            //        Message = "Token is no longer valid",
+            //        Data = null,
+            //        StatusCode = 401,
+            //    });
+            //}
 
             var userData = new
             {

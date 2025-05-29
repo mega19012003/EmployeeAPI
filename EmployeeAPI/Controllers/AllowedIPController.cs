@@ -4,6 +4,7 @@ using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Services.AllowedIpServices;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace EmployeeAPI.Controllers
@@ -20,9 +21,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
         /// <summary>
-        /// Đang fix
+        /// (Đang fix) Chỉ có admin dc phép dùng
         /// </summary>
-  
+        [Authorize(Roles = "Administrator")]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
@@ -30,9 +31,10 @@ namespace EmployeeAPI.Controllers
             return Ok(list);
         }
         /// <summary>
-        /// Đang fix
+        /// (Đang fix) Chỉ có admin dc phép dùng
         /// </summary>
-        [HttpGet("{id}")]
+        [Authorize(Roles = "Administrator")]
+        [HttpGet]
         public async Task<IActionResult> GetById(Guid id)
         {
             var ip = await _allowedIPService.GetByIdAsync(id);
@@ -40,8 +42,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ip);
         }
         /// <summary>
-        /// Đang fix
+        /// (Đang fix) Chỉ có admin dc phép dùng
         /// </summary>
+        [Authorize(Roles = "Administrator")]
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] string IPAddress)
         {
@@ -56,9 +59,10 @@ namespace EmployeeAPI.Controllers
             }
         }
         /// <summary>
-        /// Đang fix
+        /// (Đang fix) Chỉ có admin dc phép dùng
         /// </summary>
-        [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrator")]
+        [HttpDelete]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _allowedIPService.DeleteAsync(id);

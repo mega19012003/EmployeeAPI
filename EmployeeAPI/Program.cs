@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Text;
+using EmployeeAPI.Middlewares;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
@@ -153,6 +154,9 @@ app.UseStaticFiles();
 app.UseCors("CustomCors");
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<TokenVersionMiddleware>();
+
 app.MapControllers();
 
 app.Run();

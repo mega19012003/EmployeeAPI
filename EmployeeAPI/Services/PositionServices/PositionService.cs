@@ -16,38 +16,14 @@ namespace EmployeeAPI.Services.PositionServices
         private readonly AppDbContext _context;
         private readonly ILogger<PositionService> _logger;
 
-        public PositionService( IPositionRepository PositionRepository, 
-                                IDepartmentRepository departmentRepository, 
-                                IHttpContextAccessor httpContextAccessor,
-                                AppDbContext context, 
-                                ILogger<PositionService> logger)
+        public PositionService( IPositionRepository PositionRepository, IDepartmentRepository departmentRepository, IHttpContextAccessor httpContextAccessor, AppDbContext context, ILogger<PositionService> logger)
         {
             _positionRepository = PositionRepository;
             _departmentRepository = departmentRepository;
             _context = context;
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
-
         }
-
-        /*public async Task<IEnumerable<ResponseModel.PositionDTO>> GetAllAsync(string? SearchTerm, int? pageIndex, int? pageSize)
-        {
-            if (pageSize == null || pageSize <= 0)
-            {
-                pageSize = 10;
-            }
-            if (pageIndex == null || pageIndex <= 0)
-            {
-                pageIndex = 1;
-            }
-            var positions = await _positionRepository.GetAllAsync(SearchTerm, pageIndex, pageSize);
-            return positions.Select(p => new ResponseModel.PositionDTO
-            {
-                Id = p.Id,
-                Name = p.Name,
-                IsDeleted = p.IsDeleted
-            });
-        }*/
 
         public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, Guid? departmentId,int? pageIndex, int? pageSize)
         {
@@ -96,7 +72,6 @@ namespace EmployeeAPI.Services.PositionServices
                 throw;
             }
         }
-
 
         public async Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id)
         {

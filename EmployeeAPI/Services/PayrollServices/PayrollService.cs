@@ -38,9 +38,9 @@ namespace EmployeeAPI.Services.PayrollServices
                 .Include(p => p.Users)
                 .Where(p => !p.IsDeleted);
 
-            if (!currentUserRoles.Contains("Administrator"))
+            if (currentUserRoles.Contains("Administrator"))
             {
-       
+                // Admin có thể xem tất cả payrolls → không cần lọc thêm gì
             }
             else if (currentUserRoles.Contains("Manager"))
             {
