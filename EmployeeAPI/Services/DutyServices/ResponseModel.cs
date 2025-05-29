@@ -1,4 +1,5 @@
-﻿using System.Text.Json.Serialization;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Services.DutyServices
@@ -10,6 +11,8 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid Id { get; set; }
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
+            public Guid AssignedById { get; set; }
+            public string AssignedBy{ get; set; }
             public bool IsCompleted { get; set; }
             public List<DutyDetailDto> DutyDetails { get; set; } = new List<DutyDetailDto>();
         }
@@ -35,6 +38,7 @@ namespace EmployeeAPI.Services.DutyServices
         }*/
         public record DutyDetailDto
         {
+            [Key]
             public Guid DutyDetailId { get; set; }
             public Guid userId { get; set; }
             public string Name { get; set; }

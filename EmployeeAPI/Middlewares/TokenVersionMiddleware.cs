@@ -14,6 +14,17 @@ namespace EmployeeAPI.Middlewares
 
         public async Task Invoke(HttpContext context, IUserRepository userRepository)
         {
+            // Bỏ qua middleware nếu là endpoint login (hoặc các endpoint khác nếu cần)
+            var path = context.Request.Path.Value?.ToLower();
+            if (path != null && (
+                path.Contains("/login") ||
+                path.Contains("/register") ||
+                path.Contains("/refresh-token")
+            ))
+            {
+                await _next(context);
+                return;
+            }
             var user = context.User;
 
             if (user.Identity?.IsAuthenticated == true)

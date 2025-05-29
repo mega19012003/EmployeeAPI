@@ -13,17 +13,6 @@ namespace EmployeeAPI.Repositories.Duties
         }
         public async Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
         {
-            /*var item = _context.Duties
-                .AsNoTracking()
-                .Include(d => d.DutyDetails)
-                .ThenInclude(dd => dd.Users)
-                .AsQueryable();
-
-            if (!string.IsNullOrEmpty(SearchTerm))
-            {
-                item = item.Where(m => m.Name.ToLower().Contains(SearchTerm.ToLower()));
-            }
-            var result = await item.Skip((int)(pageSize * (pageIndex - 1))).Take((int)pageSize).Where(p => !p.IsDeleted).ToListAsync();*/
             return _context.Duties
                 .AsNoTracking()
                 .Include(d => d.DutyDetails)
@@ -31,13 +20,21 @@ namespace EmployeeAPI.Repositories.Duties
                 .AsQueryable();
         }
 
-        public async Task<Duty> GetByIdAsync(Guid id)
+        public async Task<Duty> GetDutyByIdAsync(Guid id)
         {
             return await _context.Duties
                 .AsNoTracking()
                 .Include(p => p.DutyDetails)
                 .ThenInclude(p => p.Users)
                 .FirstOrDefaultAsync(p => p.Id == id);
+        }
+
+        public async Task<DutyDetail> GetDutyDetailByIdAsync(Guid id)
+        {
+            return await _context.DutyDetail
+                .AsNoTracking()
+                .Include(p => p.Users)
+                .FirstOrDefaultAsync(p => p.DutyDetailId == id);
         }
 
         public async Task<Duty> AddAsync(Duty duty)
@@ -47,46 +44,54 @@ namespace EmployeeAPI.Repositories.Duties
                 return duty;
         }
 
-        public async Task<Duty> UpdateAsync(Duty duty)
+        public async Task<Duty> UpdateDutyAsync(Duty duty)
         {
             var existingDuty = await _context.Duties.Include(d => d.DutyDetails).FirstOrDefaultAsync(p => p.Id == duty.Id && !p.IsDeleted);
-            if (existingDuty == null) return null;
-            existingDuty.Name = duty.Name;
-            existingDuty.IsCompleted = duty.IsCompleted;
+            //if (existingDuty == null) return null;
+            //existingDuty.Name = duty.Name;
+            //existingDuty.IsCompleted = duty.IsCompleted;
 
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
 
             return existingDuty;
         }
 
-        public async Task<Duty> SoftDeleteAsync(Guid id)
+        public async Task<DutyDetail> UpdateDutyDetailAsync(DutyDetail duty)
+        {
+            var existingDuty = await _context.DutyDetail.FirstOrDefaultAsync(p => p.DutyDetailId == duty.DutyDetailId);
+            //if (existingDuty == null) return null;
+            //existingDuty.Name = duty.Name;
+            //existingDuty.IsCompleted = duty.IsCompleted;
+
+            //await _context.SaveChangesAsync();
+
+            return existingDuty;
+        }
+
+        public async Task<Duty> SoftDeleteDutyAsync(Guid id)
         {
            var entity = await _context.Duties.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
-            if (entity == null) return null;
+            //if (entity == null) return null;
 
-            entity.IsDeleted = true;
-            _context.Duties.Update(entity);
-            await _context.SaveChangesAsync();
+            //entity.IsDeleted = true;
+            //_context.Duties.Update(entity);
+            //await _context.SaveChangesAsync();
             return entity;
         }
+
+        public async Task<DutyDetail> SoftDeleteDutyDetailAsync(Guid id)
+        {
+            var entity = await _context.DutyDetail.FirstOrDefaultAsync(p => p.DutyDetailId == id && !p.IsDeleted);
+            //if (entity == null) return null;
+
+            //entity.IsDeleted = true;
+            //_context.Duties.Update(entity);
+            //await _context.SaveChangesAsync();
+            return entity;
+        }
+
         public async Task<IEnumerable<Duty>> GetDutyByName(string name, int? pageSize, int? pageIndex)
         {
-           /* var query = _context.Duties
-                .AsNoTracking()
-                .Include(p => p.DutyDetails)
-                .ThenInclude(p => p.Users)
-                .Where(p => !p.IsDeleted);
-
-            if (!string.IsNullOrWhiteSpace(name))
-            {
-                query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
-            }
-
-            if (pageSize.HasValue && pageIndex.HasValue)
-            {
-                int skip = (pageIndex.Value - 1) * pageSize.Value;
-                query = query.Skip(skip).Take(pageSize.Value);
-            }*/
             return _context.Duties
                 .AsNoTracking()
                 .Include(p => p.DutyDetails)

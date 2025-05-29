@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Base;
+﻿using System.Security.Claims;
+using EmployeeAPI.Base;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Services.DutyServices;
 using Microsoft.AspNetCore.Authorization;
@@ -23,23 +24,20 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// (đang fix) Lấy danh sách công việc, chưa authorize
         /// </summary>
-        
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? SearchTerm, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetAll(string? name, int? pageSize, int? pageIndex)
         {
             try
             {
-                var pagedResult = await _dutyService.GetAllAsync(SearchTerm, pageSize, pageIndex);
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
 
-                /*if (pagedResult.Items.Count() == 0)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot find the result",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }*/
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                //var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
+                var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, name, pageSize, pageIndex);
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("Get list duty success", pagedResult, 200));
             }
@@ -63,16 +61,20 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// (đang fix) Lấy công việc theo id
         /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("Id")]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {
             try
             {
-                var duty = await _dutyService.GetByIdAsync(id);
-                if (duty == null)
-                {
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the duty id", null, 404));
-                }
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var duty = await _dutyService.GetByIdAsync(id, currentUserId, currentUserRoles);
+                
                 return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Get duty by id success", duty, 200));
             }
             catch (Exception ex)
@@ -91,18 +93,15 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var result = await _dutyService.AddAsync(dto);
-                if (dto == null)
-                {
-                    return NotFound(new ApiResponse<object>
-                    {
-                        Message = "Cannot add duty",
-                        Data = null,
-                        StatusCode = 404
-                    });
-                }
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
 
-                return Ok(ApiResponse<ResponseModel.CreateDuty>.ReturnResult("Create duty success", result, 200));
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var result = await _dutyService.AddDutyAsync(dto, currentUserId, currentUserRoles);
+
+                return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty success", result, 200));
             }
             catch (ArgumentException argEx)
             {
@@ -122,6 +121,42 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// (đang fix) Thêm chi tiết công việc, chưa authorize
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpPost("DutyDetail")]
+        public async Task<IActionResult> AddDutyDetailAsync(ResponseModel.CreateDuty dto, Guid id)
+        {
+            try
+            {
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var result = await _dutyService.AddDutyDetailAsync(dto, id, currentUserId, currentUserRoles);
+
+                return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty detail success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentNullException in AddDutyAsync");
+                return StatusCode(400, new { Message = "Add duty detail failed", Deatail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in AddDutyAsync");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty detail");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
+        }
+
+        /// <summary>
         /// (đang fix) Cập nhật công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
@@ -130,7 +165,14 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var result = await _dutyService.UpdateAsync(dto);
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var result = await _dutyService.UpdateDutyAsync(dto, currentUserId, currentUserRoles);
+
                 if (result == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Database update error", "Invalid input", 400));
 
@@ -155,19 +197,60 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// (đang fix) Cập nhật chi tiết công việc, chưa authorize
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpPut("DutyDetail")]
+        public async Task<IActionResult> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto)
+        {
+            try
+            {
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var result = await _dutyService.UpdateDutyDetailAsync(dto, currentUserId, currentUserRoles);
+
+                if (result == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Database update error", "Invalid input", 400));
+
+                return Ok(ApiResponse<ResponseModel.DutyDetailDto>.ReturnResult("Update duty success", result, 200));
+
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in AddDutyAsync");
+                return StatusCode(400, new { Message = "Update duty failed", Deatail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in AddDutyAsync");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
+        }
+
+        /// <summary>
         /// (đang fix) Xóa công việc, chưa authorize
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete]
-        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid id)
+        public async Task<IActionResult> SoftDeleteDutyAsync([FromForm] Guid id)
         {
             try
             {
-                var result = await _dutyService.SoftDeleteAsync(id);
-                /*if (result == null)
-                {
-                    return NotFound();
-                }*/
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+                var result = await _dutyService.SoftDeleteDutyAsync(id);
                 return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
             }
             catch (ArgumentException argEx)
@@ -186,6 +269,38 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find id", StatusCode = 500 });
             }
         }
+        /// <summary>
+        /// (đang fix) Xóa chi tiết công việc, chưa authorize
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpDelete("DutyDetail")]
+        public async Task<IActionResult> SoftDeleteDutyDetailAsync([FromForm] Guid id)
+        {
+            try
+            {
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
 
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+                var result = await _dutyService.SoftDeleteDutyDetailAsync(id);
+                return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
+                return StatusCode(400, new { Message = "Delete duty failed", Deatail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi tạo Duty");
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find id", StatusCode = 500 });
+            }
+        }
     }
 }
