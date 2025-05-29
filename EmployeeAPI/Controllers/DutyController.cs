@@ -105,8 +105,8 @@ namespace EmployeeAPI.Controllers
             }
             catch (ArgumentException argEx)
             {
-                _logger.LogError(argEx, "ArgumentNullException in AddDutyAsync");
-                return StatusCode(400, new { Message = "Add duty failed", Deatail = argEx.Message, StatusCode = 400 });
+                _logger.LogError(argEx, "ArgumentException in AddDutyAsync");
+                return StatusCode(400, new { Message = "Add duty failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -142,7 +142,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentNullException in AddDutyAsync");
-                return StatusCode(400, new { Message = "Add duty detail failed", Deatail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "Add duty detail failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -182,7 +182,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentException in AddDutyAsync");
-                return StatusCode(400, new { Message = "Update duty failed", Deatail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "Update duty failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -222,7 +222,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentException in AddDutyAsync");
-                return StatusCode(400, new { Message = "Update duty failed", Deatail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "Update duty failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -256,7 +256,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
-                return StatusCode(400, new { Message = "Delete duty failed", Deatail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "Delete duty failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -289,7 +289,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
-                return StatusCode(400, new { Message = "Delete duty failed", Deatail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "Delete duty failed", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {

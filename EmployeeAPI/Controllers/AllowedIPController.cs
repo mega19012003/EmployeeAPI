@@ -21,7 +21,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
         /// <summary>
-        /// (Đang fix) Lấy danh sách ip, Chỉ có admin dc phép dùng
+        ///  Lấy danh sách ip, Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
@@ -31,7 +31,7 @@ namespace EmployeeAPI.Controllers
             return Ok(list);
         }
         ///// <summary>
-        ///// (Đang fix) Chỉ có admin dc phép dùng
+        /////  Chỉ có admin dc phép dùng
         ///// </summary>
         //[Authorize(Roles = "Administrator")]
         //[HttpGet("id")]
@@ -42,7 +42,7 @@ namespace EmployeeAPI.Controllers
         //    return Ok(ip);
         //}
         /// <summary>
-        /// (Đang fix) Chỉ có admin dc phép dùng
+        ///  Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
@@ -59,7 +59,7 @@ namespace EmployeeAPI.Controllers
             }
         }
         /// <summary>
-        /// (Đang fix) Chỉ có admin dc phép dùng
+        ///  Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpDelete]

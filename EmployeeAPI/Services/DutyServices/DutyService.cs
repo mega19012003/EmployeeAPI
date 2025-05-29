@@ -11,10 +11,12 @@ namespace EmployeeAPI.Services.DutyServices
     {
         private readonly IDutyRepository _dutyRepository;
         private readonly AppDbContext _context;
-        public DutyService(IDutyRepository dutyRepository, AppDbContext context)
+        private readonly ILogger<DutyService> _logger;
+        public DutyService(IDutyRepository dutyRepository, AppDbContext context, ILogger<DutyService> logger)
         {
             _dutyRepository = dutyRepository;
             _context = context;
+            _logger = logger;
         }
 
         public async Task<PagedResult<ResponseModel.DutyDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
@@ -37,8 +39,8 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                query = query.Where(d =>
-                    d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
+                //query = query.Where(d => d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
+                query = query.Where(d => d.AssignedById == currentUserId); 
             }
             else
             {
@@ -72,6 +74,7 @@ namespace EmployeeAPI.Services.DutyServices
                         userId = dd.UserId,
                         Description = dd.Description,
                         Name = dd.Users.Fullname,
+                        
                     }).ToList()
                 })
                 .AsNoTracking()
@@ -85,46 +88,6 @@ namespace EmployeeAPI.Services.DutyServices
                 TotalCount = totalCount
             };
         }
-
-        //public async Task<PagedResult<ResponseModel.DutyDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
-        //{
-        //    pageIndex ??= 1;
-        //    pageSize ??= 10;
-
-        //    var query = _context.Duties
-        //        .Where(f => string.IsNullOrEmpty(name) || f.Name.ToLower().Contains(name.ToLower()))
-        //        .Where(p => !p.IsDeleted);
-
-        //    var totalCount = await query.CountAsync();
-
-        //    var items = await query.AsNoTracking()
-        //        .Skip((pageIndex.Value - 1) * pageSize.Value)
-        //        .Take(pageSize.Value)
-        //        .Select(f => new ResponseModel.DutyDto
-        //        {
-        //            Id = f.Id,
-        //            Name = f.Name,
-        //            IsCompleted = f.IsCompleted,
-        //            StartDate = f.StartDate,
-        //            DutyDetails = f.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
-        //            {
-        //                DutyDetailId = d.DutyDetailId,
-        //                userId = d.UserId,
-        //                Name = d.Users.Fullname,
-        //                Description = d.Description
-        //            }).ToList()
-        //        })
-        //        .ToListAsync();
-
-        //    return new PagedResult<ResponseModel.DutyDto>
-        //    {
-        //        TotalCount = totalCount,
-        //        PageIndex = pageIndex.Value,
-        //        PageSize = pageSize.Value,
-        //        Items = items
-        //    };
-        //}
-
         public async Task<ResponseModel.DutyDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var duty = await _context.Duties
@@ -185,16 +148,30 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUserRoles.Contains("Manager"))
                 {
                     var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
-
                     var assignedUsers = await _context.Users
                         .Where(u => userIdsToAssign.Contains(u.UserId))
                         .ToListAsync();
 
-                    var anyInvalidUser = assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId);
-                    if (anyInvalidUser)
-                        throw new UnauthorizedAccessException("Manager can only assign users from the same department");
-                }
+                    if (assignedUsers.Count != userIdsToAssign.Count)
+                        throw new Exception("Cannot asign employee form other department");
 
+                    if (assignedUsers.Any(u => u.IsDeleted))
+                        throw new Exception("Cannot assign duty to deleted users");
+
+                    if (currentUserRoles.Contains("Manager") && assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
+                        throw new Exception("Manager can only assign users from the same department");
+
+                }
+                else if (currentUserRoles.Contains("Administrator"))
+                {
+                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
+
+                    var assignedUsers = await _context.Users.Where(u => userIdsToAssign.Contains(u.UserId)).ToListAsync();
+
+                    var anyDeletedUser = assignedUsers.Any(u => u.IsDeleted);
+                    if (anyDeletedUser)
+                        throw new Exception("Cannot assign duty to deleted users");
+                }
                 else if (!currentUserRoles.Contains("Administrator"))
                 {
                     throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
@@ -209,7 +186,8 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                     {
                         UserId = d.userId,
-                        Description = d.Description
+                        Description = d.Description,
+                        IsDeleted = false
                     }).ToList()
                 };
 
@@ -233,20 +211,22 @@ namespace EmployeeAPI.Services.DutyServices
                     IsCompleted = result.IsCompleted,
                     StartDate = result.StartDate,
                     AssignedById = result.AssignedById,
-                    AssignedBy = result.AssignedBy?.Fullname
-                    /*DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    AssignedBy = result.AssignedBy?.Fullname,
+                    DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
-                    }).ToList()*/
+                        IsDeleted = d.IsDeleted
+                    }).ToList()
                 };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                throw new Exception("An error occurred while adding the duty", ex);
+                _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
         public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.CreateDuty dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
