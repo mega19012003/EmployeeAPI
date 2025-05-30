@@ -128,7 +128,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Admin Lấy toàn bộ thông tin người dùng, manager lấy danh sách theo phòng ban
+        /// Admin có thể lấy thông tin của người dùng, manager lấy danh sách theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
