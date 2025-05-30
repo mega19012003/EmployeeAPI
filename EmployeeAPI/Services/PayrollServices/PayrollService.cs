@@ -233,7 +233,7 @@ namespace EmployeeAPI.Services.PayrollServices
             // Lấy thông tin người dùng cần chấm công
             var staff = await _context.Users
                 .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.UserId == staffId && !u.IsDeleted);
+                .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == true || u.IsActive == false));
 
             if (staff == null)
                 throw new Exception("Cannot find staff id");

@@ -152,8 +152,8 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Count != userIdsToAssign.Count)
                         throw new Exception("Cannot asign employee");
 
-                    if (assignedUsers.Any(u => u.IsDeleted))
-                        throw new Exception("Cannot assign duty to deleted users");
+                    if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
+                        throw new Exception("Cannot assign duty to deleted or inactive users");
 
                     if (currentUserRoles.Contains("Manager") && assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new Exception("Manager can only assign users from the same department");
@@ -165,9 +165,9 @@ namespace EmployeeAPI.Services.DutyServices
 
                     var assignedUsers = await _context.Users.Where(u => userIdsToAssign.Contains(u.UserId)).ToListAsync();
 
-                    var anyDeletedUser = assignedUsers.Any(u => u.IsDeleted);
+                    var anyDeletedUser = assignedUsers.Any(u => u.IsDeleted || !u.IsActive);
                     if (anyDeletedUser)
-                        throw new Exception("Cannot assign duty to deleted users");
+                        throw new Exception("Cannot assign duty to deleted or inactive users");
                 }
                 else if (!currentUserRoles.Contains("Administrator"))
                 {
@@ -195,7 +195,7 @@ namespace EmployeeAPI.Services.DutyServices
                 var result = await _context.Duties
                    .Include(d => d.AssignedBy)
                    .Include(d => d.DutyDetails)
-                       .ThenInclude(dd => dd.Users)
+                   .ThenInclude(dd => dd.Users)
                    .FirstOrDefaultAsync(d => d.Id == created.Id);
 
                 if (result == null)
@@ -238,14 +238,14 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
                     var assignedUsers = await _context.Users
-                        .Where(u => userIdsToAssign.Contains(u.UserId))
+                        .Where(u => userIdsToAssign.Contains(u.UserId)) 
                         .ToListAsync();
 
                     if (assignedUsers.Count != userIdsToAssign.Count)
                         throw new Exception("Cannot asign employee");
 
-                    if (assignedUsers.Any(u => u.IsDeleted))
-                        throw new Exception("Cannot assign duty to deleted users");
+                    if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
+                        throw new Exception("Cannot assign duty to deleted or inactive users");
 
                     if (currentUserRoles.Contains("Manager") && assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new Exception("Manager can only assign users from the same department");
@@ -256,7 +256,7 @@ namespace EmployeeAPI.Services.DutyServices
 
                     var assignedUsers = await _context.Users.Where(u => userIdsToAssign.Contains(u.UserId)).ToListAsync();
 
-                    var anyDeletedUser = assignedUsers.Any(u => u.IsDeleted);
+                    var anyDeletedUser = assignedUsers.Any(u => !u.IsDeleted || u.IsActive);
                     if (anyDeletedUser) throw new Exception("Cannot assign duty to deleted users");
                 }
                 else
@@ -385,19 +385,22 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var existingDutyDetail = await _context.DutyDetail.Include(dd => dd.Users).Where(dd => !dd.Users.IsDeleted).FirstOrDefaultAsync(d => d.DutyDetailId == dto.DutyDetailId && !d.IsDeleted);
+                var existingDutyDetail = await _context.DutyDetail.Include(dd => dd.Users).Where(dd => !dd.Users.IsDeleted && dd.Users.IsActive).FirstOrDefaultAsync(d => d.DutyDetailId == dto.DutyDetailId && !d.IsDeleted);
                 if (existingDutyDetail == null)
                     throw new ArgumentException("Duty detail not found");
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
+                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
+                    if (userToAssign == null)
+                        throw new ArgumentException("Cannot assign this employee");
                     // Do nothing, allow update
                 }
                 else if (currentUserRoles.Contains("Manager"))
                 {
                     var userIdsToAssign = dto.userId;
 
-                    var userToAssign = await _context.Users.FirstOrDefaultAsync(p => p.UserId == dto.userId);
+                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
                     if (userToAssign == null)
                         throw new ArgumentException("Cannot assign this employee");
 
@@ -432,7 +435,6 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-
         public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
@@ -465,7 +467,6 @@ namespace EmployeeAPI.Services.DutyServices
 
             return $"Delete duty '{entity.Name}' success";
         }
-
         public async Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
         {
             var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
