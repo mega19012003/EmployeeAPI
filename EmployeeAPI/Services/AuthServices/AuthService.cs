@@ -114,6 +114,8 @@ namespace EmployeeAPI.Services.AuthServices
                 var user = await _repository.LoginAsync(username, password);
                 if (user == null)
                     throw new Exception("Wrong Username or Password ");
+                if(user.IsDeleted)
+                    throw new Exception("UserAccount has been deleted");
 
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 

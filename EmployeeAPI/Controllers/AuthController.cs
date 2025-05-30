@@ -1,19 +1,13 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
-using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
-using EmployeeAPI.Models;
-using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Base;
-using Azure;
-using System.Globalization;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
-using EmployeeAPI.Enums;
 
 namespace EmployeeAPI.Controllers
 {
@@ -80,13 +74,13 @@ namespace EmployeeAPI.Controllers
         ///  "username": "Admin123",
         ///  "password": "anno123"
         ///}
-        /// - Tk manager Thu ngân { "username": "Manager123", "password": "anno123" }
-        /// - Tk manager It { "username": "Manager456", "password": "anno123" }
-        /// - Tk manager sửa chữa { "username": "Manager789", "password": "anno123" }
+        /// - Tk manager Thu ngân    { "username": "Manager123", "password": "anno123" }
+        /// - Tk manager It          { "username": "Manager456", "password": "anno123" }
+        /// - Tk manager sửa chữa    { "username": "Manager789", "password": "anno123" }
         /// - Tk employee Thu ngân 1 { "username": "user101", "password": "123456" }
         /// - Tk employee Thu ngân 2 { "username": "user01", "password": "123456" }
-        /// - Tk employee IT { "username": "user02", "password": "654321" }
-        /// - Tk employee Sửa chữa { "username": "user100", "password": "123456" }
+        /// - Tk employee IT         { "username": "user02", "password": "654321" }
+        /// - Tk employee Sửa chữa   { "username": "user100", "password": "123456" }
         /// </remarks>
         [HttpPost, Route("login")]
         public async Task<IActionResult> Login([FromBody] ResponseModel.LoginDto dto)
