@@ -100,7 +100,6 @@ namespace EmployeeAPI.Services.AuthServices
             }
         }
 
-
         public async Task<User> GetUserById(Guid userId)
         {
             var user = await _repository.GetByIdAsync(userId);
@@ -140,6 +139,58 @@ namespace EmployeeAPI.Services.AuthServices
             user.RefreshTokenExpiryTime = DateTime.UtcNow;
 
             await _repository.UpdateUserAsync(user);
+        }
+
+        public async Task<string> ChangePasswordAsync(Guid userId, string oldPassword, string confirmPassword, string newPassword)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await _repository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new ArgumentException("User not found");
+
+                if (user.Password != HashPassword(oldPassword))
+                    throw new ArgumentException("Password is incorrect");
+
+                if (newPassword != confirmPassword)
+                    throw new ArgumentException("New password and confirm password do not match");
+
+                user.Password = HashPassword(newPassword);
+                await _repository.UpdateUserAsync(user);
+                await transaction.CommitAsync();
+                return "Change password success";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while changing password");
+                throw;
+            }
+        }
+
+        public async Task<string> ResetPasswordAsync(Guid userId)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var user = await _repository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new ArgumentException("User not found");
+
+                user.Password = HashPassword("123456");
+
+                await _repository.UpdateUserAsync(user);
+
+                await transaction.CommitAsync();
+                return "Reset password to 123456 success";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while resetting password");
+                throw;
+            }
         }
 
         private string GenerateRefreshToken()

@@ -334,5 +334,76 @@ namespace EmployeeAPI.Controllers
                 StatusCode = 200,
             });
         }
+
+        /// <summary>
+        /// Thay đổi password
+        /// </summary>
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ResponseModel.ChangePasswordDto dto)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
+                    return BadRequest(new ApiResponse<string>
+                    {
+                        Message = "Invalid user ID",
+                        StatusCode = 400
+                    });
+                var result = await _authService.ChangePasswordAsync(userId, dto.OldPassword, dto.ConfirmPassword, dto.NewPassword);
+                return Ok(ApiResponse<string>.ReturnResult("Change password success", result, 200));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiResponse<string>
+                {
+                    Message = ex.Message,
+                    StatusCode = 400
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while changing password");
+                return StatusCode(500, new ApiResponse<string>
+                {
+                    Message = "Internal server error",
+                    Data = ex.Message,
+                    StatusCode = 500
+                });
+            }
+        }
+
+        /// <summary>
+        /// Reset password, chỉ có admin/manager dc phép dùng
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpPut("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromForm] Guid id)
+        {
+            try
+            {
+                var result = await _authService.ResetPasswordAsync(id);
+                return Ok(ApiResponse<string>.ReturnResult("Reset password success", result, 200));
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new ApiResponse<string>
+                {
+                    Message = ex.Message,
+                    StatusCode = 400
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while resetting password");
+                return StatusCode(500, new ApiResponse<string>
+                {
+                    Message = "Internal server error",
+                    Data = ex.Message,
+                    StatusCode = 500
+                });
+            }
+        }
     }
 }

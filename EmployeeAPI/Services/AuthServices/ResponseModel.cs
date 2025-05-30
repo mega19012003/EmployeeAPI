@@ -29,7 +29,20 @@ namespace EmployeeAPI.Services.AuthServices
             [Required]
             public string Password { get; set; }
         }
-
+        public class ChangePasswordDto
+        {
+            [Required]
+            public string OldPassword { get; set; }
+            [Required]
+            public string NewPassword { get; set; }
+            [Required]
+            public string ConfirmPassword { get; set; }
+        }
+        public class ResetPasswordDto
+        {
+            [Required]
+            public Guid UserId { get; set; }
+        }
         public class RegisterDto
         {
             [Required]

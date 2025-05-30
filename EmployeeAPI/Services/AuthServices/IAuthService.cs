@@ -12,6 +12,8 @@ namespace EmployeeAPI.Services.AuthServices
         Task<string> RefreshTokenAsync(string accessToken, string refreshToken);
         Task<ResponseModel.AuthDto> RegisterAsync(ResponseModel.RegisterDto dto, ClaimsPrincipal user);
         Task<User> LoginAsync(string username, string password);
+        Task<string> ChangePasswordAsync(Guid userId, string oldPassword, string confirmPassword, string newPassword);
+        Task<string> ResetPasswordAsync(Guid userId);
         /*Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.UpdateUser dto);
         Task<string> SoftDeleteAsync(Guid id);
 
