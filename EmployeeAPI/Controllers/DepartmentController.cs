@@ -11,6 +11,7 @@ using System.Security.Claims;
 using EmployeeAPI.Services.UserService;
 using ResponseModel = EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -41,6 +42,12 @@ namespace EmployeeAPI.Controllers
             try
             {
                 var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
+                /*if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find department name", null, 404));*/
+
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("No result", pagedResult, 200));
+
                 return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("Get list department success", pagedResult, 200));
 
             }
@@ -182,6 +189,9 @@ namespace EmployeeAPI.Controllers
                 var pagedResult = await _departmentService.GetStaffByDepartmentAsync(id, pageSize, pageIndex);
                 if (pagedResult == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.UserFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
             }

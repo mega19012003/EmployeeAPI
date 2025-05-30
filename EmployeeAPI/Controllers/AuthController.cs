@@ -319,7 +319,7 @@ namespace EmployeeAPI.Controllers
                 userEntity.PhoneNumber,
                 userEntity.Address,
                 userEntity.PositionId,
-                PositionName = userEntity.Position?.Name, // nếu Position hoặc Name null thì trả về null luôn
+                PositionName = userEntity.Position?.Name,
                 userEntity.DepartmentId,
                 DepartmentName = userEntity.Department?.Name,
                 userEntity.BasicSalary,

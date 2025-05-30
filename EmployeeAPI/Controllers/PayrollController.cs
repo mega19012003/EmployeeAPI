@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -38,6 +39,11 @@ namespace EmployeeAPI.Controllers
 
                 var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
                 //var pagedResult = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
+                /*if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));*/
+
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll success", pagedResult, 200));
             }

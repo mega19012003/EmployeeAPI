@@ -195,7 +195,7 @@ namespace EmployeeAPI.Controllers
                     return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
 
                 if (!pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No employees found for this position", pagedResult, 200));
+                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
 
                 return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
             }

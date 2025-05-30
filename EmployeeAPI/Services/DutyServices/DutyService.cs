@@ -150,7 +150,7 @@ namespace EmployeeAPI.Services.DutyServices
                         .ToListAsync();
 
                     if (assignedUsers.Count != userIdsToAssign.Count)
-                        throw new Exception("Cannot asign employee form other department");
+                        throw new Exception("Cannot asign employee");
 
                     if (assignedUsers.Any(u => u.IsDeleted))
                         throw new Exception("Cannot assign duty to deleted users");
@@ -242,7 +242,7 @@ namespace EmployeeAPI.Services.DutyServices
                         .ToListAsync();
 
                     if (assignedUsers.Count != userIdsToAssign.Count)
-                        throw new Exception("Cannot asign employee form other department");
+                        throw new Exception("Cannot asign employee");
 
                     if (assignedUsers.Any(u => u.IsDeleted))
                         throw new Exception("Cannot assign duty to deleted users");

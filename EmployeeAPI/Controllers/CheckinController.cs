@@ -5,7 +5,9 @@ using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -34,6 +36,12 @@ namespace EmployeeAPI.Controllers
             try
             {
                 var pagedResult = await _checkinService.GetAllAsync(StaffName, pageIndex, pageSize);
+                /*if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));*/
+
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("No result", pagedResult, 200));
+
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin success", pagedResult, 200));
             }
             catch (Exception ex)
@@ -204,7 +212,12 @@ namespace EmployeeAPI.Controllers
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
                 var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, staffId, pageIndex, pageSize);
-                //var result = await _checkinService.GetCheckinByUserAsync(staffId, pageIndex, pageSize);
+                if (result == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the user id", null, 404));
+
+                if (!result.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("No result", result, 200));
+
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by staff success", result, 200));
 
             }

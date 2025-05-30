@@ -159,6 +159,12 @@ namespace EmployeeAPI.Controllers
                 }
 
                 var pagedResult = await _userService.GetAllAsync(Name, departmentId, pageIndex, pageSize);
+                if (pagedResult == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));
+
                 return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("Get list user success", pagedResult, 200));
             }
             catch (Exception ex)
