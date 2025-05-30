@@ -71,7 +71,6 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-
         /// <summary>
         /// Đăng nhập người dùng
         /// </summary>
@@ -96,17 +95,22 @@ namespace EmployeeAPI.Controllers
         ///  "username": "Manager789",
         ///  "password": "anno123"
         ///}
-        /// - Tk employee 1
+        /// - Tk employee Thu ngân 1 
         ///{
         ///  "username": "user101",
         ///  "password": "123456"
         ///}
-        /// - Tk employee 2
+        /// - Tk employee Thu ngân 2
+        ///{
+        ///  "username": "user101",
+        ///  "password": "123456"
+        ///}
+        /// - Tk employee IT
         ///{
         ///  "username": "user02",
         ///  "password": "654321"
         ///}
-        /// - Tk employee 3
+        /// - Tk employee Sửa chữa
         ///{
         ///  "username": "user100",
         ///  "password": "123456"
