@@ -23,14 +23,12 @@ namespace EmployeeAPI.Services.AuthServices
     {
         private readonly IAuthRepository _repository;
         private readonly IConfiguration _configuration;
-        private readonly IFileService _fileService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public AuthService(IAuthRepository repository, IConfiguration configuration, IFileService fileService, AppDbContext context, ILogger<AuthService> logger)
+        public AuthService(IAuthRepository repository, IConfiguration configuration, AppDbContext context, ILogger<AuthService> logger)
         {
             _repository = repository;
             _configuration = configuration;
-            _fileService = fileService;
             _context = context;
             _logger = logger;
         }
@@ -89,7 +87,6 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
-
         private string HashPassword(string password)
         {
             using (var sha256 = SHA256.Create())
@@ -99,7 +96,6 @@ namespace EmployeeAPI.Services.AuthServices
                 return Convert.ToBase64String(hash);
             }
         }
-
         public async Task<User> GetUserById(Guid userId)
         {
             var user = await _repository.GetByIdAsync(userId);
@@ -142,7 +138,7 @@ namespace EmployeeAPI.Services.AuthServices
 
             await _repository.UpdateUserAsync(user);
         }
-
+        
         public async Task<string> ChangePasswordAsync(Guid userId, string oldPassword, string confirmPassword, string newPassword)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -170,7 +166,6 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
-
         public async Task<string> ResetPasswordAsync(Guid userId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -204,7 +199,6 @@ namespace EmployeeAPI.Services.AuthServices
                 return Convert.ToBase64String(randomBytes);
             }
         }
-
         public async Task<string> RefreshTokenAsync(string accessToken, string refreshToken)
         {
             var principal = GetPrincipalFromExpiredToken(accessToken);
@@ -227,7 +221,6 @@ namespace EmployeeAPI.Services.AuthServices
 
             return jwt;
         }
-
         private ClaimsPrincipal GetPrincipalFromExpiredToken(string token)
         {
             var jwtSection = _configuration.GetSection("Jwt");
@@ -249,7 +242,6 @@ namespace EmployeeAPI.Services.AuthServices
 
             return null;
         }
-
         public string GenerateAccessToken(User user)
         {
             var jwtSection = _configuration.GetSection("Jwt");
@@ -274,7 +266,6 @@ namespace EmployeeAPI.Services.AuthServices
 
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
-
         public async Task<ResponseModel.AuthDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto)
         {
             var result = await _repository.GetLoginUserAsync(dto.UserName);

@@ -53,7 +53,7 @@ namespace EmployeeAPI.Repositories.Positions
         {
             return await _context.Positions
                 .AsNoTracking()
-                .Include(p => p.Users.Where(s => s.IsActive))
+                .Include(p => p.Users.Where(s => s.IsActive ))
                 .FirstOrDefaultAsync(p => p.Name.ToLower().Equals(name.ToLower()));
         }
         

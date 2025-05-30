@@ -12,14 +12,12 @@ namespace EmployeeAPI.Services.PositionServices
     {
         private readonly IPositionRepository _positionRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
-        private readonly IDepartmentRepository _departmentRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<PositionService> _logger;
 
-        public PositionService( IPositionRepository PositionRepository, IDepartmentRepository departmentRepository, IHttpContextAccessor httpContextAccessor, AppDbContext context, ILogger<PositionService> logger)
+        public PositionService( IPositionRepository PositionRepository, IHttpContextAccessor httpContextAccessor, AppDbContext context, ILogger<PositionService> logger)
         {
             _positionRepository = PositionRepository;
-            _departmentRepository = departmentRepository;
             _context = context;
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;

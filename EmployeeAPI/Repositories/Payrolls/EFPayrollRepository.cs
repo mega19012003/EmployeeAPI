@@ -58,19 +58,12 @@ namespace EmployeeAPI.Repositories.Payrolls
         /// </summary>
         public async Task<bool> ExistsPayrollForMonth(Guid UserId, int month, int year)
         {
-            return await _context.Payrolls.AnyAsync(p => p.UserId == UserId &&
-                                                         p.CreatedDate.Month == month &&
-                                                         p.CreatedDate.Year == year &&
-                                                         !p.IsDeleted);
+            return await _context.Payrolls.AnyAsync(p => p.UserId == UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year && !p.IsDeleted);
         }
 
         private async Task<int> CountCheckinsByStatus(Guid userId, CheckinStatus status, int month, int year)
         {
-            return await _context.Checkins.CountAsync(c => c.UserId == userId &&
-                                                           c.Status == status &&
-                                                           c.CheckinDate.Month == month &&
-                                                           c.CheckinDate.Year == year &&
-                                                           !c.IsDeleted);
+            return await _context.Checkins.CountAsync(c => c.UserId == userId && c.Status == status && c.CheckinDate.Month == month && c.CheckinDate.Year == year && !c.IsDeleted);
         }
 
         public Task<int> CountValidCheckins(Guid userId, int month, int year)
@@ -82,11 +75,6 @@ namespace EmployeeAPI.Repositories.Payrolls
         {
             return CountCheckinsByStatus(userId, CheckinStatus.Late, month, year);
         }
-
-        //public Task<int> CountLeaveEarlyCheckins(Guid UserId, int month, int year)
-        //{
-        //    return CountCheckinsByStatus(UserId, CheckinStatus.LeaveEarly, month, year);
-        //}
 
         public Task<int> CountAbsentCheckins(Guid userId, int month, int year)
         {
@@ -107,9 +95,6 @@ namespace EmployeeAPI.Repositories.Payrolls
         {
             return CountCheckinsByStatus(UserId, CheckinStatus.Overtime, month, year);
         }
-
-
-
 
         //public async Task<int> CountValidCheckins(Guid UserId, int month, int year)
         //{
