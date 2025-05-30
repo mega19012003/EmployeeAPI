@@ -30,17 +30,7 @@ namespace EmployeeAPI.Controllers
             var list = await _allowedIPService.GetAllAsync();
             return Ok(list);
         }
-        ///// <summary>
-        /////  Chỉ có admin dc phép dùng
-        ///// </summary>
-        //[Authorize(Roles = "Administrator")]
-        //[HttpGet("id")]
-        //public async Task<IActionResult> GetById(Guid id)
-        //{
-        //    var ip = await _allowedIPService.GetByIdAsync(id);
-        //    if (ip == null) return NotFound();
-        //    return Ok(ip);
-        //}
+
         /// <summary>
         ///  Chỉ có admin dc phép dùng
         /// </summary>
