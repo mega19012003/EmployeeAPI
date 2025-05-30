@@ -96,9 +96,19 @@ namespace EmployeeAPI.Controllers
         ///  "username": "Manager789",
         ///  "password": "anno123"
         ///}
-        /// - Tk employee
+        /// - Tk employee 1
         ///{
         ///  "username": "user101",
+        ///  "password": "123456"
+        ///}
+        /// - Tk employee 2
+        ///{
+        ///  "username": "user02",
+        ///  "password": "654321"
+        ///}
+        /// - Tk employee 3
+        ///{
+        ///  "username": "user100",
         ///  "password": "123456"
         ///}
         /// </remarks>
