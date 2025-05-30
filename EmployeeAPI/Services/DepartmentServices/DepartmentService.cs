@@ -120,13 +120,6 @@ namespace EmployeeAPI.Services.DepartmentServices
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try {
-                /*if (id == Guid.Empty)
-                    throw new ArgumentException("Department ID is invalid", nameof(id));
-
-                if (string.IsNullOrWhiteSpace(newName))
-                    throw new ArgumentException("Department name cannot be empty", nameof(newName));*/
-
-
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find department id");

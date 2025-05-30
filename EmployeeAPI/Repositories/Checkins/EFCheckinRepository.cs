@@ -25,7 +25,7 @@ namespace EmployeeAPI.Repositories.Checkins
         {
             return await _context.Checkins
                 .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted && (!c.Users.IsDeleted && c.Users.IsActive));
         }
 
         public async Task CreateAsync(Checkin checkin)

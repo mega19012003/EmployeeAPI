@@ -61,7 +61,7 @@ namespace EmployeeAPI.Repositories.Positions
         {
             return await _context.Positions
                 .AsNoTracking()
-                .Include(d => d.Users)
+                .Include(d => d.Users.Where(u => u.IsActive && !u.IsDeleted))
                 .ThenInclude(u => u.Department)
                 .Where(d => !d.IsDeleted && d.Id == positionId)
                 .ToListAsync();
