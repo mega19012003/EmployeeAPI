@@ -8,6 +8,7 @@ using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.CheckinStatusConfigs;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Duties;
+using EmployeeAPI.Repositories.Holidays;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.ScheduleTimes;
@@ -20,6 +21,7 @@ using EmployeeAPI.Services.CheckinStatusConfigServices;
 using EmployeeAPI.Services.DepartmentServices;
 using EmployeeAPI.Services.DutyServices;
 using EmployeeAPI.Services.FileServices;
+using EmployeeAPI.Services.HolidayServices;
 using EmployeeAPI.Services.PayrollServices;
 using EmployeeAPI.Services.PositionServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
@@ -68,6 +70,7 @@ builder.Services.AddScoped<IUserRepository, EFUserRepository>();
 builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
 builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfigRepository>();
 builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
+builder.Services.AddScoped<IHolidayRepository, EmployeeAPI.Repositories.Holidays.EFHolidayRepository>();
 
 //builder.Services.AddScoped<IStaffService, StafffService>();
 builder.Services.AddScoped<IFileService, FileService>();
@@ -81,6 +84,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
 builder.Services.AddScoped<ICheckinStatusConfigService, CheckinStatusConfigService>();
 builder.Services.AddScoped<IAllowedIPService, AllowedIPService>();
+builder.Services.AddScoped<IHolidayService, HolidayService>();
 
 
 builder.Services.AddSwaggerGen(c =>
@@ -148,7 +152,8 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    UserSeed.SeedAdminUser(dbContext); 
+    SeedDB.SeedAdminUser(dbContext);
+    await SeedDB.SeedHolidayAsync(dbContext);
 }
 
 app.MapGet("/", context =>

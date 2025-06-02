@@ -4,6 +4,7 @@ using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250602065408_test3")]
+    partial class test3
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -46,20 +49,17 @@ namespace EmployeeAPI.Migrations
                     b.Property<DateTime>("CheckinDate")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CheckinStatus")
-                        .HasColumnType("int");
-
                     b.Property<DateTime>("CheckoutDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<int>("CheckoutStatus")
-                        .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<double>("SalaryPerDay")
                         .HasColumnType("float");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -244,6 +244,56 @@ namespace EmployeeAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Holidays");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = new Guid("fe7b47c5-31f5-4826-989b-00ce9579b70c"),
+                            IsDeleted = false,
+                            endDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            name = "Tết Dương lịch",
+                            startDate = new DateTime(2025, 1, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = new Guid("d1eced4c-8979-4159-b1b3-2ff9e796c1a1"),
+                            IsDeleted = false,
+                            endDate = new DateTime(2025, 2, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            name = "Tết Nguyên đán",
+                            startDate = new DateTime(2025, 1, 28, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = new Guid("c38a26ef-d11f-477e-8c0c-90e80bd3618a"),
+                            IsDeleted = false,
+                            endDate = new DateTime(2025, 4, 10, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            name = "Giỗ Tổ Hùng Vương",
+                            startDate = new DateTime(2025, 4, 10, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = new Guid("74e85ea7-09e0-44ce-95c2-c584a41d3d37"),
+                            IsDeleted = false,
+                            endDate = new DateTime(2025, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            name = "Ngày Giải phóng miền Nam",
+                            startDate = new DateTime(2025, 4, 30, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = new Guid("9e89e439-124a-4fb5-a85b-116dc4fbf821"),
+                            IsDeleted = false,
+                            endDate = new DateTime(2025, 5, 1, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            name = "Ngày Quốc tế Lao động",
+                            startDate = new DateTime(2025, 5, 1, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        },
+                        new
+                        {
+                            Id = new Guid("a90bb4b5-0ba7-44ea-9b8e-eb39ca6a33d5"),
+                            IsDeleted = false,
+                            endDate = new DateTime(2025, 9, 2, 0, 0, 0, 0, DateTimeKind.Unspecified),
+                            name = "Ngày Quốc khánh",
+                            startDate = new DateTime(2025, 9, 2, 0, 0, 0, 0, DateTimeKind.Unspecified)
+                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>

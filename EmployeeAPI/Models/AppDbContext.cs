@@ -40,6 +40,57 @@ namespace EmployeeAPI.Models
                 //new CheckinStatusConfig { Id = 5, Name = "Others", SalaryMultiplier = 1.0, Note = "Khác" }
             );
 
+            /*modelBuilder.Entity<Holiday>().HasData(
+                new Holiday
+                {
+                    Id = Guid.NewGuid(),
+                    name = "Tết Dương lịch",
+                    startDate = new DateTime(2025, 1, 1),
+                    endDate = new DateTime(2025, 1, 1),
+                    IsDeleted = false
+                },
+                new Holiday
+                {
+                    Id = Guid.NewGuid(),
+                    name = "Tết Nguyên đán",
+                    startDate = new DateTime(2025, 1, 28),
+                    endDate = new DateTime(2025, 2, 1),
+                    IsDeleted = false
+                },
+                new Holiday
+                {
+                    Id = Guid.NewGuid(),
+                    name = "Giỗ Tổ Hùng Vương",
+                    startDate = new DateTime(2025, 4, 10),
+                    endDate = new DateTime(2025, 4, 10),
+                    IsDeleted = false
+                },
+                new Holiday
+                {
+                    Id = Guid.NewGuid(),
+                    name = "Ngày Giải phóng miền Nam",
+                    startDate = new DateTime(2025, 4, 30),
+                    endDate = new DateTime(2025, 4, 30),
+                    IsDeleted = false
+                },
+                new Holiday
+                {
+                    Id = Guid.NewGuid(),
+                    name = "Ngày Quốc tế Lao động",
+                    startDate = new DateTime(2025, 5, 1),
+                    endDate = new DateTime(2025, 5, 1),
+                    IsDeleted = false
+                },
+                new Holiday
+                {
+                    Id = Guid.NewGuid(),
+                    name = "Ngày Quốc khánh",
+                    startDate = new DateTime(2025, 9, 2),
+                    endDate = new DateTime(2025, 9, 2),
+                    IsDeleted = false
+                }
+            );*/
+
             base.OnModelCreating(modelBuilder);
 
             /*modelBuilder.Entity<DutyDetail>()

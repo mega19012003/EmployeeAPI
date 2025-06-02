@@ -9,7 +9,10 @@ namespace EmployeeAPI.Models
         public Guid UserId { get; set; }
         public User Users { get; set; }
         public DateTime CheckinDate { get; set; } 
-        public CheckinStatus Status { get; set; } = CheckinStatus.OnTime;
+        public DateTime CheckoutDate { get; set; } 
+        public CheckinStatus CheckinStatus { get; set; } = CheckinStatus.OnTime;
+        public CheckinStatus CheckoutStatus { get; set; } = CheckinStatus.OnTime;
+        public double SalaryPerDay { get; set; } = 0.0;
         public bool IsDeleted { get; set; } = false;
     }
 }

@@ -3,16 +3,15 @@ using System.Transactions;
 using Azure;
 using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
+using EmployeeAPI.Helpers;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
+using EmployeeAPI.Repositories.Holidays;
 using EmployeeAPI.Repositories.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
-using static EmployeeAPI.Services.CheckinServices.ResponseModel;
-using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
-using static Microsoft.EntityFrameworkCore.DbLoggerCategory.Database;
 
 namespace EmployeeAPI.Services.CheckinServices
 {
@@ -20,14 +19,16 @@ namespace EmployeeAPI.Services.CheckinServices
     {
         private readonly ICheckinRepository _checkinRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IHolidayRepository _holidayRepository;
         private readonly IAllowedIPRepository _allowedIPRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<CheckinService> _logger;
 
-        public CheckinService(ICheckinRepository checkinRepository, IUserRepository userRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger)
+        public CheckinService(ICheckinRepository checkinRepository, IUserRepository userRepository, IHolidayRepository holidayRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger)
         {
             _checkinRepository = checkinRepository;
             _userRepository = userRepository;
+            _holidayRepository = holidayRepository;
             _allowedIPRepository = allowedIPRepository;
             _context = context;
             _logger = logger;
@@ -54,10 +55,14 @@ namespace EmployeeAPI.Services.CheckinServices
                     {
                         CheckinId = c.Id,
                         CheckinDate = c.CheckinDate,
-                        CheckinStatus = c.Status,
-                        Status = c.Status.ToString(),
+                        CheckinStatus = c.CheckinStatus,
+                        Checkin = c.CheckinStatus.ToString(),
+                        CheckoutDate = c.CheckoutDate,
+                        CheckoutStatus = c.CheckoutStatus,
+                        Checkout = c.CheckoutStatus.ToString(),
                         userId = c.UserId,
                         Name = c.Users.Fullname,
+                        SalaryPerDay = c.SalaryPerDay
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinDto>
@@ -84,11 +89,16 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 return new ResponseModel.CheckinDto
                 {
+                    CheckinId = c.Id,
                     CheckinDate = c.CheckinDate,
-                    CheckinStatus = c.Status,
-                    Status = c.Status.ToString(),
+                    CheckinStatus = c.CheckinStatus,
+                    Checkin = c.CheckinStatus.ToString(),
+                    CheckoutDate = c.CheckoutDate,
+                    CheckoutStatus = c.CheckoutStatus,
+                    Checkout = c.CheckoutStatus.ToString(),
                     userId = c.UserId,
                     Name = c.Users.Fullname,
+                    SalaryPerDay = c.SalaryPerDay
                 };
             }
             catch (Exception ex)
@@ -168,15 +178,17 @@ namespace EmployeeAPI.Services.CheckinServices
                 // Giờ hiện tại (theo VN) dưới dạng TimeOnly để so sánh với giờ bắt đầu
                 var currentTimeOnly = TimeOnly.FromDateTime(vnCheckinDate);
 
-                // 7. Xác định trạng thái OnTime hay Late
-                //var status = currentTimeOnly <= lateTime ? CheckinStatus.OnTime : CheckinStatus.Late;
-                CheckinStatus status;
+                // 7. Kiểm tra ngày nghỉ lễ hoặc Chủ Nhật
+                bool isSunday = vnCheckinDate.DayOfWeek == DayOfWeek.Sunday;
+                bool isHoliday = await _holidayRepository.IsHolidayAsync(utcCheckinDate); // dùng UTC để chuẩn hóa
 
-                /*if (currentTimeOnly > schedule.EndTime)
+                // 8. Xác định trạng thái check-in
+                CheckinStatus status;
+                if (isSunday || isHoliday)
                 {
                     status = CheckinStatus.Overtime;
                 }
-                else */if (currentTimeOnly <= lateTime)
+                else if (currentTimeOnly <= lateTime)
                 {
                     status = CheckinStatus.OnTime;
                 }
@@ -184,11 +196,13 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     status = CheckinStatus.Late;
                 }
+
+
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     CheckinDate = utcCheckinDate,
-                    Status = status,
+                    CheckinStatus = status,
                     UserId = dto.userId,
                 };
 
@@ -200,16 +214,140 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = checkin.Id,
                     CheckinDate = checkin.CheckinDate,
-                    CheckinStatus = checkin.Status,
-                    Status = checkin.Status.ToString(),
+                    CheckinStatus = checkin.CheckinStatus,
+                    Checkin = checkin.CheckinStatus.ToString(),
+                    CheckoutDate = checkin.CheckoutDate,
+                    CheckoutStatus = checkin.CheckoutStatus,
+                    Checkout = checkin.CheckoutStatus.ToString(),
                     userId = checkin.UserId,
-                    Name = existUsers.Fullname
+                    Name = existUsers.Fullname,
                 };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
                 _logger.LogError(ex, "Error while creating checkin");
+                throw;
+            }
+        }
+
+        public async Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var existUser = await _userRepository.GetByIdAsync(dto.userId);
+                if (existUser == null)
+                    throw new ArgumentException("Cannot find User by id");
+
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                DateTime nowVn;
+
+                if (dto.CheckoutDate.HasValue)
+                {
+                    var dt = dto.CheckoutDate.Value;
+                    // Nếu Kind = Unspecified, giả định là giờ local VN
+                    if (dt.Kind == DateTimeKind.Unspecified)
+                    {
+                        dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
+                    }
+                    // Convert giờ local hoặc UTC về giờ VN
+                    nowVn = dt.Kind == DateTimeKind.Utc
+                        ? TimeZoneInfo.ConvertTimeFromUtc(dt, vnTimeZone)
+                        : TimeZoneInfo.ConvertTime(dt, vnTimeZone);
+                }
+                else
+                {
+                    // Lấy giờ hiện tại theo giờ VN
+                    var nowUtc = DateTime.UtcNow;
+                    nowVn = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTimeZone);
+                }
+
+                var checkins = await _context.Checkins
+                    .Where(c => c.UserId == dto.userId && !c.IsDeleted && c.CheckoutDate == default)
+                    .ToListAsync();
+
+                // Tìm checkin hôm nay theo giờ VN
+                var todayCheckin = checkins.FirstOrDefault(c =>
+                {
+                    // Đảm bảo CheckinDate có Kind phù hợp
+                    var checkinDate = c.CheckinDate;
+                    if (checkinDate.Kind == DateTimeKind.Unspecified)
+                    {
+                        // Giả định giờ trong DB là UTC (hoặc tùy theo bạn lưu thế nào)
+                        checkinDate = DateTime.SpecifyKind(checkinDate, DateTimeKind.Utc);
+                    }
+
+                    var vnDate = checkinDate.Kind == DateTimeKind.Utc
+                        ? TimeZoneInfo.ConvertTimeFromUtc(checkinDate, vnTimeZone)
+                        : TimeZoneInfo.ConvertTime(checkinDate, vnTimeZone);
+
+                    return vnDate.Date == nowVn.Date;
+                });
+
+                if (todayCheckin == null)
+                    throw new ArgumentException("Bạn chưa check-in hôm nay hoặc đã checkout rồi.");
+
+                // Lấy cấu hình giờ làm việc
+                var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+                if (schedule == null)
+                    throw new Exception("Chưa thiết lập giờ làm việc");
+
+                var endWorkTime = schedule.EndTime; 
+
+                var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
+
+                CheckinStatus newStatus;
+
+                if (currentTimeOnly > endWorkTime)
+                {
+                    newStatus = CheckinStatus.Overtime;
+                }
+                else if (currentTimeOnly < endWorkTime)
+                {
+                    newStatus = CheckinStatus.LeaveEarly;
+                }
+                else
+                {
+                    newStatus = CheckinStatus.OnTime;
+                }
+
+                // Cập nhật giờ checkout, convert giờ VN về UTC trước khi lưu
+                var checkoutUtc = nowVn.Kind switch
+                {
+                    DateTimeKind.Utc => nowVn,
+                    DateTimeKind.Local => nowVn.ToUniversalTime(),
+                    DateTimeKind.Unspecified => TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone),
+                    _ => TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone)
+                };
+
+                todayCheckin.CheckoutDate = checkoutUtc;
+                todayCheckin.CheckoutStatus = newStatus;
+
+                todayCheckin.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
+
+                _context.Checkins.Update(todayCheckin);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new ResponseModel.CheckinDto
+                {
+                    CheckinId = todayCheckin.Id,
+                    CheckinDate = todayCheckin.CheckinDate,
+                    CheckinStatus = todayCheckin.CheckinStatus,
+                    Checkin = todayCheckin.CheckinStatus.ToString(),
+                    CheckoutDate = todayCheckin.CheckoutDate,
+                    CheckoutStatus = todayCheckin.CheckoutStatus,
+                    Checkout = todayCheckin.CheckoutStatus.ToString(),
+                    userId = todayCheckin.UserId,
+                    Name = existUser.Fullname,
+                    SalaryPerDay = todayCheckin.SalaryPerDay
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error while creating checkout");
                 throw;
             }
         }
@@ -249,7 +387,9 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new UnauthorizedAccessException("Access denied");
                 }
 
-                existing.Status = dto.CheckinStatus;
+                existing.CheckinStatus = dto.CheckinStatus;
+                existing.CheckoutStatus = dto.CheckoutStatus;
+                existing.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, employee, existing.CheckinStatus, existing.CheckoutStatus);
 
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
@@ -259,10 +399,14 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = existing.Id,
                     CheckinDate = existing.CheckinDate,
-                    CheckinStatus = existing.Status,
-                    Status = existing.Status.ToString(),
+                    CheckinStatus = existing.CheckinStatus,
+                    Checkin = existing.CheckinStatus.ToString(),
+                    CheckoutDate = existing.CheckoutDate,
+                    CheckoutStatus = existing.CheckoutStatus,
+                    Checkout = existing.CheckoutStatus.ToString(),
                     userId = existing.UserId,
                     Name = employee.Fullname,
+                    SalaryPerDay = existing.SalaryPerDay
                 };
             }
             catch
@@ -284,12 +428,12 @@ namespace EmployeeAPI.Services.CheckinServices
                 return;
             }
 
-            /*bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
+            bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
             if (isHoliday)
             {
                 _logger.LogInformation("Hôm nay là ngày nghỉ lễ, không đánh dấu Absent.");
                 return;
-            }*/
+            }
 
             var allUsers = await _userRepository.GetAll().ToListAsync(); 
 
@@ -308,8 +452,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.UserId,
-                    Status = CheckinStatus.Absent,
-                    CheckinDate = DateTime.UtcNow // lưu UTC
+                    CheckinStatus = CheckinStatus.Absent,
+                    CheckinDate = DateTime.UtcNow 
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -319,7 +463,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
             _logger.LogInformation($"Đã đánh dấu {absentUsers.Count} người dùng vắng mặt ngày {today:dd/MM/yyyy}.");
         }
-
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -407,10 +550,14 @@ namespace EmployeeAPI.Services.CheckinServices
                     {
                         CheckinId = c.Id,
                         CheckinDate = c.CheckinDate,
-                        CheckinStatus = c.Status,
-                        Status = c.Status.ToString(),
+                        CheckinStatus = c.CheckinStatus,
+                        Checkin = c.CheckinStatus.ToString(),
+                        CheckoutDate = c.CheckoutDate,
+                        CheckoutStatus = c.CheckoutStatus,
+                        Checkout = c.CheckoutStatus.ToString(),
                         userId = c.UserId,
                         Name = c.Users.Fullname,
+                        SalaryPerDay = c.SalaryPerDay
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinDto>

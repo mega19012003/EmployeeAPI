@@ -52,13 +52,13 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// (đang fix) Tạo checkin cho user
+        /// Tạo checkin cho user
         /// </summary>
         ///<remarks>
         /// Nhập dateTime theo dạng "yyyy-MM-ddTHH:mm:ss" (ví dụ: "2000-01-01T08:00:00" ) hoặc excute luôn cũng dc
         /// </remarks>
         [Authorize]
-        [HttpPost]
+        [HttpPost("Chekin")]
         public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)
         {
             try
@@ -110,16 +110,65 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// Cập nhật checkout cho user
+        /// </summary>
+        ///<remarks>
+        /// Nhập dateTime theo dạng "yyyy-MM-ddTHH:mm:ss" (ví dụ: "2000-01-01T08:00:00" ) hoặc excute luôn cũng dc
+        /// </remarks>
+        [Authorize]
+        [HttpPost("Chekout")]
+        public async Task<IActionResult> Checkout([FromBody] ResponseModel.CreateCheckout dto)
+        {
+            try
+            {
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
+                {
+                    return Unauthorized(new { Message = "User ID not found in token." });
+                }
+                dto.userId = userId;
+                var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
+                var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
+                if (!isAllowed)
+                {
+                    return StatusCode(403, new { Message = $"IP address {ip} is not allowed to check out.", Data = ip });
+                }
+
+                var result = await _checkinService.CheckoutAsync(dto);
+                return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkout success", result, 200));
+            }
+            catch (ArgumentException argEx)
+            {
+                _logger.LogError(argEx, "An error occurred while updating a checkout");
+                return StatusCode(400, new { Message = "Checkin Failed", Detail = argEx.Message, StatusCode = 400 });
+            }
+            catch (DbUpdateException dbEx)
+            {
+                _logger.LogError(dbEx, "An error occurred while updating a checkout");
+                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while updating a checkout");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
+            }
+        }
+
+
+        /// <summary>
         /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
         /// </summary>
         /// <remarks>
-        /// - CheckinStatus enum values:
+        /// - CheckIn Status enum values:
         /// - OnTime = 0 (đúng giờ)
         /// - Late = 1 (Đi trễ hơn 15 phút)
-        /// - Overtime = 2 (làm tăng ca)
-        /// - Absent = 3 (Vắng)
         /// - LeaveWithPermission = 4 (Vắng có phép)
         /// - Others = 5 (lí do khác)
+        /// 
+        /// - CheckOut Status enum values:
+        /// - OnTime = 0 (đúng giờ)
+        /// - Overtime = 2 (làm tăng ca)
+        /// - Absent = 3 (Vắng)
         /// </remarks>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPut]

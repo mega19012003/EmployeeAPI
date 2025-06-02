@@ -11,6 +11,7 @@ namespace EmployeeAPI.Services.CheckinServices
         Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex);
         Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id);
         Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto);
+        Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto);
         Task AutoMarkAbsentAsync();
         Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto, Guid currentUserId, IList<string> currentUserRoles);
         //Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);

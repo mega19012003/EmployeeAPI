@@ -230,15 +230,15 @@ namespace EmployeeAPI.Services.PayrollServices
 
         public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
-            // Lấy thông tin người dùng cần chấm công
+            // Lấy thông tin nhân viên
             var staff = await _context.Users
                 .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == true || u.IsActive == false));
+                .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == false && u.IsActive == true)); // sửa điều kiện cho đúng
 
             if (staff == null)
                 throw new Exception("Cannot find staff id");
 
-            // Nếu là Manager thì chỉ được chấm công cho nhân viên trong phòng ban của mình
+            // Kiểm tra quyền Manager
             if (currentUserRoles.Contains("Manager"))
             {
                 var currentUser = await _context.Users
@@ -252,38 +252,26 @@ namespace EmployeeAPI.Services.PayrollServices
                     throw new UnauthorizedAccessException("You can only calculate payrolls for employees in your department");
             }
 
-            // Check nếu đã tồn tại bảng lương tháng này
             int month = DateTime.Now.Month;
             int year = DateTime.Now.Year;
 
             if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
                 throw new InvalidOperationException("Payroll for this month already exists");
 
-            var configs = await _context.CheckinStatusConfigs.ToListAsync();
+            // Lấy tất cả checkin trong tháng (đã được xác nhận hợp lệ)
+            var checkinsInMonth = await _context.Checkins
+                .Where(c => c.UserId == staffId
+                    && c.CheckinDate.Year == year
+                    && c.CheckinDate.Month == month
+                    && !c.IsDeleted
+                    && c.SalaryPerDay > 0)
+                .ToListAsync();
 
-            double GetMultiplier(CheckinStatus status)
-            {
-                return configs.First(c => c.Id == (int)status).SalaryMultiplier;
-            }
+            // Tổng lương = tổng SalaryPerDay của các ngày checkin
+            double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
 
-            var validCheckins = await _payrollRepository.CountValidCheckins(staffId, month, year);
-            var lateCheckins = await _payrollRepository.CountLateCheckins(staffId, month, year);
-            var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(staffId, month, year);
-            var absentCheckins = await _payrollRepository.CountAbsentCheckins(staffId, month, year);
-            var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(staffId, month, year);
-            var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(staffId, month, year);
-
-            var basic = staff.BasicSalary;
-
-            double totalSalary =
-                validCheckins * basic * GetMultiplier(CheckinStatus.OnTime) +
-                lateCheckins * basic * GetMultiplier(CheckinStatus.Late) +
-                leaveEarlyCheckins * basic * GetMultiplier(CheckinStatus.LeaveEarly) +
-                absentCheckins * basic * GetMultiplier(CheckinStatus.Absent) +
-                absentPermissionCheckins * basic * GetMultiplier(CheckinStatus.LeaveWithPermission) +
-                overtimeCheckins * basic * GetMultiplier(CheckinStatus.Overtime);
-
-            var totalDayWorked = await _payrollRepository.CountDayWorked(staffId, month, year);
+            // Tính tổng ngày làm việc dựa vào số checkin hợp lệ
+            var totalDayWorked = checkinsInMonth.Select(c => c.CheckinDate.Date).Distinct().Count();
 
             var payroll = new Payroll
             {
@@ -307,5 +295,86 @@ namespace EmployeeAPI.Services.PayrollServices
                 Note = payroll.Note
             };
         }
+
+
+        //public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
+        //{
+        //    // Lấy thông tin người dùng cần chấm công
+        //    var staff = await _context.Users
+        //        .Include(u => u.Department)
+        //        .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == true || u.IsActive == false));
+
+        //    if (staff == null)
+        //        throw new Exception("Cannot find staff id");
+
+        //    // Nếu là Manager thì chỉ được chấm công cho nhân viên trong phòng ban của mình
+        //    if (currentUserRoles.Contains("Manager"))
+        //    {
+        //        var currentUser = await _context.Users
+        //            .Include(u => u.Department)
+        //            .FirstOrDefaultAsync(u => u.UserId == currentUserId);
+
+        //        if (currentUser == null)
+        //            throw new Exception("Cannot find current user");
+
+        //        if (staff.DepartmentId != currentUser.DepartmentId)
+        //            throw new UnauthorizedAccessException("You can only calculate payrolls for employees in your department");
+        //    }
+
+        //    // Check nếu đã tồn tại bảng lương tháng này
+        //    int month = DateTime.Now.Month;
+        //    int year = DateTime.Now.Year;
+
+        //    if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
+        //        throw new InvalidOperationException("Payroll for this month already exists");
+
+        //    var configs = await _context.CheckinStatusConfigs.ToListAsync();
+
+        //    double GetMultiplier(CheckinStatus status)
+        //    {
+        //        return configs.First(c => c.Id == (int)status).SalaryMultiplier;
+        //    }
+
+        //    var validCheckins = await _payrollRepository.CountValidCheckins(staffId, month, year);
+        //    var lateCheckins = await _payrollRepository.CountLateCheckins(staffId, month, year);
+        //    var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(staffId, month, year);
+        //    var absentCheckins = await _payrollRepository.CountAbsentCheckins(staffId, month, year);
+        //    var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(staffId, month, year);
+        //    var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(staffId, month, year);
+
+        //    var basic = staff.BasicSalary;
+
+        //    double totalSalary =
+        //        validCheckins * basic * GetMultiplier(CheckinStatus.OnTime) +
+        //        lateCheckins * basic * GetMultiplier(CheckinStatus.Late) +
+        //        leaveEarlyCheckins * basic * GetMultiplier(CheckinStatus.LeaveEarly) +
+        //        absentCheckins * basic * GetMultiplier(CheckinStatus.Absent) +
+        //        absentPermissionCheckins * basic * GetMultiplier(CheckinStatus.LeaveWithPermission) +
+        //        overtimeCheckins * basic * GetMultiplier(CheckinStatus.Overtime);
+
+        //    var totalDayWorked = await _payrollRepository.CountDayWorked(staffId, month, year);
+
+        //    var payroll = new Payroll
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        UserId = staffId,
+        //        Salary = totalSalary,
+        //        DaysWorked = totalDayWorked,
+        //        CreatedDate = DateTime.Now,
+        //        Note = $"Lương tháng {month}/{year}"
+        //    };
+
+        //    await _payrollRepository.CreatePayrollAsync(payroll);
+
+        //    return new PaidPayroll
+        //    {
+        //        Id = payroll.Id,
+        //        UserId = staffId,
+        //        DaysWorked = totalDayWorked,
+        //        Salary = totalSalary,
+        //        CreatedDate = payroll.CreatedDate,
+        //        Note = payroll.Note
+        //    };
+        //}
     }
 }
