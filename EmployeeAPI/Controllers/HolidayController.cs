@@ -109,7 +109,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa ngày nghỉ lễ, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Aministrator")]
-        [HttpDelete]
+        [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteHoliday(Guid id)
         {
             try
