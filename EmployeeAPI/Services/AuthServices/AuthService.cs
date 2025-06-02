@@ -11,7 +11,7 @@ using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Positions;
 
 using EmployeeAPI.Services.FileServices;
-
+using EmployeeAPI.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
@@ -58,7 +58,7 @@ namespace EmployeeAPI.Services.AuthServices
                 {
                     UserId = Guid.NewGuid(),
                     Username = dto.Username,
-                    Password = HashPassword(dto.Password),
+                    Password = HashPassword.ComputeHash(dto.Password),
                     Fullname = dto.Fullname,
                     Role = dto.Role,
                     PhoneNumber = "",
@@ -87,15 +87,15 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var bytes = Encoding.UTF8.GetBytes(password);
-                var hash = sha256.ComputeHash(bytes);
-                return Convert.ToBase64String(hash);
-            }
-        }
+        //private string HashPassword(string password)
+        //{
+        //    using (var sha256 = SHA256.Create())
+        //    {
+        //        var bytes = Encoding.UTF8.GetBytes(password);
+        //        var hash = sha256.ComputeHash(bytes);
+        //        return Convert.ToBase64String(hash);
+        //    }
+        //}
         public async Task<User> GetUserById(Guid userId)
         {
             var user = await _repository.GetByIdAsync(userId);
@@ -148,13 +148,13 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("User not found");
 
-                if (user.Password != HashPassword(oldPassword))
+                if (user.Password != HashPassword.ComputeHash(oldPassword))
                     throw new ArgumentException("Password is incorrect");
 
                 if (newPassword != confirmPassword)
                     throw new ArgumentException("New password and confirm password do not match");
 
-                user.Password = HashPassword(newPassword);
+                user.Password = HashPassword.ComputeHash(newPassword);
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
                 return "Change password success";
@@ -175,7 +175,7 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("User not found");
 
-                user.Password = HashPassword("123456");
+                user.Password = HashPassword.ComputeHash("123456");
 
                 await _repository.UpdateUserAsync(user);
 

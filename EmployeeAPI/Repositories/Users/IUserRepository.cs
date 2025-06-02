@@ -9,6 +9,7 @@ namespace EmployeeAPI.Repositories.Users
         Task<User> UpdateAsync(User user);
         Task<User> GetByIdAsync(Guid id);
         IQueryable<User> GetAll();
+        //Task<User> GetAllUser();
         //Task<User> GetByIdAsync(Guid id);
         Task<User> SoftDeleteAsync(User user);
         Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);

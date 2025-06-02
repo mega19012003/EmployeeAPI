@@ -76,6 +76,11 @@ namespace EmployeeAPI.Repositories.Payrolls
             return CountCheckinsByStatus(userId, CheckinStatus.Late, month, year);
         }
 
+        public Task<int> CountLeaveEarlyCheckins(Guid userId, int month, int year)
+        {
+            return CountCheckinsByStatus(userId, CheckinStatus.LeaveEarly, month, year);
+        }
+
         public Task<int> CountAbsentCheckins(Guid userId, int month, int year)
         {
             return CountCheckinsByStatus(userId, CheckinStatus.Absent, month, year);

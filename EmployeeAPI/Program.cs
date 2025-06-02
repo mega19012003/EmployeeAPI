@@ -12,6 +12,7 @@ using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.ScheduleTimes;
 using EmployeeAPI.Repositories.Users;
+using EmployeeAPI.Seeds;
 using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
@@ -54,6 +55,8 @@ var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.AddHostedService<AbsentBackgroundService>();
+
 //builder.Services.AddScoped<IStaffRepository, EFStaffRepository>();
 builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
@@ -78,6 +81,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
 builder.Services.AddScoped<ICheckinStatusConfigService, CheckinStatusConfigService>();
 builder.Services.AddScoped<IAllowedIPService, AllowedIPService>();
+
 
 builder.Services.AddSwaggerGen(c =>
 {
@@ -140,6 +144,12 @@ builder.Logging.AddConsole();
 //Ý nghĩa: Thêm một provider để ghi log ra Console.
 //Tác dụng: Hiển thị log trong Terminal, Command Prompt hoặc Output window của Visual Studio.
 var app = builder.Build();
+
+using (var scope = app.Services.CreateScope())
+{
+    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+    UserSeed.SeedAdminUser(dbContext); 
+}
 
 app.MapGet("/", context =>
 {

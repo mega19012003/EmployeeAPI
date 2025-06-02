@@ -263,5 +263,23 @@ namespace EmployeeAPI.Services.UserService
                 ImageUrl = results.ImageUrl,
             };
         }
+    
+        public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser()
+        {
+            var users = await _repository.GetAll().ToListAsync();
+            var userDtos = users.Select(u => new ResponseModel.UserDto
+            {
+                userId = u.UserId,
+                Fullname = u.Fullname,
+                RoleName = u.Role.ToString(),
+                Address = u.Address,
+                PhoneNumber = u.PhoneNumber,
+                DepartmentName = u.Department?.Name ?? null,
+                PositionName = u.Position?.Name ?? null,
+                BasicSalary = u.BasicSalary,
+                ImageUrl = u.ImageUrl,
+            }).AsQueryable();
+            return userDtos;
+        }
     }
 }

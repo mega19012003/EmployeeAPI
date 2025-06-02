@@ -268,7 +268,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
             var validCheckins = await _payrollRepository.CountValidCheckins(staffId, month, year);
             var lateCheckins = await _payrollRepository.CountLateCheckins(staffId, month, year);
-            //var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(staffId, month, year);
+            var leaveEarlyCheckins = await _payrollRepository.CountLeaveEarlyCheckins(staffId, month, year);
             var absentCheckins = await _payrollRepository.CountAbsentCheckins(staffId, month, year);
             var absentPermissionCheckins = await _payrollRepository.CountAbsentPermissionCheckins(staffId, month, year);
             var overtimeCheckins = await _payrollRepository.CountOvertimeCheckins(staffId, month, year);
@@ -278,7 +278,7 @@ namespace EmployeeAPI.Services.PayrollServices
             double totalSalary =
                 validCheckins * basic * GetMultiplier(CheckinStatus.OnTime) +
                 lateCheckins * basic * GetMultiplier(CheckinStatus.Late) +
-                //leaveEarlyCheckins * basic * GetMultiplier(CheckinStatus.LeaveEarly) +
+                leaveEarlyCheckins * basic * GetMultiplier(CheckinStatus.LeaveEarly) +
                 absentCheckins * basic * GetMultiplier(CheckinStatus.Absent) +
                 absentPermissionCheckins * basic * GetMultiplier(CheckinStatus.LeaveWithPermission) +
                 overtimeCheckins * basic * GetMultiplier(CheckinStatus.Overtime);

@@ -63,6 +63,13 @@ namespace EmployeeAPI.Repositories.Users
                 .Where(u => u.IsActive && !u.IsDeleted)
                 .AsNoTracking();
         }
+        //public async Task<User> GetAllUser()
+        //{
+        //    return await _context.Users
+        //        .Include(u => u.Department)
+        //        .Include(u => u.Position)
+        //        .FirstOrDefaultAsync(u => u.IsActive && !u.IsDeleted);
+        //}
         public async Task<User> GetByIdAsync(Guid id)
         {
             return await _context.Users.Include(p => p.Department).Include(p => p.Position)

@@ -52,7 +52,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Tạo checkin cho user
+        /// (đang fix) Tạo checkin cho user
         /// </summary>
         ///<remarks>
         /// Nhập dateTime theo dạng "yyyy-MM-ddTHH:mm:ss" (ví dụ: "2000-01-01T08:00:00" ) hoặc excute luôn cũng dc
@@ -84,7 +84,7 @@ namespace EmployeeAPI.Controllers
                 }
                 //dto.IpAddress = ip ?? "Unknown";
 
-                var created = await _checkinService.CreateAsync(dto, ip);
+                var created = await _checkinService.CreateAsync(dto);
                 if (created == null)
                 {
                     return BadRequest();

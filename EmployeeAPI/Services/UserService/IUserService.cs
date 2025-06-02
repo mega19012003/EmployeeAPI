@@ -12,6 +12,8 @@ namespace EmployeeAPI.Services.UserService
         Task<string> SoftDeleteAsync(Guid id);
 
         Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);
+        //Task<ResponseModel.UserDto> GetAllUser();
         Task<ResponseModel.UserDto> GetByIdAsync(Guid id);
+        Task<IQueryable<ResponseModel.UserDto>> GetAllUser();
     }
 }
