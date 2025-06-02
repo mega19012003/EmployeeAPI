@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
 using EmployeeAPI.Services.PayrollServices;
 using Microsoft.AspNetCore.Authorization;
@@ -11,6 +12,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(7)]
     public class PayrollController : ControllerBase
     {
         private readonly IPayrollService _payrollService;

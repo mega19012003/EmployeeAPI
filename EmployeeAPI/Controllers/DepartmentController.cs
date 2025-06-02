@@ -12,11 +12,13 @@ using EmployeeAPI.Services.UserService;
 using ResponseModel = EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.UserService.ResponseModel;
+using EmployeeAPI.Attributes;
 
 namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(3)]
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentService _departmentService;

@@ -8,11 +8,13 @@ using EmployeeAPI.Base;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authorization;
 using static EmployeeAPI.Services.AuthServices.ResponseModel;
+using EmployeeAPI.Attributes;
 
 namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(1)]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

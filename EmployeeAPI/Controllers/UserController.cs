@@ -9,11 +9,13 @@ using System.Globalization;
 using Microsoft.AspNetCore.Authorization;
 using EmployeeAPI.Services.UserService;
 using static EmployeeAPI.Services.UserService.ResponseModel;
+using EmployeeAPI.Attributes;
 
 namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(2)]
     public class UserController : Controller
     {
         private readonly IUserService _userService;

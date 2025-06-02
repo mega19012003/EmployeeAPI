@@ -1,5 +1,6 @@
 ﻿using System.Reflection;
 using System.Text;
+using EmployeeAPI.Attributes;
 using EmployeeAPI.Middlewares;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
@@ -92,7 +93,7 @@ builder.Services.AddSwaggerGen(c =>
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Employee API", Version = "v1" });
-
+    c.DocumentFilter<SwaggerControllerOrderAttribute>();
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Name = "Authorization",

@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Services.DutyServices;
@@ -11,6 +12,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(5)]
     public class DutyController : ControllerBase
     {
         private readonly IDutyService _dutyService;

@@ -13,11 +13,13 @@ using System.Security.Claims;
 using EmployeeAPI.Services.UserService;
 using ResponseModel = EmployeeAPI.Services.PositionServices.ResponseModel;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
+using EmployeeAPI.Attributes;
 
 namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(4)]
     public class PositionController : ControllerBase
     {
         private readonly IPositionService _positionService;

@@ -1,5 +1,6 @@
 ﻿using System.Security.Claims;
 using Azure.Core;
+using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
 using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.CheckinServices;
@@ -13,6 +14,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(6)]
     public class CheckinController : ControllerBase
     {
         private readonly ICheckinService _checkinService;
