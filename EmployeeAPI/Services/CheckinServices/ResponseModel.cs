@@ -31,6 +31,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime? CheckoutDate { get; set; } = DateTime.Now;
             [JsonIgnore]
             public CheckinStatus CheckinStatus { get; set; }
+            [JsonIgnore]
             public CheckinStatus CheckoutStatus { get; set; } 
             //[JsonIgnore]
             //public string IpAddress { get; set; }
