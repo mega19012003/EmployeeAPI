@@ -57,11 +57,14 @@ namespace EmployeeAPI.Repositories.Users
 
         public IQueryable<User> GetAll()
         {
-            return _context.Users
+            var result = _context.Users
                 .Include(u => u.Department)
                 .Include(u => u.Position)
                 .Where(u => u.IsActive && !u.IsDeleted)
                 .AsNoTracking();
+
+
+            return result;
         }
         //public async Task<User> GetAllUser()
         //{

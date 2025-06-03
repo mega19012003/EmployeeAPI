@@ -222,6 +222,10 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var query = await _positionRepository.GetStaffByPositionAsync(positionId, pageSize, pageIndex);
 
+                var result = await _positionRepository.GetByIdAsync(positionId);
+                if (result == null)
+                    throw new ArgumentException("Cannot find the Position");
+
                 var allUsers = query
                     .SelectMany(d => d.Users
                     .Where(s => s.IsActive && !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));

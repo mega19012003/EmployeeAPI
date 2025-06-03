@@ -40,6 +40,8 @@ namespace EmployeeAPI.Controllers
 
                 //var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
                 var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, name, pageSize, pageIndex);
+                if (!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("No result", pagedResult, 200));
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("Get list duty success", pagedResult, 200));
             }

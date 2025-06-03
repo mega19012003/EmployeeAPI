@@ -127,7 +127,8 @@ namespace EmployeeAPI.Controllers
                 var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
                 var pagedResult = await _payrollService.GetPayrollByUser(staffId, currentUserId, currentRoles, pageIndex, pageSize);
-
+                if(!pagedResult.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by staff success", pagedResult, 200));
             }
             catch (DbUpdateConcurrencyException ex)

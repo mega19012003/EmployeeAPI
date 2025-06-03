@@ -14,6 +14,7 @@ using EmployeeAPI.Services.UserService;
 using ResponseModel = EmployeeAPI.Services.PositionServices.ResponseModel;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
 using EmployeeAPI.Attributes;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace EmployeeAPI.Controllers
 {
@@ -56,10 +57,14 @@ namespace EmployeeAPI.Controllers
                     if (user == null)
                         return Unauthorized("User not found");
                     departmentId = user.DepartmentId;
-
                 }
 
+
                 var result = await _positionService.GetAllAsync(name, departmentId, pageIndex, pageSize);
+
+                if (!result.Items.Any())
+                    return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
+
 
                 return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
             }
@@ -204,7 +209,7 @@ namespace EmployeeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception thrown in GetEmployeeByPosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Position name", StatusCode = 500 });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 

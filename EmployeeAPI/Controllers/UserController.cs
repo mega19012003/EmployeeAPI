@@ -218,7 +218,7 @@ namespace EmployeeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception in GetUserByIdAsync");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.ToString() });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.ToString(), StatusCode = 500 });
             }
         }
     }

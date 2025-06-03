@@ -267,6 +267,18 @@ namespace EmployeeAPI.Services.UserService
         public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser()
         {
             var users = await _repository.GetAll().ToListAsync();
+
+            var validDepartmentIds = await _context.Departments.Select(d => d.Id).ToListAsync();
+
+            var invalidUsers = users
+                .Where(u => u.DepartmentId != null && !validDepartmentIds.Contains(u.DepartmentId.Value))
+                .ToList();
+
+            if (invalidUsers == null)
+            {
+                throw new ArgumentException("Department not found");
+            }
+
             var userDtos = users.Select(u => new ResponseModel.UserDto
             {
                 userId = u.UserId,
