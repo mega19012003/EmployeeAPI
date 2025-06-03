@@ -128,10 +128,8 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.ImageUrl = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
                 }
 
-                // Gán department từ manager
                 existingUser.DepartmentId = manager.DepartmentId;
 
-                // Lưu thay đổi
                 await _repository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
@@ -170,9 +168,6 @@ namespace EmployeeAPI.Services.UserService
                 var existingUser = await _repository.GetByIdAsync(Id);
                 if (existingUser == null)
                     throw new ArgumentException("Cannot find User");
-
-                //existingUser.IsDeleted = true;
-                //existingUser.IsActive = false;
 
                 await _repository.SoftDeleteAsync(existingUser);
 
