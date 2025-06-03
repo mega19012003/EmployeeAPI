@@ -87,7 +87,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
             catch (Exception ex)
             {
-                _logger.LogError("An error occurred while retrieving position by ID. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError("An error occurred while retrieving position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -106,7 +106,7 @@ namespace EmployeeAPI.Services.PositionServices
                 var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
                 if (!Guid.TryParse(userIdClaim, out var userId))
-                    throw new UnauthorizedAccessException("Invalid user ID");
+                    throw new UnauthorizedAccessException("Invalid user");
 
                 Guid departmentId;
 
@@ -121,7 +121,7 @@ namespace EmployeeAPI.Services.PositionServices
                 else
                 {
                     if (dto.DepartmentId == null)
-                        throw new ArgumentException("Admin must input department Id");
+                        throw new ArgumentException("Admin must input department");
 
                     departmentId = dto.DepartmentId.Value;
                 }
@@ -152,7 +152,7 @@ namespace EmployeeAPI.Services.PositionServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError("An error occurred while adding staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError("An error occurred while adding User. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -164,7 +164,7 @@ namespace EmployeeAPI.Services.PositionServices
             {
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find position id");
+                    throw new ArgumentException("Cannot find position");
 
                 result.Name = newName;
                 var updated = await _positionRepository.UpdateAsync(result);
@@ -183,7 +183,7 @@ namespace EmployeeAPI.Services.PositionServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync(); 
-                _logger.LogError("An error occurred while updating staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError("An error occurred while updating User. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -195,7 +195,7 @@ namespace EmployeeAPI.Services.PositionServices
             {
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find position id");
+                    throw new ArgumentException("Cannot find position");
 
                 //result.IsDeleted = true;
 
@@ -208,7 +208,7 @@ namespace EmployeeAPI.Services.PositionServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError("An error occurred while deleting staff. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError("An error occurred while deleting User. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -255,7 +255,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
             catch (Exception ex)
             {
-                _logger.LogError("An error occurred while retrieving staff by position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError("An error occurred while retrieving User by position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }

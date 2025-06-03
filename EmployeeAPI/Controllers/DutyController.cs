@@ -48,7 +48,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentNullException in GetAll");
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the duty id", argEx.Message, 400));
+                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the duty", argEx.Message, 400));
             }
             catch (DbUpdateException dbEx)
             {
@@ -79,11 +79,11 @@ namespace EmployeeAPI.Controllers
 
                 var duty = await _dutyService.GetByIdAsync(id, currentUserId, currentUserRoles);
                 
-                return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Get duty by id success", duty, 200));
+                return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Get duty success", duty, 200));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error while retrieving duty id");
+                _logger.LogError(ex, "Error while retrieving duty");
                 return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
@@ -270,7 +270,7 @@ namespace EmployeeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find id", StatusCode = 500 });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
         /// <summary>
@@ -303,7 +303,7 @@ namespace EmployeeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Lỗi khi tạo Duty");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find id", StatusCode = 500 });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
     }

@@ -56,6 +56,10 @@ namespace EmployeeAPI.Controllers
                     var user = await _userService.GetByIdAsync(userId);
                     if (user == null)
                         return Unauthorized("User not found");
+
+                    if (user.DepartmentId == null)
+                        return BadRequest(ApiResponse<string>.ReturnResult("User does not belong to any department", null, 400));
+
                     departmentId = user.DepartmentId;
                 }
 
@@ -118,6 +122,26 @@ namespace EmployeeAPI.Controllers
                 if (id == Guid.Empty || string.IsNullOrWhiteSpace(newName)) 
                     return BadRequest(ApiResponse<string>.ReturnResult("Invalid input", null, 404));
 
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Unauthorized("Invalid user");
+
+                Guid? managerDepartmentId = null;
+
+                if (userRole == "Manager")
+                {
+                    var user = await _userService.GetByIdAsync(userId);
+                    if (user == null)
+                        return Unauthorized("User not found");
+
+                    if (user.DepartmentId == null)
+                        return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
+
+                    managerDepartmentId = user.DepartmentId;
+                }
+
                 var result = await _positionService.UpdateAsync(id, newName);
                 if (result == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
@@ -152,6 +176,25 @@ namespace EmployeeAPI.Controllers
             {
                 var result = await _positionService.SoftDeleteAsync(id);
                 if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
+
+                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+                if (!Guid.TryParse(userIdClaim, out var userId))
+                    return Unauthorized("Invalid user");
+                Guid? managerDepartmentId = null;
+                if (userRole == "Manager")
+                {
+                    var user = await _userService.GetByIdAsync(userId);
+                    if (user == null)
+                        return Unauthorized("User not found");
+
+                    if (user.DepartmentId == null)
+                        return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
+
+                    managerDepartmentId = user.DepartmentId;
+                }
+
                 return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
             }
             catch (ArgumentException argEx)
@@ -193,6 +236,9 @@ namespace EmployeeAPI.Controllers
                     var user = await _userService.GetByIdAsync(userId);
                     if (user == null)
                         return Unauthorized("User not found");
+
+                    if(user.DepartmentId == null)
+                        return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
 
                     departmentId = user.DepartmentId;
                 }

@@ -190,17 +190,17 @@ namespace EmployeeAPI.Controllers
 
                 var pagedResult = await _departmentService.GetStaffByDepartmentAsync(id, pageSize, pageIndex);
                 if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
 
                 if (!pagedResult.Items.Any())
                     return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
 
-                return Ok(ApiResponse<PagedResult<ResponseModel.UserFilter>>.ReturnResult("Get list staff by department success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.UserFilter>>.ReturnResult("Get list User by department success", pagedResult, 200));
             }
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "An error occurred while retrieving employees by department");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Get list staffs failed", argEx.InnerException?.Message ?? argEx.Message, 400));
+                return StatusCode(400, ApiResponse<string>.ReturnResult("Get list User failed", argEx.InnerException?.Message ?? argEx.Message, 400));
             } 
             catch (DbUpdateException dbEx)
             {
@@ -246,7 +246,7 @@ namespace EmployeeAPI.Controllers
 
                 var pagedResult = await _departmentService.GetListPositionAsync(id, pageSize, pageIndex);
                 if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
 
                 return Ok(ApiResponse<PagedResult<PositionByDepartment>>.ReturnResult("Get list posistion by department success", pagedResult, 200));
             }

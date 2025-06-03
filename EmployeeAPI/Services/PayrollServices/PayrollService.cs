@@ -48,6 +48,9 @@ namespace EmployeeAPI.Services.PayrollServices
                 if (manager == null)
                     throw new ArgumentException("Manager not found");
 
+                if (manager.DepartmentId == null)
+                    throw new Exception("Manager does not belong to any department");
+
                 var departmentId = manager.DepartmentId;
 
                 query = query.Where(p => p.Users.DepartmentId == departmentId);
@@ -94,7 +97,7 @@ namespace EmployeeAPI.Services.PayrollServices
         {
             var existing = await _payrollRepository.GetPayrollById(id);
             if (existing == null)
-                throw new ArgumentException("Cannot find checkin id");
+                throw new ArgumentException("Cannot find checkin");
 
             var employee = await _userRepository.GetByIdAsync(existing.UserId);
             if (employee == null)
@@ -111,7 +114,10 @@ namespace EmployeeAPI.Services.PayrollServices
             else if (currentUserRoles.Contains("Manager"))
             {
                 if (currentUser.DepartmentId != employee.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager cannot delete payroll of an employeee from other department");
+                    throw new UnauthorizedAccessException("Manager cannot delete payroll of an User from other department");
+
+                if (currentUser.DepartmentId == null)
+                    throw new Exception("Manager does not belong to any department");
             }
             else
             {
@@ -134,11 +140,34 @@ namespace EmployeeAPI.Services.PayrollServices
                 {
                     staffId = currentUserId;
                 }
-                else
+                else if (currentUserRoles.Contains("Manager"))
                 {
-                    // Nếu admin hoặc manager thì staffId phải có giá trị
+                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("User not found");
+
+                    if (currentUser.DepartmentId == null)
+                        throw new Exception("Manager does not belong to any department");
+
+
+                    // Kiểm tra user được lấy có tồn tại không
+                    var findUser = await _userRepository.GetByIdAsync(staffId.Value);
+                    if (findUser == null)
+                        throw new ArgumentException("Cannot find user");
+
+                    if (findUser.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
+
+                }
+                else if (currentUserRoles.Contains("Administrator"))
+                {
+                    // Admin: bắt buộc phải nhập staffId
                     if (staffId == null || staffId == Guid.Empty)
                         throw new ArgumentException("Please input staffId");
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException("You do not have permission");
                 }
 
                 pageIndex ??= 1;
@@ -146,11 +175,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
                 var user = await _userRepository.GetByIdAsync(staffId.Value);
                 if (user == null)
-                    throw new ArgumentException("Cannot find user id");
-
-                // Manager chỉ lấy được dữ liệu trong phòng ban của mình
-                if (currentUserRoles.Contains("Manager") && user.DepartmentId != (await _userRepository.GetByIdAsync(currentUserId)).DepartmentId)
-                    throw new UnauthorizedAccessException("Manager cannot access payroll from other departments");
+                    throw new ArgumentException("Cannot find user");
 
                 var query = _context.Payrolls
                     .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
@@ -193,10 +218,10 @@ namespace EmployeeAPI.Services.PayrollServices
             // Lấy thông tin nhân viên
             var staff = await _context.Users
                 .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == false && u.IsActive == true)); // sửa điều kiện cho đúng
+                .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == false && u.IsActive == true)); 
 
             if (staff == null)
-                throw new Exception("Cannot find staff id");
+                throw new Exception("Cannot find User");
 
             // Kiểm tra quyền Manager
             if (currentUserRoles.Contains("Manager"))
@@ -208,8 +233,11 @@ namespace EmployeeAPI.Services.PayrollServices
                 if (currentUser == null)
                     throw new Exception("Cannot find current user");
 
+                if (currentUser.DepartmentId == null)
+                    throw new Exception("Manager does not belong to any department");
+
                 if (staff.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("You can only calculate payrolls for employees in your department");
+                    throw new UnauthorizedAccessException("You can only calculate payrolls for User in your department");
             }
 
             int month = DateTime.Now.Month;

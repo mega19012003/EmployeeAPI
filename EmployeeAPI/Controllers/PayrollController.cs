@@ -129,7 +129,7 @@ namespace EmployeeAPI.Controllers
                 var pagedResult = await _payrollService.GetPayrollByUser(staffId, currentUserId, currentRoles, pageIndex, pageSize);
                 if(!pagedResult.Items.Any())
                     return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
-                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by staff success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
             }
             catch (DbUpdateConcurrencyException ex)
             {
@@ -138,7 +138,7 @@ namespace EmployeeAPI.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while retrieving payrolls by staff");
+                _logger.LogError(ex, "An error occurred while retrieving payrolls by User");
                 return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }

@@ -229,7 +229,7 @@ namespace EmployeeAPI.Controllers
 
                 var result = await _checkinService.DeleteAsync(id, currentUserId, currentUserRoles);
                 //var result = await _checkinService.DeleteAsync(id);
-                if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find Staff id", result, 200));
+                if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find User", result, 200));
 
                 return Ok(ApiResponse<string>.ReturnResult("Delete Checkin Success", result, 200));
             }
@@ -238,20 +238,15 @@ namespace EmployeeAPI.Controllers
                 _logger.LogError(argEx, "An error occurred while deleting a checkin");
                 return StatusCode(400, new { Message = "Checkin not found", Detail = argEx.Message, StatusCode = 400 });
             }
-            catch (UnauthorizedAccessException unAuthEx)
-            {
-                _logger.LogWarning(unAuthEx, "Unauthorized access while deleting checkin");
-                return StatusCode(403, new { Message = "Access Denied", Detail = unAuthEx.Message, StatusCode = 403 });
-            }
             catch (DbUpdateException dbEx)
             {
                 _logger.LogError(dbEx, "An error occurred while deleting a checkin");
                 return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
-            catch
+            catch (Exception ex)
             {
                 _logger.LogError("An error occurred while deleting a checkin");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Checkin id", StatusCode = 500 });
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
 
@@ -271,29 +266,27 @@ namespace EmployeeAPI.Controllers
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
                 var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, staffId, pageIndex, pageSize);
-                if (result == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the user id", null, 404));
 
                 if (!result.Items.Any())
                     return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("No result", result, 200));
 
-                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by staff success", result, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by user success", result, 200));
 
             }
             catch (ArgumentException argEx)
             {
-                _logger.LogError(argEx, "An error occurred while retrieving checkins by staff");
-                return StatusCode(400, new { Message = "Staff not found", Detail = argEx.Message, StatusCode = 400 });
+                _logger.LogError(argEx, "An error occurred while retrieving checkins by user");
+                return StatusCode(400, new { Message = "User not found", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
-                _logger.LogError(dbEx, "An error occurred while retrieving checkins by staff");
+                _logger.LogError(dbEx, "An error occurred while retrieving checkins by user");
                 return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while retrieving checkins by staff");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Staff id", StatusCode = 500 });
+                _logger.LogError(ex, "An error occurred while retrieving checkins by user");
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
     }

@@ -48,7 +48,7 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new UnauthorizedAccessException("Only Admin or Manager can register new users");
 
                 if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
-                    throw new UnauthorizedAccessException("Manager can only register Staff users");
+                    throw new UnauthorizedAccessException("Manager can only register users");
 
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)

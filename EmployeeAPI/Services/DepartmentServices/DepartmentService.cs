@@ -75,7 +75,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving department by id. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while retrieving department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -122,7 +122,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             try {
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find department id");
+                    throw new ArgumentException("Cannot find department");
 
                 result.Name = newName;
 
@@ -151,7 +151,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             {
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find department id");
+                    throw new ArgumentException("Cannot find department");
 
                 result.isDeleted = true;
                 await _repository.SoftDeleteAsync(result.Id);
@@ -177,7 +177,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 var result = await _repository.GetByIdAsync(departmentId.Value);
                 if (result == null)
                 {
-                    throw new ArgumentException("Cannot find department id");
+                    throw new ArgumentException("Cannot find department");
                 }
                 /*var currentUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 var role = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Role).Value;
@@ -232,7 +232,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving staff by department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while retrieving User by department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -245,7 +245,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             var result = await _repository.GetByIdAsync(departmentId.Value);
             if (result == null)
             {
-                throw new ArgumentException("Cannot find department id");
+                throw new ArgumentException("Cannot find department");
             }
 
             var query = await _repository.GetPositionsByDepartmentAsync(departmentId, pageSize, pageIndex);

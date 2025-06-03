@@ -169,7 +169,7 @@ namespace EmployeeAPI.Services.UserService
             {
                 var existingUser = await _repository.GetByIdAsync(Id);
                 if (existingUser == null)
-                    throw new ArgumentException("Cannot find User id");
+                    throw new ArgumentException("Cannot find User");
 
                 //existingUser.IsDeleted = true;
                 //existingUser.IsActive = false;
@@ -246,7 +246,7 @@ namespace EmployeeAPI.Services.UserService
         {
             var results = await _repository.GetByIdAsync(id);
             if (results == null)
-                throw new ArgumentException("Cannot find User id");
+                throw new ArgumentException("Cannot find User");
 
             return new ResponseModel.UserDto
             {
