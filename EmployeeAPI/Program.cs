@@ -135,7 +135,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 Encoding.UTF8.GetBytes(jwtSetting.Key))
         };
     });
-
+//
 builder.Services.AddControllers();
 //Ý nghĩa: Đăng ký dịch vụ Controllers vào Dependency Injection (DI container).
 //Tác dụng: Cho phép bạn sử dụng các Controller (thường nằm trong thư mục Controllers/) để xử lý các HTTP request (GET, POST, PUT, DELETE...).
