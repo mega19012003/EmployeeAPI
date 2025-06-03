@@ -34,7 +34,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _logger = logger;
         }
         
-        public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -42,9 +42,24 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageSize ??= 10;
 
                 var query = _context.Checkins
-                    .Include(c => c.Users)
-                    .Where(f => string.IsNullOrEmpty(Name) || f.Users.Fullname.ToLower().Contains(Name.ToLower()))
-                    .Where(p => !p.IsDeleted);
+                   .Include(c => c.Users)
+                   .Where(c => !c.IsDeleted);
+
+                if (currentUserRoles.Contains("Manager"))
+                {
+                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("User not found");
+
+                    var currentDepartmentId = currentUser.DepartmentId;
+                    query = query.Where(c => c.Users.DepartmentId == currentDepartmentId);
+                }
+
+                if (!string.IsNullOrEmpty(Name))
+                {
+                    Name = Name.ToLower();
+                    query = query.Where(c => c.Users.Fullname.ToLower().Contains(Name));
+                }
 
                 var totalCount = await query.CountAsync();
 

@@ -29,17 +29,21 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy toàn bộ danh sách checkin, chỉ có admin dc phép dùng
+        /// lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban
         /// </summary>
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
         {
             try
             {
-                var pagedResult = await _checkinService.GetAllAsync(StaffName, pageIndex, pageSize);
-                /*if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));*/
+                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                    return Unauthorized("UserId invalid");
+
+                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+                var pagedResult = await _checkinService.GetAllAsync(StaffName, pageIndex, pageSize, currentUserId, currentUserRoles);
 
                 if (!pagedResult.Items.Any())
                     return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("No result", pagedResult, 200));

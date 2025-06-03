@@ -8,7 +8,7 @@ namespace EmployeeAPI.Services.CheckinServices
 {
     public interface ICheckinService
     {
-        Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex);
+        Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id);
         Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto);
         Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto);
