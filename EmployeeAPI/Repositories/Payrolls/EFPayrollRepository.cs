@@ -26,12 +26,6 @@ namespace EmployeeAPI.Repositories.Payrolls
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
-        //public async Task UpdatePayroll(Payroll payroll)
-        //{
-        //    _context.Payrolls.Update(payroll);
-        //    await _context.SaveChangesAsync();
-        //}
-
         public async Task<Payroll> SoftDeletePayroll(Guid id)
         {
             var entity = await _context.Payrolls.FirstOrDefaultAsync(p => !p.IsDeleted && p.Id == id);
