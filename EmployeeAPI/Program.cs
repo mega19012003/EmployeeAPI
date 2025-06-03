@@ -60,7 +60,7 @@ builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHostedService<AbsentBackgroundService>();
 
-//builder.Services.AddScoped<IStaffRepository, EFStaffRepository>();
+
 builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
 builder.Services.AddScoped<IPositionRepository, EFPositionRepository>();
@@ -73,7 +73,7 @@ builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfig
 builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
 builder.Services.AddScoped<IHolidayRepository, EmployeeAPI.Repositories.Holidays.EFHolidayRepository>();
 
-//builder.Services.AddScoped<IStaffService, StafffService>();
+
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
