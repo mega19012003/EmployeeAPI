@@ -10,6 +10,8 @@ using Microsoft.AspNetCore.Authorization;
 using EmployeeAPI.Services.UserService;
 using static EmployeeAPI.Services.UserService.ResponseModel;
 using EmployeeAPI.Attributes;
+using EmployeeAPI.Models;
+using System.Text.RegularExpressions;
 
 namespace EmployeeAPI.Controllers
 {
@@ -104,13 +106,36 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                var result = await _userService.SoftDeleteAsync(Id);
-                /*if (result == null)
+                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+                var isManager = User.IsInRole("Manager");
+                var isAdmin = User.IsInRole("Administrator");
+
+                if (isManager && !isAdmin)
                 {
-                    return NotFound();
+                    var currentUser = await _userService.GetByIdAsync(currentUserId);
+                    if (currentUser == null)
+                        return Unauthorized("Current user not found");
+
+                    if (!currentUser.DepartmentId.HasValue)
+                        return BadRequest("Manager chưa có phòng ban.");
+
+                    var findUser = await _userService.GetByIdAsync(Id);
+                    if (findUser.DepartmentId != currentUser.DepartmentId)
+                        return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager cannot delete user from other department", StatusCode = 400 });
+
+                    var managerResult = await _userService.SoftDeleteAsync(findUser.userId);
+                    if (managerResult == null)
+                        return BadRequest("Cannot delete user, user not found or already deleted.");
+
+                    return Ok(ApiResponse<string>.ReturnResult("Delete staff success", managerResult, 200));
                 }
-                return Ok(result);*/
-                return Ok(ApiResponse<string>.ReturnResult("Soft delete staff success", result, 200));
+
+                var result = await _userService.SoftDeleteAsync(Id);
+
+                return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
             }
             catch (ArgumentException argEx)
             {
@@ -140,14 +165,11 @@ namespace EmployeeAPI.Controllers
             {
                 var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
-                {
-                    return Unauthorized("Cannot determine current user.");
-                }
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 var isManager = User.IsInRole("Manager");
                 var isAdmin = User.IsInRole("Administrator");
 
-                // Nếu là Manager và không phải Admin, thì tự gán departmentId nếu chưa truyền
                 if (isManager && !isAdmin)
                 {
                     var result = await _userService.GetByIdAsync(currentUserId);
@@ -187,7 +209,7 @@ namespace EmployeeAPI.Controllers
             {
                 var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
-                    return Unauthorized("Cannot determine current user.");
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 var isManager = User.IsInRole("Manager");
                 var isAdmin = User.IsInRole("Administrator");

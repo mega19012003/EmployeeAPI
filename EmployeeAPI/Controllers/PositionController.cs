@@ -47,7 +47,7 @@ namespace EmployeeAPI.Controllers
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
                 if (!Guid.TryParse(userIdClaim, out var userId))
-                    return Unauthorized("Invalid user");
+                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 Guid? departmentId = null;
 
@@ -126,7 +126,7 @@ namespace EmployeeAPI.Controllers
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
                 if (!Guid.TryParse(userIdClaim, out var userId))
-                    return Unauthorized("Invalid user");
+                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 Guid? managerDepartmentId = null;
 
@@ -181,7 +181,7 @@ namespace EmployeeAPI.Controllers
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
                 if (!Guid.TryParse(userIdClaim, out var userId))
-                    return Unauthorized("Invalid user");
+                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
                 Guid? managerDepartmentId = null;
                 if (userRole == "Manager")
                 {
@@ -227,7 +227,7 @@ namespace EmployeeAPI.Controllers
                 var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
 
                 if (!Guid.TryParse(userIdClaim, out var userId))
-                    return Unauthorized("Invalid user");
+                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 Guid? departmentId = null;
 

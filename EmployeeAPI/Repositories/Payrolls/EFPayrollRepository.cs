@@ -55,7 +55,7 @@ namespace EmployeeAPI.Repositories.Payrolls
             return await _context.Payrolls.AnyAsync(p => p.UserId == UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year && !p.IsDeleted);
         }
 
-        private async Task<int> CountCheckinsByStatus(Guid userId, CheckinStatus status, int month, int year)
+        /*private async Task<int> CountCheckinsByStatus(Guid userId, CheckinStatus status, int month, int year)
         {
             return await _context.Checkins.CountAsync(c => c.UserId == userId && c.CheckinStatus == status && c.CheckinDate.Month == month && c.CheckinDate.Year == year && !c.IsDeleted);
         }
@@ -93,7 +93,7 @@ namespace EmployeeAPI.Repositories.Payrolls
         public Task<int> CountothersCheckins(Guid UserId, int month, int year)
         {
             return CountCheckinsByStatus(UserId, CheckinStatus.Overtime, month, year);
-        }
+        }*/
 
         public async Task<User> GetUserWithSalary(Guid UserId)
         {

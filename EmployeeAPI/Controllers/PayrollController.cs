@@ -35,7 +35,7 @@ namespace EmployeeAPI.Controllers
             {
                 var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return Unauthorized("Invalid user ID");
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
@@ -66,7 +66,7 @@ namespace EmployeeAPI.Controllers
             {
                 var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return Unauthorized("Invalid user ID");
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
                // var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
@@ -91,7 +91,7 @@ namespace EmployeeAPI.Controllers
             {
                 var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return Unauthorized("Invalid user ID");
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
@@ -122,7 +122,7 @@ namespace EmployeeAPI.Controllers
             {
                 var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                 if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return Unauthorized("Invalid user ID");
+                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                 var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 

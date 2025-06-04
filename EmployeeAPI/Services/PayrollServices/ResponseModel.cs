@@ -37,7 +37,6 @@ namespace EmployeeAPI.Services.PayrollServices
             public Guid Id { get; set; }
             public Guid UserId { get; set; }
             public double Salary { get; set; }
-            public DateTime CheckoutDate { get; set; } //ngày trả lương
             public string Note { get; set; }
             public DateTime CreatedDate { get; set; }
             //public bool isPaid { get; set; }
