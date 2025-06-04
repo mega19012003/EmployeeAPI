@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Services.CheckinStatusConfigServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -34,19 +35,16 @@ namespace EmployeeAPI.Controllers
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]
         [HttpPut]
-        public async Task<IActionResult> Update(int id, [FromBody] CheckinStatusConfig updated)
+        public async Task<IActionResult> Update([FromBody] CheckinStatusConfig updated)
         {
-            if (id != updated.Id)
-                return BadRequest("ID mismatch");
-
             try
             {
-                await _service.UpdateConfigAsync(updated);
-                return NoContent();
+                var result = await _service.UpdateConfigAsync(updated);
+                return Ok(ApiResponse<CheckinStatusConfig>.ReturnResult("Update config success", result, 200));
             }
             catch (Exception ex)
             {
-                return BadRequest(ex.Message);
+                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
     }

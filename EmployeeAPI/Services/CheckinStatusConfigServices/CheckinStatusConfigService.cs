@@ -22,7 +22,7 @@ namespace EmployeeAPI.Services.CheckinStatusConfigServices
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task UpdateConfigAsync(CheckinStatusConfig updatedConfig)
+        public async Task<CheckinStatusConfig> UpdateConfigAsync(CheckinStatusConfig updatedConfig)
         {
             var existing = await _repository.GetByIdAsync(updatedConfig.Id);
             if (existing == null)
@@ -32,6 +32,14 @@ namespace EmployeeAPI.Services.CheckinStatusConfigServices
             existing.Name = updatedConfig.Name;
 
             await _repository.UpdateAsync(existing);
+
+            return new CheckinStatusConfig
+            {
+                Id = existing.Id,
+                Name = existing.Name,
+                SalaryMultiplier = existing.SalaryMultiplier,
+                Note = existing.Note
+            };
         }
     }
 }

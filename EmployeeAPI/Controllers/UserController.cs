@@ -45,12 +45,12 @@ namespace EmployeeAPI.Controllers
                 var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
                 var result = await _userService.AdminUpdateStaffAsync(dto);
 
-                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
+                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update user success", result, 200));
             }
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentException in UpdateAsync");
-                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "user cannot be found", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin người dùng, sẽ do manager chỉnh, manager ko dc chỉnh role và departmentid sẽ tự gán cho staff
+        /// Cập nhật thông tin người dùng, sẽ do manager chỉnh, manager ko dc chỉnh role và departmentid sẽ tự gán cho user
         /// </summary>
         [Authorize(Roles = "Manager")]
         [HttpPut("ManagerUpdateUser")]
@@ -128,7 +128,7 @@ namespace EmployeeAPI.Controllers
 
                     var managerResult = await _userService.SoftDeleteAsync(findUser.userId);
 
-                    return Ok(ApiResponse<string>.ReturnResult("Delete staff success", managerResult, 200));
+                    return Ok(ApiResponse<string>.ReturnResult("Delete user success", managerResult, 200));
                 }
 
                 var result = await _userService.SoftDeleteAsync(Id);
@@ -138,7 +138,7 @@ namespace EmployeeAPI.Controllers
             catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
-                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
+                return StatusCode(400, new { Message = "user cannot be found", Detail = argEx.Message, StatusCode = 400 });
             }
             catch (DbUpdateException dbEx)
             {
@@ -148,7 +148,7 @@ namespace EmployeeAPI.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Exception thrown in SoftDeleteAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Staff Id", StatusCode = 500 });
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find user", StatusCode = 500 });
             }
         }
 
@@ -182,7 +182,7 @@ namespace EmployeeAPI.Controllers
 
                 var pagedResult = await _userService.GetAllAsync(Name, departmentId, pageIndex, pageSize);
                 if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));
+                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
 
                 if (!pagedResult.Items.Any())
                     return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));
@@ -224,11 +224,11 @@ namespace EmployeeAPI.Controllers
                         return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                     if (!currentUser.DepartmentId.HasValue)
-                        return BadRequest("Manager dose not hae department");
+                        return BadRequest("Manager does not have department");
 
                     // Manager chỉ được xem user trong cùng phòng ban
                     if (result.DepartmentId != currentUser.DepartmentId)
-                        return StatusCode(403, new { Message = "Employee does not exist in this department or has been deleted." });
+                        return StatusCode(403, new { Message = "User does not exist in this department or has been deleted." });
 
                     return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
                 }

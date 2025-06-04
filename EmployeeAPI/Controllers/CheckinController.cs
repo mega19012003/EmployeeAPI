@@ -160,7 +160,6 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-
         /// <summary>
         /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
         /// </summary>

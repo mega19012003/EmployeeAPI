@@ -21,7 +21,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xem danh sách ngày nghỉ lễ, do admin/manager xử lý
         ///</summary>
-        [Authorize(Roles = "Aministrator")]
+        [Authorize(Roles = "Administrator")]
         [HttpGet]
         public async Task<IActionResult> GetAllHolidays(string? name, int? pageIndex, int? pageSize)
         {
@@ -41,7 +41,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Thêm ngày nghỉ lễ, dùng checkin để kiểm tra xem người dùng có đi làm vào ngày nghỉ ko, do admin xử lý
         /// </summary>
-        [Authorize(Roles = "Aministrator")]
+        [Authorize(Roles = "Administrator")]
         [HttpPost]
         public async Task<IActionResult> CreateHoliday(ResponseModel.CreateHoliday dto)
         {
@@ -75,7 +75,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// sủa ngày nghỉ lễ, do admin xử lý
         /// </summary>
-        [Authorize(Roles = "Aministrator")]
+        [Authorize(Roles = "Administrator")]
         [HttpPut]
         public async Task<IActionResult> UpdateHoliday(ResponseModel.UpdateHoliday dto)
         {
@@ -108,7 +108,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xóa ngày nghỉ lễ, do admin xử lý
         /// </summary>
-        [Authorize(Roles = "Aministrator")]
+        [Authorize(Roles = "Administrator")]
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteHoliday(Guid id)
         {

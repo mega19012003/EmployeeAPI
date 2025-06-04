@@ -83,13 +83,10 @@ namespace EmployeeAPI.Services.DepartmentServices
         public async Task<ResponseModel.CreateDepartment> AddAsync(string name)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
-
             try
             {
-                if(name ==null)
-                {
-                    throw new ArgumentNullException(nameof(name), "Department name cannot be null or empty");
-                }
+                if(!string.IsNullOrEmpty(name))
+                    throw new ArgumentException("Department name cannot be null or empty");
 
                 var model = new Department
                 {

@@ -44,8 +44,6 @@ namespace EmployeeAPI.Controllers
             try
             {
                 var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
-                /*if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find department name", null, 404));*/
 
                 if (!pagedResult.Items.Any())
                     return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("No result", pagedResult, 200));
@@ -77,11 +75,11 @@ namespace EmployeeAPI.Controllers
 
                 return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("Department added success", result, 200));
             }
-            catch (ArgumentException argEx)
+            /*catch (ArgumentException argEx)
             {
                 _logger.LogError(argEx, "An error occurred while adding the department");
                 return StatusCode(400, new { Message = "Department cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
+            }*/
             catch (DbUpdateException dbEx)
             {
                 _logger.LogError(dbEx, "An error occurred while adding the department");

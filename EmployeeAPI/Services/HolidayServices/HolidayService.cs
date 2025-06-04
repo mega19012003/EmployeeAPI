@@ -80,7 +80,7 @@ namespace EmployeeAPI.Services.HolidayServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving department by id. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while retrieving holiday by id. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -120,7 +120,7 @@ namespace EmployeeAPI.Services.HolidayServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while adding department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while adding holiday. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -131,7 +131,7 @@ namespace EmployeeAPI.Services.HolidayServices
             {
                 var result = await _holidayRepository.GetByIdAsync(dto.HolidayId);
                 if (result == null)
-                    throw new ArgumentException("Cannot find department id");
+                    throw new ArgumentException("Cannot find holiday");
 
                 result.name = dto.Name;
                 result.startDate = dto.startDate;
@@ -153,7 +153,7 @@ namespace EmployeeAPI.Services.HolidayServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while updating department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while updating holiday. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }

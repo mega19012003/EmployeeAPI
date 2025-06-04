@@ -8,7 +8,7 @@ namespace EmployeeAPI.Services.CheckinStatusConfigServices
 
         Task<CheckinStatusConfig?> GetConfigAsync(int id);
 
-        Task UpdateConfigAsync(CheckinStatusConfig updatedConfig);
+        Task<CheckinStatusConfig> UpdateConfigAsync(CheckinStatusConfig updatedConfig);
 
     }
 }

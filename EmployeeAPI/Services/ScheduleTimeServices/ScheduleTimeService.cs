@@ -47,7 +47,6 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                 await trasaction.CommitAsync();
 
                 return newSchedule;
-
             }
             catch
             {

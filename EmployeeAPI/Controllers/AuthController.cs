@@ -37,7 +37,6 @@ namespace EmployeeAPI.Controllers
         /// - 2 = Manager
         /// - 3 = Employee
         /// </remarks> 
-
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ResponseModel.RegisterDto dto)
@@ -89,8 +88,6 @@ namespace EmployeeAPI.Controllers
         {
             try
             {
-                /*if (string.IsNullOrEmpty(dto.Username) || string.IsNullOrEmpty(dto.Password))
-                    return BadRequest("Email and password cannot be null");*/
                 var user = await _authService.LoginAsync(dto.Username, dto.Password);
                 if (user == null)
                     return BadRequest(new ApiResponse<ResponseModel.LoginDto>
@@ -233,12 +230,11 @@ namespace EmployeeAPI.Controllers
             }
         }
 
-
         /// <summary>
         /// Lấy thông tin user đang đăng nhập
         /// </summary>
         [Authorize]
-        [HttpGet("current")/*, Authorize*/]
+        [HttpGet("current")]
         public async Task<IActionResult> GetCurrentUser()
         {
             var user = HttpContext.User;
