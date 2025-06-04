@@ -214,7 +214,7 @@ namespace EmployeeAPI.Controllers
 
                 var result = await _userService.GetByIdAsync(id);
                 if (result == null)
-                    return NotFound("User not found.");
+                    return StatusCode(400, new { Message = "Get user failed", Detail = "User not found", StatusCode = 400 });
 
 
                 if (isManager)
@@ -224,7 +224,7 @@ namespace EmployeeAPI.Controllers
                         return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                     if (!currentUser.DepartmentId.HasValue)
-                        return BadRequest("Manager does not have department");
+                        return StatusCode(400, new { Message = "Get user failed", Detail = "Manager does not have department", StatusCode = 400 });
 
                     // Manager chỉ được xem user trong cùng phòng ban
                     if (result.DepartmentId != currentUser.DepartmentId)
