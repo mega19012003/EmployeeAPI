@@ -117,18 +117,16 @@ namespace EmployeeAPI.Controllers
                 {
                     var currentUser = await _userService.GetByIdAsync(currentUserId);
                     if (currentUser == null)
-                        return Unauthorized("Current user not found");
+                        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                     if (!currentUser.DepartmentId.HasValue)
-                        return BadRequest("Manager chưa có phòng ban.");
+                        return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
 
                     var findUser = await _userService.GetByIdAsync(Id);
                     if (findUser.DepartmentId != currentUser.DepartmentId)
                         return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager cannot delete user from other department", StatusCode = 400 });
 
                     var managerResult = await _userService.SoftDeleteAsync(findUser.userId);
-                    if (managerResult == null)
-                        return BadRequest("Cannot delete user, user not found or already deleted.");
 
                     return Ok(ApiResponse<string>.ReturnResult("Delete staff success", managerResult, 200));
                 }
@@ -174,10 +172,10 @@ namespace EmployeeAPI.Controllers
                 {
                     var result = await _userService.GetByIdAsync(currentUserId);
                     if (result == null)
-                        return Unauthorized("Current user not found");
+                        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                     if (!result.DepartmentId.HasValue)
-                        return BadRequest("Manager chưa có phòng ban.");
+                        return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
 
                     departmentId = result.DepartmentId;
                 }
@@ -223,7 +221,7 @@ namespace EmployeeAPI.Controllers
                 {
                     var currentUser = await _userService.GetByIdAsync(currentUserId);
                     if (currentUser == null)
-                        return Unauthorized("Current user not found.");
+                        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
                     if (!currentUser.DepartmentId.HasValue)
                         return BadRequest("Manager dose not hae department");

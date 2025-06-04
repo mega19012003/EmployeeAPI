@@ -110,7 +110,7 @@ namespace EmployeeAPI.Services.UserService
                 string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
                 var existingUser = await _repository.GetByIdAsync(dto.UserId);
-                if (existingUser == null) throw new ArgumentException("User không tồn tại");
+                if (existingUser == null) throw new ArgumentException("User Not found");
 
                 var manager = await _repository.GetByIdAsync(managerId);
                 if (manager == null || manager.DepartmentId == null)
