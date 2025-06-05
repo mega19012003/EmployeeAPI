@@ -100,8 +100,6 @@ namespace EmployeeAPI.Services.PositionServices
                 if(dto.Name == null)
                     throw new ArgumentException("Position name cannot be null or empty");
 
-                //var department = await _context.Positions.Include(p => p.Department).SingleOrDefaultAsync();
-
                 var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
                 var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
@@ -122,7 +120,6 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     if (dto.DepartmentId == null)
                         throw new ArgumentException("Admin must input department");
-
                     departmentId = dto.DepartmentId.Value;
                 }
 
@@ -136,11 +133,10 @@ namespace EmployeeAPI.Services.PositionServices
                 var entity = await _positionRepository.AddAsync(model);
 
                 await _context.SaveChangesAsync();
-                
                 await transaction.CommitAsync();
-                var result = await _context.Positions
-                    .Include(p => p.Department)
-                    .FirstOrDefaultAsync(p => p.Id == entity.Id);
+
+                //var result = await _context.Positions.Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == entity.Id);
+                var result = await _positionRepository.GetByIdAsync(entity.Id);
 
                 return new ResponseModel.PositionDTO
                 {

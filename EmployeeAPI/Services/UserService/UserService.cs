@@ -2,6 +2,7 @@
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
+using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.FileServices;
@@ -15,14 +16,15 @@ namespace EmployeeAPI.Services.UserService
 {
     public class UserService : IUserService
     {
-        private readonly IUserRepository _repository;
-
+        private readonly IUserRepository _userRepository;
+        private readonly IDepartmentRepository _departmentRepository;
         private readonly IFileService _fileService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public UserService(IUserRepository repository, IFileService fileService, AppDbContext context, ILogger<AuthService> logger)
+        public UserService(IUserRepository userRepository, IFileService fileService, AppDbContext context, ILogger<AuthService> logger, IDepartmentRepository departmentRepository)
         {
-            _repository = repository;
+            _userRepository = userRepository;
+            _departmentRepository = departmentRepository;
             _fileService = fileService;
             _context = context;
             _logger = logger;
@@ -35,7 +37,7 @@ namespace EmployeeAPI.Services.UserService
             {
                 string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
-                var existingUser = await _repository.GetByIdAsync(dto.UserId);
+                var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("User không tồn tại");
 
                 if (dto.ImageUrl != null)
@@ -55,27 +57,43 @@ namespace EmployeeAPI.Services.UserService
 
                     if (dto.PositionId.HasValue)
                     {
-                        var department = await _context.Departments
-                            .Include(d => d.Positions)
-                            .FirstOrDefaultAsync(d => d.Id == dto.DepartmentId.Value);
-
+                        var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
                         if (department == null)
-                            throw new ArgumentException("Department does not existed");
+                            throw new ArgumentException("Department does not exist");
 
                         bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                         if (!isValidPosition)
-                            throw new ArgumentException("Position does not existed in department");
+                            throw new ArgumentException("Position does not exist in the new department");
+
+                        existingUser.PositionId = dto.PositionId;
+                    }
+                    else
+                    {
                     }
                 }
-                if (dto.PositionId.HasValue)
+                else
                 {
-                    existingUser.PositionId = dto.PositionId;
+                    if (dto.PositionId.HasValue)
+                    {
+                        if (!existingUser.DepartmentId.HasValue)
+                            throw new ArgumentException("User does not belong to any department");
+
+                        var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
+                        if (department == null)
+                            throw new ArgumentException("Current department does not exist");
+
+                        bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+                        if (!isValidPosition)
+                            throw new ArgumentException("Position does not exist in the current department");
+
+                        existingUser.PositionId = dto.PositionId;
+                    }
                 }
 
-                await _repository.UpdateAsync(existingUser);
+
+                await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
-                // Load lại navigation properties để lấy tên Department và Position
                 await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
                 await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
 
@@ -109,10 +127,10 @@ namespace EmployeeAPI.Services.UserService
             {
                 string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
-                var existingUser = await _repository.GetByIdAsync(dto.UserId);
+                var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("User Not found");
 
-                var manager = await _repository.GetByIdAsync(managerId);
+                var manager = await _userRepository.GetByIdAsync(managerId);
                 if (manager == null || manager.DepartmentId == null)
                     throw new ArgumentException("Manager không có phòng ban. Vui lòng liên hệ admin để thêm phòng ban.");
 
@@ -130,7 +148,7 @@ namespace EmployeeAPI.Services.UserService
 
                 existingUser.DepartmentId = manager.DepartmentId;
 
-                await _repository.UpdateAsync(existingUser);
+                await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
                 // Load lại navigation properties để lấy tên phòng ban và chức vụ
@@ -165,14 +183,12 @@ namespace EmployeeAPI.Services.UserService
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var existingUser = await _repository.GetByIdAsync(Id);
+                var existingUser = await _userRepository.GetByIdAsync(Id);
                 if (existingUser == null)
                     throw new ArgumentException("Cannot find User");
 
-                await _repository.SoftDeleteAsync(existingUser);
-
+                await _userRepository.SoftDeleteAsync(existingUser);
                 await _context.SaveChangesAsync();
-
                 await transaction.CommitAsync();
 
                 return "Đã xóa user: " + existingUser.Fullname;
@@ -192,7 +208,7 @@ namespace EmployeeAPI.Services.UserService
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _repository.GetAll();
+                var query = _userRepository.GetAll();
 
                 if (!string.IsNullOrEmpty(SearchTerm))
                     query = query.Where(x => x.Fullname.ToLower().Contains(SearchTerm.ToLower()));
@@ -210,11 +226,8 @@ namespace EmployeeAPI.Services.UserService
                         userId = f.UserId,
                         Fullname = f.Fullname,
                         RoleName = f.Role.ToString(),
- 
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
-                        /*DepartmentName = f.Department.Name,
-                        PositionName = f.Position.Name,*/
                         DepartmentName = f.Department != null ? f.Department.Name : string.Empty,
                         PositionName = f.Position != null ? f.Position.Name : string.Empty,
                         BasicSalary = f.BasicSalary,
@@ -239,7 +252,7 @@ namespace EmployeeAPI.Services.UserService
 
         public async Task<ResponseModel.UserDto> GetByIdAsync(Guid id)
         {
-            var results = await _repository.GetByIdAsync(id);
+            var results = await _userRepository.GetByIdAsync(id);
             if (results == null)
                 throw new ArgumentException("Cannot find User");
 
@@ -248,7 +261,6 @@ namespace EmployeeAPI.Services.UserService
                 userId = results.UserId,
                 Fullname = results.Fullname,
                 RoleName = results.Role.ToString(),
-         
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
                 DepartmentId = results.DepartmentId,
@@ -261,7 +273,7 @@ namespace EmployeeAPI.Services.UserService
     
         public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser()
         {
-            var users = await _repository.GetAll().ToListAsync();
+            var users = await _userRepository.GetAll().ToListAsync();
 
             var validDepartmentIds = await _context.Departments.Select(d => d.Id).ToListAsync();
 

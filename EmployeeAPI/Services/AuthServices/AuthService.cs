@@ -87,15 +87,6 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
-        //private string HashPassword(string password)
-        //{
-        //    using (var sha256 = SHA256.Create())
-        //    {
-        //        var bytes = Encoding.UTF8.GetBytes(password);
-        //        var hash = sha256.ComputeHash(bytes);
-        //        return Convert.ToBase64String(hash);
-        //    }
-        //}
         public async Task<User> GetUserById(Guid userId)
         {
             var user = await _repository.GetByIdAsync(userId);
@@ -277,6 +268,5 @@ namespace EmployeeAPI.Services.AuthServices
                 RoleName = result.Role.ToString(),
             };
         }
-
     }
 }

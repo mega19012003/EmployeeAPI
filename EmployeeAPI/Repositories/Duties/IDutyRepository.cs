@@ -4,7 +4,8 @@ namespace EmployeeAPI.Repositories.Duties
 {
     public interface IDutyRepository
     {
-        Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex);
+        Task<IEnumerable<Duty>> GetAllAsync();
+        IQueryable<Duty> GetAllQueryable();
         Task<Duty> GetDutyByIdAsync(Guid id);
         Task<DutyDetail> GetDutyDetailByIdAsync(Guid id);
         Task<Duty> AddAsync(Duty duty);
@@ -12,6 +13,6 @@ namespace EmployeeAPI.Repositories.Duties
         Task<DutyDetail> UpdateDutyDetailAsync(DutyDetail duty);
         Task<Duty> SoftDeleteDutyAsync(Guid id);
         Task<DutyDetail> SoftDeleteDutyDetailAsync(Guid id);
-        Task<IEnumerable<Duty>> GetDutyByName(string name, int? pageSize, int? pageIndex);
+        Task<IEnumerable<Duty>> GetDutyByName();
     }
 }

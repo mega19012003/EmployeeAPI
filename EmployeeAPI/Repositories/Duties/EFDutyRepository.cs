@@ -11,12 +11,22 @@ namespace EmployeeAPI.Repositories.Duties
         {
             _context = context;
         }
-        public async Task<IEnumerable<Duty>> GetAllAsync(string? SearchTerm, int? pageSize, int? pageIndex)
+        public async Task<IEnumerable<Duty>> GetAllAsync()
         {
             return _context.Duties
                 .AsNoTracking()
                 .Include(d => d.DutyDetails)
                 .ThenInclude(dd => dd.Users)
+                .Where(p => !p.IsDeleted);
+        }
+
+        public IQueryable<Duty> GetAllQueryable()
+        {
+            return _context.Duties
+                .AsNoTracking()
+                .Include(d => d.DutyDetails)
+                .ThenInclude(dd => dd.Users)
+                .Where(p => !p.IsDeleted)
                 .AsQueryable();
         }
 
@@ -26,6 +36,7 @@ namespace EmployeeAPI.Repositories.Duties
                 .AsNoTracking()
                 .Include(p => p.DutyDetails)
                 .ThenInclude(p => p.Users)
+                .Where(p => !p.IsDeleted)
                 .FirstOrDefaultAsync(p => p.Id == id);
         }
 
@@ -68,7 +79,7 @@ namespace EmployeeAPI.Repositories.Duties
             return entity;
         }
 
-        public async Task<IEnumerable<Duty>> GetDutyByName(string name, int? pageSize, int? pageIndex)
+        public async Task<IEnumerable<Duty>> GetDutyByName()
         {
             return _context.Duties
                 .AsNoTracking()

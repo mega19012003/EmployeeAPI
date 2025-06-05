@@ -18,7 +18,7 @@ namespace EmployeeAPI.Repositories.Positions
 
         public async Task<Position?> GetByIdAsync(Guid id)
         {
-            return await _context.Positions.AsNoTracking().FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            return await _context.Positions.AsNoTracking().Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
         public async Task<Position> AddAsync(Position position)

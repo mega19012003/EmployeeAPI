@@ -14,11 +14,20 @@ namespace EmployeeAPI.Repositories.Checkins
             _context = context;
         }
 
-        public async Task<IEnumerable<Checkin>> GetAllAsync(string? UserName, int? pageIndex, int? pageSize)
+        public async Task<IEnumerable<Checkin>> GetAllAsync()
         {
-            return await _context.Checkins
+            return _context.Checkins
                 .AsNoTracking()
-                .AsQueryable().ToListAsync();
+                .Include(c => c.Users)
+                .Where(c => !c.IsDeleted && (!c.Users.IsDeleted && c.Users.IsActive));
+        }
+
+        public IQueryable<Checkin> GetAll()
+        {
+            return _context.Checkins
+                .AsNoTracking()
+                .Include(c => c.Users)
+                .Where(c => !c.IsDeleted && !c.Users.IsDeleted && c.Users.IsActive);
         }
 
         public async Task<Checkin> GetByIdAsync(Guid id)

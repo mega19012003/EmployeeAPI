@@ -38,11 +38,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 .Include(p => p.Users)
                 .Where(p => !p.IsDeleted);
 
-            if (currentUserRoles.Contains("Administrator"))
-            {
-                // Admin có thể xem tất cả payrolls → không cần lọc thêm gì
-            }
-            else if (currentUserRoles.Contains("Manager"))
+            if (currentUserRoles.Contains("Manager"))
             {
                 var manager = await _context.Users.FindAsync(currentUserId);
                 if (manager == null)
@@ -54,10 +50,6 @@ namespace EmployeeAPI.Services.PayrollServices
                 var departmentId = manager.DepartmentId;
 
                 query = query.Where(p => p.Users.DepartmentId == departmentId);
-            }
-            else
-            {
-                throw new UnauthorizedAccessException("Access Denied");
             }
 
             if (!string.IsNullOrEmpty(name))
@@ -95,40 +87,46 @@ namespace EmployeeAPI.Services.PayrollServices
 
         public async Task<string> SoftDeletePayroll(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
-            var existing = await _payrollRepository.GetPayrollById(id);
-            if (existing == null)
-                throw new ArgumentException("Cannot find checkin");
-
-            var employee = await _userRepository.GetByIdAsync(existing.UserId);
-            if (employee == null)
-                throw new ArgumentException("Cannot find employee for this checkin");
-
-            var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-            if (currentUser == null)
-                throw new ArgumentException("Cannot find current user");
-
-            if (currentUserRoles.Contains("Administrator"))
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
+                var existing = await _payrollRepository.GetPayrollById(id);
+                if (existing == null)
+                    throw new ArgumentException("Cannot find checkin");
 
+                var employee = await _userRepository.GetByIdAsync(existing.UserId);
+                if (employee == null)
+                    throw new ArgumentException("Cannot find employee for this checkin");
+
+                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                if (currentUser == null)
+                    throw new ArgumentException("Cannot find current user");
+
+                if (currentUserRoles.Contains("Manager"))
+                {
+                    if (currentUser.DepartmentId != employee.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager cannot delete payroll of an User from other department");
+
+                    if (currentUser.DepartmentId == null)
+                        throw new Exception("Manager does not belong to any department");
+                }
+
+                var result = await _payrollRepository.SoftDeletePayroll(id);
+                if (result == null) return null;
+                result.IsDeleted = true;
+
+                await _payrollRepository.SoftDeletePayroll(result.Id);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return "Đã xóa payroll " + id;
             }
-            else if (currentUserRoles.Contains("Manager"))
+            catch (Exception ex)
             {
-                if (currentUser.DepartmentId != employee.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager cannot delete payroll of an User from other department");
-
-                if (currentUser.DepartmentId == null)
-                    throw new Exception("Manager does not belong to any department");
+                _logger.LogError(ex, "Error occurred while deleting payroll. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                await transaction.RollbackAsync();
+                throw;
             }
-            else
-            {
-                throw new UnauthorizedAccessException("Access denied");
-            }
-
-            var result = await _payrollRepository.SoftDeletePayroll(id);
-            if (result == null) return null;
-            /*result.IsDeleted = true;
-            await _payrollRepository.UpdatePayroll(result);*/
-            return "Đã xóa payroll " + id;
         }
 
         public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
@@ -215,10 +213,8 @@ namespace EmployeeAPI.Services.PayrollServices
 
         public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
-            // Lấy thông tin nhân viên
-            var staff = await _context.Users
-                .Include(u => u.Department)
-                .FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == false && u.IsActive == true)); 
+            //var staff = await _context.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == false && u.IsActive == true)); //fix this
+            var staff = await _userRepository.GetByIdAsync(staffId);
 
             if (staff == null)
                 throw new Exception("Cannot find User");

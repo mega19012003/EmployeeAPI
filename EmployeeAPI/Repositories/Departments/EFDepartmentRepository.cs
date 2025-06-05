@@ -20,23 +20,16 @@ namespace EmployeeAPI.Repositories.Departments
 
         public async Task<Department> GetByIdAsync(Guid id)
         {
-            return await _context.Departments.FirstOrDefaultAsync(p => p.Id == id && !p.isDeleted);
+            return await _context.Departments.Include(d => d.Positions).FirstOrDefaultAsync(p => p.Id == id && !p.isDeleted);
         }
         public async Task AddAsync(Department department)
         {
             await _context.Departments.AddAsync(department);
-            //await _context.SaveChangesAsync();
         }
 
         public async Task UpdateAsync(Department department)
         {
-            /*var existingDepartment = await _context.Departments.FirstOrDefaultAsync(p => p.Id == department.Id && !p.isDeleted);
-
-            if (existingDepartment == null) return;*/
-
-            //existingDepartment.Name = department.Name;
             _context.Departments.Update(department);
-            //await _context.SaveChangesAsync();
         }
 
         public async Task SoftDeleteAsync(Guid id)
@@ -44,8 +37,6 @@ namespace EmployeeAPI.Repositories.Departments
             var results = await _context.Departments.FirstOrDefaultAsync(p => p.Id == id && !p.isDeleted);
             if (results == null) return;
 
-            //results.isDeleted = true;
-            _context.Departments.Update(results);
             await _context.SaveChangesAsync();
         }
 

@@ -41,9 +41,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _context.Checkins
-                   .Include(c => c.Users)
-                   .Where(c => !c.IsDeleted);
+                /*var query = _context.Checkins.Include(c => c.Users).Where(c => !c.IsDeleted);*/
+                var query = _checkinRepository.GetAll();
 
                 if (currentUserRoles.Contains("Manager"))
                 {
@@ -214,7 +213,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     status = CheckinStatus.Late;
                 }
-
 
                 var checkin = new Checkin
                 {
@@ -388,12 +386,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                // Kiểm tra quyền
-                if (currentUserRoles.Contains("Administrator"))
-                {
-                    // Admin: được quyền update mọi checkin
-                }
-                else if (currentUserRoles.Contains("Manager"))
+                if (currentUserRoles.Contains("Manager"))
                 {
                     // Manager: chỉ được update checkin nhân viên trong cùng phòng ban
                     if (currentUser.DepartmentId != employee.DepartmentId)
@@ -401,11 +394,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (currentUser.DepartmentId == null)
                         throw new Exception("Manager does not belong to any department");
-                }
-                else
-                {
-                    // Người dùng khác không có quyền update checkin
-                    throw new UnauthorizedAccessException("Access denied");
                 }
 
                 existing.CheckinStatus = dto.CheckinStatus;
@@ -503,56 +491,6 @@ namespace EmployeeAPI.Services.CheckinServices
             _logger.LogInformation($"Đã đánh dấu {absentUsers.Count} người dùng vắng mặt ngày {today:dd/MM/yyyy}.");
         }
 
-
-
-        //public async Task AutoMarkAbsentAsync()
-        //{
-        //    var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        //    var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
-        //    var today = vnNow.Date;
-
-        //    if (vnNow.DayOfWeek == DayOfWeek.Sunday)
-        //    {
-        //        _logger.LogInformation("Sunday, no checkin");
-        //        return;
-        //    }
-
-        //    bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
-        //    if (isHoliday)
-        //    {
-        //        _logger.LogInformation("Hôm nay là ngày nghỉ lễ, không đánh dấu Absent.");
-        //        return;
-        //    }
-
-        //    var allUsers = await _userRepository.GetAll().ToListAsync(); 
-
-        //    var checkedInUserIds = await _context.Checkins
-        //        .Where(c => TimeZoneInfo.ConvertTimeFromUtc(c.CheckinDate, vnTimeZone).Date == today)
-        //        .Select(c => c.UserId)
-        //        .ToListAsync();
-
-        //    var absentUsers = allUsers
-        //        .Where(u => !checkedInUserIds.Contains(u.UserId))
-        //        .ToList();
-
-        //    foreach (var user in absentUsers)
-        //    {
-        //        var checkin = new Checkin
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            UserId = user.UserId,
-        //            CheckinStatus = CheckinStatus.Absent,
-        //            CheckinDate = DateTime.UtcNow 
-        //        };
-
-        //        await _checkinRepository.CreateAsync(checkin);
-        //    }
-
-        //    await _context.SaveChangesAsync();
-
-        //    _logger.LogInformation($"Đã đánh dấu {absentUsers.Count} người dùng vắng mặt ngày {today:dd/MM/yyyy}.");
-        //}
-
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -637,10 +575,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     // Admin: bắt buộc phải nhập staffId
                     if (staffId == null || staffId == Guid.Empty)
                         throw new ArgumentException("Please input user id");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("You do not have permission");
                 }
 
                 pageIndex ??= 1;

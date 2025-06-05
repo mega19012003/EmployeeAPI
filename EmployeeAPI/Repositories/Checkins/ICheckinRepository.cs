@@ -6,7 +6,8 @@ namespace EmployeeAPI.Repositories.Checkins
 {
     public interface ICheckinRepository
     {
-        Task<IEnumerable<Checkin>> GetAllAsync(string? name, int? pageIndex, int? pageSize);
+        Task<IEnumerable<Checkin>> GetAllAsync();
+        IQueryable<Checkin> GetAll();
         Task<Checkin> GetByIdAsync(Guid id);
         Task CreateAsync(Checkin checkin);
         Task UpdateAsync(Checkin checkin);

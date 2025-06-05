@@ -31,9 +31,6 @@ namespace EmployeeAPI.Repositories.Payrolls
             var entity = await _context.Payrolls.FirstOrDefaultAsync(p => !p.IsDeleted && p.Id == id);
             if(entity == null)  return null;
 
-            entity.IsDeleted = true;
-            _context.Payrolls.Update(entity);
-            await _context.SaveChangesAsync();
             return entity;
         }
 
@@ -55,46 +52,6 @@ namespace EmployeeAPI.Repositories.Payrolls
             return await _context.Payrolls.AnyAsync(p => p.UserId == UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year && !p.IsDeleted);
         }
 
-        /*private async Task<int> CountCheckinsByStatus(Guid userId, CheckinStatus status, int month, int year)
-        {
-            return await _context.Checkins.CountAsync(c => c.UserId == userId && c.CheckinStatus == status && c.CheckinDate.Month == month && c.CheckinDate.Year == year && !c.IsDeleted);
-        }
-
-        public Task<int> CountValidCheckins(Guid userId, int month, int year)
-        {
-            return CountCheckinsByStatus(userId, CheckinStatus.OnTime, month, year);
-        }
-
-        public Task<int> CountLateCheckins(Guid userId, int month, int year)
-        {
-            return CountCheckinsByStatus(userId, CheckinStatus.Late, month, year);
-        }
-
-        public Task<int> CountLeaveEarlyCheckins(Guid userId, int month, int year)
-        {
-            return CountCheckinsByStatus(userId, CheckinStatus.LeaveEarly, month, year);
-        }
-
-        public Task<int> CountAbsentCheckins(Guid userId, int month, int year)
-        {
-            return CountCheckinsByStatus(userId, CheckinStatus.Absent, month, year);
-        }
-
-        public Task<int> CountAbsentPermissionCheckins(Guid UserId, int month, int year)
-        {
-            return CountCheckinsByStatus(UserId, CheckinStatus.LeaveWithPermission, month, year);
-        }
-
-        public Task<int> CountOvertimeCheckins(Guid UserId, int month, int year)
-        {
-            return CountCheckinsByStatus(UserId, CheckinStatus.Overtime, month, year);
-        }
-
-        public Task<int> CountothersCheckins(Guid UserId, int month, int year)
-        {
-            return CountCheckinsByStatus(UserId, CheckinStatus.Overtime, month, year);
-        }*/
-
         public async Task<User> GetUserWithSalary(Guid UserId)
         {
             return await _context.Users.FirstOrDefaultAsync(s => s.UserId == UserId && !s.IsDeleted);
@@ -103,9 +60,8 @@ namespace EmployeeAPI.Repositories.Payrolls
         public async Task CreatePayrollAsync(Payroll payroll)
         {
             _context.Payrolls.Add(payroll);
-            await _context.SaveChangesAsync();
+            //await _context.SaveChangesAsync();
         }
-
         public async Task<int> CountDayWorked(Guid UserId, int month, int year)
         {
             return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
