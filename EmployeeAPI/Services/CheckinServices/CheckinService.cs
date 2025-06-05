@@ -437,7 +437,7 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task AutoMarkAbsentAsync()
+        public async Task AutoMarkAbsentAsync(TimeOnly endTime)
         {
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
@@ -456,12 +456,30 @@ namespace EmployeeAPI.Services.CheckinServices
                 return;
             }
 
-            var allUsers = await _userRepository.GetAll().ToListAsync(); 
+            if (TimeOnly.FromDateTime(vnNow) < endTime)
+            {
+                _logger.LogInformation("Chưa đến giờ kết thúc ca làm, chưa đánh dấu Absent.");
+                return;
+            }
 
-            var checkedInUserIds = await _context.Checkins
+            // Tính thời gian bắt đầu và kết thúc ngày theo UTC dựa trên VN timezone
+            var vnTodayStart = vnNow.Date; 
+            var vnTodayStartUtc = TimeZoneInfo.ConvertTimeToUtc(vnTodayStart, vnTimeZone);
+            var vnTodayEndUtc = vnTodayStartUtc.AddDays(1);
+
+            // Lấy checkin trong khoảng thời gian này (UTC)
+            var checkinsInRange = await _context.Checkins
+                .Where(c => c.CheckinDate >= vnTodayStartUtc && c.CheckinDate < vnTodayEndUtc)
+                .ToListAsync();
+
+            // Lọc checkin đúng ngày theo VN timezone
+            var checkedInUserIds = checkinsInRange
                 .Where(c => TimeZoneInfo.ConvertTimeFromUtc(c.CheckinDate, vnTimeZone).Date == today)
                 .Select(c => c.UserId)
-                .ToListAsync();
+                .Distinct()
+                .ToList();
+
+            var allUsers = await _userRepository.GetAll().ToListAsync();
 
             var absentUsers = allUsers
                 .Where(u => !checkedInUserIds.Contains(u.UserId))
@@ -474,7 +492,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     Id = Guid.NewGuid(),
                     UserId = user.UserId,
                     CheckinStatus = CheckinStatus.Absent,
-                    CheckinDate = DateTime.UtcNow 
+                    CheckinDate = DateTime.UtcNow
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -484,6 +502,56 @@ namespace EmployeeAPI.Services.CheckinServices
 
             _logger.LogInformation($"Đã đánh dấu {absentUsers.Count} người dùng vắng mặt ngày {today:dd/MM/yyyy}.");
         }
+
+
+
+        //public async Task AutoMarkAbsentAsync()
+        //{
+        //    var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        //    var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
+        //    var today = vnNow.Date;
+
+        //    if (vnNow.DayOfWeek == DayOfWeek.Sunday)
+        //    {
+        //        _logger.LogInformation("Sunday, no checkin");
+        //        return;
+        //    }
+
+        //    bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
+        //    if (isHoliday)
+        //    {
+        //        _logger.LogInformation("Hôm nay là ngày nghỉ lễ, không đánh dấu Absent.");
+        //        return;
+        //    }
+
+        //    var allUsers = await _userRepository.GetAll().ToListAsync(); 
+
+        //    var checkedInUserIds = await _context.Checkins
+        //        .Where(c => TimeZoneInfo.ConvertTimeFromUtc(c.CheckinDate, vnTimeZone).Date == today)
+        //        .Select(c => c.UserId)
+        //        .ToListAsync();
+
+        //    var absentUsers = allUsers
+        //        .Where(u => !checkedInUserIds.Contains(u.UserId))
+        //        .ToList();
+
+        //    foreach (var user in absentUsers)
+        //    {
+        //        var checkin = new Checkin
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            UserId = user.UserId,
+        //            CheckinStatus = CheckinStatus.Absent,
+        //            CheckinDate = DateTime.UtcNow 
+        //        };
+
+        //        await _checkinRepository.CreateAsync(checkin);
+        //    }
+
+        //    await _context.SaveChangesAsync();
+
+        //    _logger.LogInformation($"Đã đánh dấu {absentUsers.Count} người dùng vắng mặt ngày {today:dd/MM/yyyy}.");
+        //}
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {

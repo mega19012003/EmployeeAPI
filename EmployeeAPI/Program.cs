@@ -14,7 +14,7 @@ using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.ScheduleTimes;
 using EmployeeAPI.Repositories.Users;
-using EmployeeAPI.Seeds;
+//using EmployeeAPI.Seeds;
 using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
@@ -59,7 +59,6 @@ var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddHostedService<AbsentBackgroundService>();
-
 
 builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
@@ -150,12 +149,12 @@ builder.Logging.AddConsole();
 //Tác dụng: Hiển thị log trong Terminal, Command Prompt hoặc Output window của Visual Studio.
 var app = builder.Build();
 
-using (var scope = app.Services.CreateScope())
-{
-    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    SeedDB.SeedAdminUser(dbContext);
-    await SeedDB.SeedHolidayAsync(dbContext);
-}
+//using (var scope = app.Services.CreateScope())
+//{
+//    var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+//    SeedDB.SeedAdminUser(dbContext);
+//    await SeedDB.SeedHolidayAsync(dbContext);
+//}
 
 app.MapGet("/", context =>
 {

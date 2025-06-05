@@ -288,5 +288,7 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
             }
         }
+
+
     }
 }

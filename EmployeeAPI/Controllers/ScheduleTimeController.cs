@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Models;
+using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -11,8 +12,10 @@ namespace EmployeeAPI.Controllers
     public class ScheduleTimeController : ControllerBase
     {
         private readonly IScheduleTimeService _scheduleTimeService;
-        public ScheduleTimeController(IScheduleTimeService scheduleTimeService) 
+        private readonly ICheckinService _checkinService;
+        public ScheduleTimeController(IScheduleTimeService scheduleTimeService, ICheckinService checkinService) 
         {
+            _checkinService = checkinService;
             _scheduleTimeService = scheduleTimeService;
         }
 
@@ -45,5 +48,19 @@ namespace EmployeeAPI.Controllers
             var result = await _scheduleTimeService.UpdateScheduleTimeAsync(scheduleTime);
             return Ok(result);
         }
+
+        /// <summary>
+        /// Test code Tự động chấm công
+        /// </summary>
+        /*[HttpGet("test-absent")]
+        public async Task<IActionResult> TestAbsent()
+        {
+            var schedule = await _scheduleTimeService.GetScheduleTimeAsync();
+            if (schedule == null)
+                return NotFound("Không có ca làm việc");
+
+            await _checkinService.AutoMarkAbsentAsync(schedule.EndTime);
+            return Ok("Đã thử đánh dấu absent");
+        }*/
     }
 }
