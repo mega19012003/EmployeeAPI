@@ -26,7 +26,8 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var configs = await _service.GetAllConfigsAsync();
-            return Ok(configs);
+            return Ok(ApiResponse<IEnumerable<CheckinStatusConfig>>.ReturnResult("Get all configs success", configs, 200));
+
         }
 
         /// <summary>
@@ -37,15 +38,8 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] CheckinStatusConfig updated)
         {
-            try
-            {
-                var result = await _service.UpdateConfigAsync(updated);
-                return Ok(ApiResponse<CheckinStatusConfig>.ReturnResult("Update config success", result, 200));
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            var result = await _service.UpdateConfigAsync(updated);
+            return Ok(ApiResponse<CheckinStatusConfig>.ReturnResult("Update config success", result, 200));
         }
     }
 }

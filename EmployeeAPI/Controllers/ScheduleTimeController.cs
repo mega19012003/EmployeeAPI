@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
 using Microsoft.AspNetCore.Authorization;
@@ -27,11 +28,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> GetScheduleTime()
         {
             var result = await _scheduleTimeService.GetScheduleTimeAsync();
-            if (result == null)
-            {
-                return NotFound();
-            }
-            return Ok(result);
+            return Ok(ApiResponse<ScheduleTime>.ReturnResult("Get Schedule time Success", result, 200));
         }
         /// <summary>
         /// Cập nhật gian biểu, chỉ có admin dc phép dùng
@@ -46,7 +43,7 @@ namespace EmployeeAPI.Controllers
         public async Task<ActionResult<ScheduleTime>> UpdateScheduleTime(ScheduleTime scheduleTime)
         {
             var result = await _scheduleTimeService.UpdateScheduleTimeAsync(scheduleTime);
-            return Ok(result);
+            return Ok(ApiResponse<ScheduleTime>.ReturnResult("Update Schedule time Success", result, 200));
         }
 
         /// <summary>

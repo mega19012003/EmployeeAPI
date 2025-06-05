@@ -4,7 +4,7 @@ namespace EmployeeAPI.Services.CheckinStatusConfigServices
 {
     public interface ICheckinStatusConfigService
     {
-        Task<List<CheckinStatusConfig>> GetAllConfigsAsync();
+        Task<IEnumerable<CheckinStatusConfig>> GetAllConfigsAsync();
 
         Task<CheckinStatusConfig?> GetConfigAsync(int id);
 
