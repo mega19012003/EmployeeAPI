@@ -473,14 +473,21 @@ namespace EmployeeAPI.Services.CheckinServices
                 .Where(u => !checkedInUserIds.Contains(u.UserId))
                 .ToList();
 
+           
+
             foreach (var user in absentUsers)
             {
+
+                double salary = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, user, CheckinStatus.Absent, CheckinStatus.Absent);
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.UserId,
                     CheckinStatus = CheckinStatus.Absent,
-                    CheckinDate = DateTime.UtcNow
+                    CheckinDate = DateTime.UtcNow,
+                    CheckoutStatus = CheckinStatus.Absent,
+                    CheckoutDate = DateTime.UtcNow,
+                    SalaryPerDay = salary
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
