@@ -27,7 +27,6 @@ namespace EmployeeAPI.Controllers
         {
             var configs = await _service.GetAllConfigsAsync();
             return Ok(ApiResponse<IEnumerable<CheckinStatusConfig>>.ReturnResult("Get all configs success", configs, 200));
-
         }
 
         /// <summary>

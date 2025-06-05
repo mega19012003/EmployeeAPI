@@ -13,7 +13,7 @@ namespace EmployeeAPI.Repositories.Positions
         IQueryable<Position> GetQueryable();
         Task<Position?> GetByIdAsync(Guid id);
         Task<Position> AddAsync(Position position);
-        Task<Position?> UpdateAsync(Position position);
+        Task<Position> UpdateAsync(Position position);
         Task<Position> SoftDeleteAsync(Guid id);
         Task<Position?> GetAllEmployee(string name);
         Task<IEnumerable<Position>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex);
