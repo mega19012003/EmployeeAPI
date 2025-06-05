@@ -25,10 +25,10 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(string? IpAdress, int? pageIndex, int? pageSize)
         {
-            var list = await _allowedIPService.GetAllAsync();
-            return Ok(list);
+            var pageResult = await _allowedIPService.GetAllAsync(IpAdress, pageIndex, pageSize);
+            return Ok(ApiResponse<PagedResult<AllowedIP>>.ReturnResult("Get ip success", pageResult, 200));
         }
 
         /// <summary>
@@ -38,15 +38,8 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromForm] string IPAddress)
         {
-            try
-            {
-                await _allowedIPService.AddAsync(IPAddress);
-                return Ok(new { Message = "Thêm IP thành công" });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { Message = ex.Message });
-            }
+            var result = await _allowedIPService.AddAsync(IPAddress);
+            return Ok(ApiResponse<AllowedIP>.ReturnResult("Add new IP success", result, 200));
         }
         /// <summary>
         ///  Chỉ có admin dc phép dùng
@@ -55,8 +48,8 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> Delete(Guid id)
         {
-            await _allowedIPService.DeleteAsync(id);
-            return Ok(new { Message = "Xóa IP thành công" });
+            var result = await _allowedIPService.DeleteAsync(id);
+            return Ok(ApiResponse<string>.ReturnResult("Delete IP success", result, 200));
         }
 
     }

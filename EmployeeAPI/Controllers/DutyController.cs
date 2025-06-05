@@ -30,36 +30,18 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(string? name, int? pageSize, int? pageIndex)
         {
-            try
-            {
-                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return Unauthorized("UserId invalid");
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                //var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
-                var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, name, pageSize, pageIndex);
-                if (!pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("No result", pagedResult, 200));
+            //var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
+            var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, name, pageSize, pageIndex);
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("No result", pagedResult, 200));
 
-                return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("Get list duty success", pagedResult, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentNullException in GetAll");
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the duty", argEx.Message, 400));
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in GetAll");
-                return BadRequest(ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while retrieving duties");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("Get list duty success", pagedResult, 200));
         }
 
         /// <summary>

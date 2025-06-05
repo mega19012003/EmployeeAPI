@@ -39,29 +39,11 @@ namespace EmployeeAPI.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> AdminUpdateStaffAsync([FromForm] ResponseModel.AdminUpdateDto dto)
         {
-            try
-            {
-               /* var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
-                var result = await _userService.AdminUpdateStaffAsync(dto);
+            /* var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
+            var result = await _userService.AdminUpdateStaffAsync(dto);
 
-                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update user success", result, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentException in UpdateAsync");
-                return StatusCode(400, new { Message = "user cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in UpdateAsync");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in UpdateAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update user success", result, 200));
         }
 
         /// <summary>
@@ -72,29 +54,11 @@ namespace EmployeeAPI.Controllers
         [Consumes("multipart/form-data")]
         public async Task<IActionResult> ManagerUpdateStaffAsync([FromForm] ResponseModel.ManagerUpdateDto dto)
         {
-            try
-            {
-                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-                var result = await _userService.ManagerUpdateStaffAsync(dto, dto.UserId);
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            var result = await _userService.ManagerUpdateStaffAsync(dto, dto.UserId);
 
-                return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentException in UpdateAsync");
-                return StatusCode(400, new { Message = "Staff cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in UpdateAsync");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in UpdateAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
         }
 
         /// <summary>
@@ -104,52 +68,34 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
         {
-            try
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            var isManager = User.IsInRole("Manager");
+            var isAdmin = User.IsInRole("Administrator");
+
+            if (isManager && !isAdmin)
             {
-                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                var currentUser = await _userService.GetByIdAsync(currentUserId);
+                if (currentUser == null)
                     return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var isManager = User.IsInRole("Manager");
-                var isAdmin = User.IsInRole("Administrator");
+                if (!currentUser.DepartmentId.HasValue)
+                    return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
 
-                if (isManager && !isAdmin)
-                {
-                    var currentUser = await _userService.GetByIdAsync(currentUserId);
-                    if (currentUser == null)
-                        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+                var findUser = await _userService.GetByIdAsync(Id);
+                if (findUser.DepartmentId != currentUser.DepartmentId)
+                    return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager cannot delete user from other department", StatusCode = 400 });
 
-                    if (!currentUser.DepartmentId.HasValue)
-                        return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
+                var managerResult = await _userService.SoftDeleteAsync(findUser.userId);
 
-                    var findUser = await _userService.GetByIdAsync(Id);
-                    if (findUser.DepartmentId != currentUser.DepartmentId)
-                        return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager cannot delete user from other department", StatusCode = 400 });
-
-                    var managerResult = await _userService.SoftDeleteAsync(findUser.userId);
-
-                    return Ok(ApiResponse<string>.ReturnResult("Delete user success", managerResult, 200));
-                }
-
-                var result = await _userService.SoftDeleteAsync(Id);
-
-                return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
+                return Ok(ApiResponse<string>.ReturnResult("Delete user success", managerResult, 200));
             }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentException in SoftDeleteAsync");
-                return StatusCode(400, new { Message = "user cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in SoftDeleteAsync");
-                return BadRequest(new { Message = "Database update failed", Detail = dbEx.InnerException?.Message ?? dbEx.Message, StatusCode = 400 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in SoftDeleteAsync controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find user", StatusCode = 500 });
-            }
+
+            var result = await _userService.SoftDeleteAsync(Id);
+
+            return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
         }
 
         /// <summary>
@@ -159,41 +105,33 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
         {
-            try
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            var isManager = User.IsInRole("Manager");
+            var isAdmin = User.IsInRole("Administrator");
+
+            if (isManager && !isAdmin)
             {
-                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                var result = await _userService.GetByIdAsync(currentUserId);
+                if (result == null)
                     return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var isManager = User.IsInRole("Manager");
-                var isAdmin = User.IsInRole("Administrator");
+                if (!result.DepartmentId.HasValue)
+                    return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
 
-                if (isManager && !isAdmin)
-                {
-                    var result = await _userService.GetByIdAsync(currentUserId);
-                    if (result == null)
-                        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-                    if (!result.DepartmentId.HasValue)
-                        return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
-
-                    departmentId = result.DepartmentId;
-                }
-
-                var pagedResult = await _userService.GetAllAsync(Name, departmentId, pageIndex, pageSize);
-                if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
-
-                if (!pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));
-
-                return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("Get list user success", pagedResult, 200));
+                departmentId = result.DepartmentId;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception in GetAllUserAsync");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.ToString() });
-            }
+
+            var pagedResult = await _userService.GetAllAsync(Name, departmentId, pageIndex, pageSize);
+            if (pagedResult == null)
+                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
+
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));
+
+            return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("Get list user success", pagedResult, 200));
         }
 
         /// <summary>
@@ -203,43 +141,35 @@ namespace EmployeeAPI.Controllers
         [HttpGet("id")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid id)
         {
-            try
+            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            var isManager = User.IsInRole("Manager");
+            var isAdmin = User.IsInRole("Administrator");
+
+            var result = await _userService.GetByIdAsync(id);
+            if (result == null)
+                return StatusCode(400, new { Message = "Get user failed", Detail = "User not found", StatusCode = 400 });
+
+
+            if (isManager)
             {
-                var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
+                var currentUser = await _userService.GetByIdAsync(currentUserId);
+                if (currentUser == null)
                     return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var isManager = User.IsInRole("Manager");
-                var isAdmin = User.IsInRole("Administrator");
+                if (!currentUser.DepartmentId.HasValue)
+                    return StatusCode(400, new { Message = "Get user failed", Detail = "Manager does not have department", StatusCode = 400 });
 
-                var result = await _userService.GetByIdAsync(id);
-                if (result == null)
-                    return StatusCode(400, new { Message = "Get user failed", Detail = "User not found", StatusCode = 400 });
-
-
-                if (isManager)
-                {
-                    var currentUser = await _userService.GetByIdAsync(currentUserId);
-                    if (currentUser == null)
-                        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-                    if (!currentUser.DepartmentId.HasValue)
-                        return StatusCode(400, new { Message = "Get user failed", Detail = "Manager does not have department", StatusCode = 400 });
-
-                    // Manager chỉ được xem user trong cùng phòng ban
-                    if (result.DepartmentId != currentUser.DepartmentId)
-                        return StatusCode(403, new { Message = "User does not exist in this department or has been deleted." });
-
-                    return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
-                }
+                // Manager chỉ được xem user trong cùng phòng ban
+                if (result.DepartmentId != currentUser.DepartmentId)
+                    return StatusCode(403, new { Message = "User does not exist in this department or has been deleted." });
 
                 return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception in GetUserByIdAsync");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.ToString(), StatusCode = 500 });
-            }
+
+            return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
         }
     }
 }

@@ -6,10 +6,10 @@ namespace EmployeeAPI.Services.AllowedIpServices
 {
     public interface IAllowedIPService
     {
-        Task<List<AllowedIP>> GetAllAsync();
+        Task<PagedResult<AllowedIP>> GetAllAsync(string? IpAdress, int? pageIndex, int? pageSize);
         Task<AllowedIP> GetByIdAsync(Guid id);
-        Task AddAsync(string ip);
-        Task DeleteAsync(Guid id);
+        Task<AllowedIP> AddAsync(string ip);
+        Task<string> DeleteAsync(Guid id);
         Task<bool> IsIPAllowedAsync(string ip);
     }
 }

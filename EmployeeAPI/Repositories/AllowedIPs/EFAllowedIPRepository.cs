@@ -12,7 +12,7 @@ namespace EmployeeAPI.Repositories.AllowedIPs
         {
             _context = context;
         }
-        public async Task<List<AllowedIP>> GetAllAsync()
+        public async Task<IEnumerable<AllowedIP>> GetAllAsync()
         {
             return await _context.AllowedIPs.ToListAsync();
         }

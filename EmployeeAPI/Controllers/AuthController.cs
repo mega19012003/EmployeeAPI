@@ -41,29 +41,8 @@ namespace EmployeeAPI.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ResponseModel.RegisterDto dto)
         {
-            try
-            {
-                var result = await _authService.RegisterAsync(dto, User);
-                return Ok(ApiResponse<ResponseModel.AuthDto>.ReturnResult("Register success", result, 200));
-            }
-            catch (DbUpdateException dbEx)
-            {
-                var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
-                return BadRequest(new { message = "Register User Failed", detail = innerMessage, statusCode = 400 });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return StatusCode(403, new { message = "Access denied", detail = ex.Message, statusCode = 403 });
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new { message = "Register User Failed", detail = ex.Message, statusCode = 400 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while registering user");
-                return StatusCode(500, new { message = "Internal server error", detail = ex.Message, statusCode = 500 });
-            }
+            var result = await _authService.RegisterAsync(dto, User);
+            return Ok(ApiResponse<ResponseModel.AuthDto>.ReturnResult("Register success", result, 200));
         }
 
         /// <summary>
@@ -86,23 +65,21 @@ namespace EmployeeAPI.Controllers
         [HttpPost, Route("login")]
         public async Task<IActionResult> Login([FromBody] ResponseModel.LoginDto dto)
         {
-            try
-            {
-                var user = await _authService.LoginAsync(dto.Username, dto.Password);
-                if (user == null)
-                    return BadRequest(new ApiResponse<ResponseModel.LoginDto>
-                    {
-                        Message = "Invalid username or password",
-                        Data = null,
-                        StatusCode = 400,
-                    });
+            var user = await _authService.LoginAsync(dto.Username, dto.Password);
+            if (user == null)
+                return BadRequest(new ApiResponse<ResponseModel.LoginDto>
+                {
+                    Message = "Invalid username or password",
+                    Data = null,
+                    StatusCode = 400,
+                });
 
-                var jwtSection = _configuration.GetSection("Jwt");
-                var issuers = jwtSection["Issuer"];
-                var audiences = jwtSection["Audience"];
-                var keys = jwtSection["Key"];
-                var expires = int.Parse(jwtSection["Expire"]);
-                var claims = new List<Claim>
+            var jwtSection = _configuration.GetSection("Jwt");
+            var issuers = jwtSection["Issuer"];
+            var audiences = jwtSection["Audience"];
+            var keys = jwtSection["Key"];
+            var expires = int.Parse(jwtSection["Expire"]);
+            var claims = new List<Claim>
                 {
                     new Claim(ClaimTypes.NameIdentifier, user.UserId.ToString()),
                     new Claim(ClaimTypes.Name, user.Username),
@@ -110,38 +87,27 @@ namespace EmployeeAPI.Controllers
                     new Claim(ClaimTypes.Role, user.Role.ToString() ?? ""),
                     new Claim("TokenVersion", user.TokenVersion.ToString() ?? ""),
                 };
-                var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
-                var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
-                var jwtSecurityToken = new JwtSecurityToken(
-                    issuer: issuers,
-                    audience: audiences,
-                    claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(expires),
-                    signingCredentials: signinCredentials
-                );
-                var jwt = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
-  
-                return Ok(new ApiResponse<object>
-                {
-                    Message = "Login success",
-                    Data = new
-                    {
-                        AccessToken = jwt,
-                        RefreshToken = user.RefreshToken
-                    },
-                    StatusCode = 200,
-                });
-            }
-            catch (Exception ex)
+            var secretKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keys));
+            var signinCredentials = new SigningCredentials(secretKey, SecurityAlgorithms.HmacSha256);
+            var jwtSecurityToken = new JwtSecurityToken(
+                issuer: issuers,
+                audience: audiences,
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(expires),
+                signingCredentials: signinCredentials
+            );
+            var jwt = new JwtSecurityTokenHandler().WriteToken(jwtSecurityToken);
+
+            return Ok(new ApiResponse<object>
             {
-                _logger.LogError(ex, "Error occurred while logging in user");
-                return StatusCode(500, new ApiResponse<object>
+                Message = "Login success",
+                Data = new
                 {
-                    Message = "Internal server error",
-                    Data = ex.Message,
-                    StatusCode = 500
-                });
-            }
+                    AccessToken = jwt,
+                    RefreshToken = user.RefreshToken
+                },
+                StatusCode = 200,
+            });
         }
 
         /// <summary>
@@ -151,49 +117,28 @@ namespace EmployeeAPI.Controllers
         [HttpPost, Route("logout")]
         public async Task<IActionResult> Logout()
         {
-            try
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (userIdClaim == null)
-                    return Unauthorized(new ApiResponse<string>
-                    {
-                        Message = "User not found in token",
-                        StatusCode = 401
-                    });
-
-                if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
-                    return BadRequest(new ApiResponse<string>
-                    {
-                        Message = "Invalid user ID",
-                        StatusCode = 400
-                    });
-
-                await _authService.LogoutAsync(userId);
-
-                return Ok(new ApiResponse<string>
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized(new ApiResponse<string>
                 {
-                    Message = "Logout successful",
-                    StatusCode = 200
+                    Message = "User not found in token",
+                    StatusCode = 401
                 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                var innerMessage = dbEx.InnerException?.Message ?? dbEx.Message;
-                return BadRequest(new { message = "Logout User Failed", detail = innerMessage, statusCode = 400 });
-            }
-            catch (ArgumentException ex)
-            {
-                return NotFound(new ApiResponse<string>
+
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
+                return BadRequest(new ApiResponse<string>
                 {
-                    Message = ex.Message,
-                    StatusCode = 404
+                    Message = "Invalid user ID",
+                    StatusCode = 400
                 });
-            }
-            catch (Exception ex)
+
+            await _authService.LogoutAsync(userId);
+
+            return Ok(new ApiResponse<string>
             {
-                _logger.LogError(ex, "Error occurred during logout");
-                return StatusCode(500, "Internal server error");
-            }
+                Message = "Logout successful",
+                StatusCode = 200
+            });
         }
 
         /// <summary>
@@ -203,31 +148,14 @@ namespace EmployeeAPI.Controllers
         [HttpPost, Route("refresh-token")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
         {
-            try
-            {
-                var newAccessToken = await _authService.RefreshTokenAsync(request.AccessToken, request.RefreshToken);
+            var newAccessToken = await _authService.RefreshTokenAsync(request.AccessToken, request.RefreshToken);
 
-                return Ok(new ApiResponse<object>
-                {
-                    Message = "Token refreshed successfully",
-                    Data = new { AccessToken = newAccessToken },
-                    StatusCode = 200
-                });
-            }
-            catch (SecurityTokenException ex)
+            return Ok(new ApiResponse<object>
             {
-                return Unauthorized(new ApiResponse<string>
-                {
-                    Message = ex.Message,
-                    Data = null,
-                    StatusCode = 401
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while refreshing token");
-                return StatusCode(500, "Internal server error");
-            }
+                Message = "Token refreshed successfully",
+                Data = new { AccessToken = newAccessToken },
+                StatusCode = 200
+            });
         }
 
         /// <summary>
@@ -263,17 +191,6 @@ namespace EmployeeAPI.Controllers
                 });
             }
 
-            //// So sánh TokenVersion trong token với tokenVersion trong DB
-            //if (tokeVersion != userEntity.TokenVersion.ToString())
-            //{
-            //    return Unauthorized(new ApiResponse<string>
-            //    {
-            //        Message = "Token is no longer valid",
-            //        Data = null,
-            //        StatusCode = 401,
-            //    });
-            //}
-
             var userData = new
             {
                 userEntity.UserId,
@@ -306,36 +223,15 @@ namespace EmployeeAPI.Controllers
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ResponseModel.ChangePasswordDto dto)
         {
-            try
-            {
-                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-                if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
-                    return BadRequest(new ApiResponse<string>
-                    {
-                        Message = "Invalid user ID",
-                        StatusCode = 400
-                    });
-                var result = await _authService.ChangePasswordAsync(userId, dto.OldPassword, dto.ConfirmPassword, dto.NewPassword);
-                return Ok(ApiResponse<string>.ReturnResult("Change password success", result, 200));
-            }
-            catch (ArgumentException ex)
-            {
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (!Guid.TryParse(userIdClaim.Value, out Guid userId))
                 return BadRequest(new ApiResponse<string>
                 {
-                    Message = ex.Message,
+                    Message = "Invalid user ID",
                     StatusCode = 400
                 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while changing password");
-                return StatusCode(500, new ApiResponse<string>
-                {
-                    Message = "Internal server error",
-                    Data = ex.Message,
-                    StatusCode = 500
-                });
-            }
+            var result = await _authService.ChangePasswordAsync(userId, dto.OldPassword, dto.ConfirmPassword, dto.NewPassword);
+            return Ok(ApiResponse<string>.ReturnResult("Change password success", result, 200));
         }
 
         /// <summary>
@@ -345,29 +241,8 @@ namespace EmployeeAPI.Controllers
         [HttpPut("reset-password")]
         public async Task<IActionResult> ResetPassword([FromForm] Guid id)
         {
-            try
-            {
-                var result = await _authService.ResetPasswordAsync(id);
-                return Ok(ApiResponse<string>.ReturnResult("Reset password success", result, 200));
-            }
-            catch (ArgumentException ex)
-            {
-                return BadRequest(new ApiResponse<string>
-                {
-                    Message = ex.Message,
-                    StatusCode = 400
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while resetting password");
-                return StatusCode(500, new ApiResponse<string>
-                {
-                    Message = "Internal server error",
-                    Data = ex.Message,
-                    StatusCode = 500
-                });
-            }
+            var result = await _authService.ResetPasswordAsync(id);
+            return Ok(ApiResponse<string>.ReturnResult("Reset password success", result, 200));
         }
     }
 }

@@ -31,29 +31,21 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPayrolls(string? name, int? pageIndex, int? pageSize)
         {
-            try
-            {
-                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
-                //var pagedResult = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
-                /*if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));*/
+            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
+            //var pagedResult = await _payrollService.GetAllPayrolls(name, pageIndex, pageSize);
+            /*if (pagedResult == null)
+                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department id", null, 404));*/
 
-                if (!pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
 
-                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll success", pagedResult, 200));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while retrieving payrolls");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll success", pagedResult, 200));
         }
 
         /// <summary>
@@ -62,22 +54,14 @@ namespace EmployeeAPI.Controllers
         [HttpPost("calculate")]
         public async Task<IActionResult> CalculatePayroll(Guid staffId)
         {
-            try
-            {
-                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-               // var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
-                var pagedResult = await _payrollService.CalculatePayrollAsync(staffId, currentUserId, currentRoles);
-                return Ok(ApiResponse<ResponseModel.PaidPayroll>.ReturnResult("Calculate payroll success", pagedResult, 200));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while calculating payroll");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            // var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
+            var pagedResult = await _payrollService.CalculatePayrollAsync(staffId, currentUserId, currentRoles);
+            return Ok(ApiResponse<ResponseModel.PaidPayroll>.ReturnResult("Calculate payroll success", pagedResult, 200));
         }
 
         /// <summary>
@@ -87,28 +71,15 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> DeletePayroll(Guid id)
         {
-            try
-            {
-                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _payrollService.SoftDeletePayroll(id, currentUserId, currentRoles);
-                //if (result == null) return BadRequest("Không thể xóa payroll " + id);
-                return Ok(ApiResponse<string>.ReturnResult("Delete payroll success", result, 200));
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                _logger.LogError(ex, "An error occurred while deleting payroll");
-                return NotFound(new { Message = "Payroll not found", Detail = "Cannot find payroll id", StatusCode = 404 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("An error occurred while deleting payroll");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            var result = await _payrollService.SoftDeletePayroll(id, currentUserId, currentRoles);
+            //if (result == null) return BadRequest("Không thể xóa payroll " + id);
+            return Ok(ApiResponse<string>.ReturnResult("Delete payroll success", result, 200));
         }
 
         /// <summary>
@@ -118,31 +89,17 @@ namespace EmployeeAPI.Controllers
         [HttpGet("employee")]
         public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
         {
-            try
-            {
-                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-                var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var pagedResult = await _payrollService.GetPayrollByUser(staffId, currentUserId, currentRoles, pageIndex, pageSize);
-                if(!pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
-                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
-            }
-            catch (DbUpdateConcurrencyException ex)
-            {
-                _logger.LogError(ex, "An error occurred while deleting payroll");
-                return StatusCode(400, new { Message = "Payroll not found", Detail = ex.Message, StatusCode = 400 });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while retrieving payrolls by User");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            var pagedResult = await _payrollService.GetPayrollByUser(staffId, currentUserId, currentRoles, pageIndex, pageSize);
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
         }
-
     }
 }
 

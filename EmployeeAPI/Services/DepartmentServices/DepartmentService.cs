@@ -94,7 +94,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                     Name = name,
                 };
 
-                /*var entity =*/
                 await _repository.AddAsync(model);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

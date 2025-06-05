@@ -25,18 +25,10 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllHolidays(string? name, int? pageIndex, int? pageSize)
         {
-            try
-            {
-                var pagedResult = await _holidayService.GetAllAsync(name, pageSize, pageIndex);
-                if (pagedResult == null || !pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<ResponseModel.HolidayDto>>.ReturnResult("No result", pagedResult, 200));
-                return Ok(ApiResponse<PagedResult<ResponseModel.HolidayDto>>.ReturnResult("Get list holiday success", pagedResult, 200));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while retrieving holidays");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            var pagedResult = await _holidayService.GetAllAsync(name, pageSize, pageIndex);
+            if (pagedResult == null || !pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.HolidayDto>>.ReturnResult("No result", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.HolidayDto>>.ReturnResult("Get list holiday success", pagedResult, 200));
         }
         /// <summary>
         /// Thêm ngày nghỉ lễ, dùng checkin để kiểm tra xem người dùng có đi làm vào ngày nghỉ ko, do admin xử lý
@@ -45,31 +37,12 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> CreateHoliday(ResponseModel.CreateHoliday dto)
         {
-            try
+            var result = await _holidayService.CreateAsync(dto);
+            if (result == null)
             {
-               
-                var result = await _holidayService.CreateAsync(dto);
-                if (result == null)
-                {
-                    return BadRequest();
-                }
-                return Ok(ApiResponse<ResponseModel.HolidayDto>.ReturnResult("Holiday added success", result, 200));
+                return BadRequest();
             }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "An error occurred while adding the holiday");
-                return StatusCode(400, new { Message = "Holiday cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "An error occurred while adding the holiday");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while adding the holiday");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            return Ok(ApiResponse<ResponseModel.HolidayDto>.ReturnResult("Holiday added success", result, 200));
         }
         
         /// <summary>
@@ -79,29 +52,11 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateHoliday(ResponseModel.UpdateHoliday dto)
         {
-            try
-            {
-                var updatedHoliday = await _holidayService.UpdateAsync(dto);
-                if (updatedHoliday == null)
-                    return BadRequest();
+            var updatedHoliday = await _holidayService.UpdateAsync(dto);
+            if (updatedHoliday == null)
+                return BadRequest();
 
-                return Ok(ApiResponse<ResponseModel.HolidayDto>.ReturnResult("Update holiday success", updatedHoliday, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "An error occurred while updating the holiday");
-                return StatusCode(400, new { Message = "Holiday cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "An error occurred while updating the holiday");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while updating the holiday");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            return Ok(ApiResponse<ResponseModel.HolidayDto>.ReturnResult("Update holiday success", updatedHoliday, 200));
         }
 
 
@@ -112,8 +67,6 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteHoliday(Guid id)
         {
-            try
-            {
                 if (id == Guid.Empty)
                     return BadRequest();
 
@@ -122,22 +75,6 @@ namespace EmployeeAPI.Controllers
                     return BadRequest();
 
                 return Ok(ApiResponse<string>.ReturnResult("Soft delete holiday success", result, 200));
-            }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "An error occurred while deleting the holiday");
-                return StatusCode(400, new { Message = "Holiday cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "An error occurred while deleting the holiday");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "An error occurred while soft deleting the holiday");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
         }
     }
 }

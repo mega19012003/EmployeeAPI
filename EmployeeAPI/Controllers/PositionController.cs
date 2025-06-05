@@ -41,43 +41,32 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
-            try
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            Guid? departmentId = null;
+
+            if (userRole == "Manager")
             {
-                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                var user = await _userService.GetByIdAsync(userId);
+                if (user == null)
+                    return Unauthorized("User not found");
 
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+                if (user.DepartmentId == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("User does not belong to any department", null, 400));
 
-                Guid? departmentId = null;
-
-                if (userRole == "Manager")
-                {
-                    var user = await _userService.GetByIdAsync(userId);
-                    if (user == null)
-                        return Unauthorized("User not found");
-
-                    if (user.DepartmentId == null)
-                        return BadRequest(ApiResponse<string>.ReturnResult("User does not belong to any department", null, 400));
-
-                    departmentId = user.DepartmentId;
-                }
-
-
-                var result = await _positionService.GetAllAsync(name, departmentId, pageIndex, pageSize);
-
-                if (!result.Items.Any())
-                    return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
-
-
-                return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
+                departmentId = user.DepartmentId;
             }
 
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in GetAllPositions controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            var result = await _positionService.GetAllAsync(name, departmentId, pageIndex, pageSize);
+
+            if (!result.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
+
+            return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
         }
 
         /// <summary>
@@ -87,27 +76,9 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
-            try
-            {
-                //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
-                var result = await _positionService.AddAsync(dto);
-                return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
-            }
-            catch(ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentNullException in AddPosition");
-                return StatusCode(400, new { Message = "Add position failed", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in AddPosition");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in AddPosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+            //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
+            var result = await _positionService.AddAsync(dto);
+            return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
         }
 
         /// <summary>
@@ -117,52 +88,34 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
         {
-            try
+            if (id == Guid.Empty || string.IsNullOrWhiteSpace(newName))
+                return BadRequest(ApiResponse<string>.ReturnResult("Invalid input", null, 404));
+
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            Guid? managerDepartmentId = null;
+
+            if (userRole == "Manager")
             {
-                if (id == Guid.Empty || string.IsNullOrWhiteSpace(newName)) 
-                    return BadRequest(ApiResponse<string>.ReturnResult("Invalid input", null, 404));
+                var user = await _userService.GetByIdAsync(userId);
+                if (user == null)
+                    return Unauthorized("User not found");
 
-                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (user.DepartmentId == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
 
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-                Guid? managerDepartmentId = null;
-
-                if (userRole == "Manager")
-                {
-                    var user = await _userService.GetByIdAsync(userId);
-                    if (user == null)
-                        return Unauthorized("User not found");
-
-                    if (user.DepartmentId == null)
-                        return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
-
-                    managerDepartmentId = user.DepartmentId;
-                }
-
-                var result = await _positionService.UpdateAsync(id, newName);
-                if (result == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
-
-                return Ok(ApiResponse<ResponseModel.UpdatePosition>.ReturnResult("Update position success", result, 200));
+                managerDepartmentId = user.DepartmentId;
             }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentNullException in AddPosition");
-                return StatusCode(400, new { Message = "Position cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in UpdatePosition");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in UpdatePosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+
+            var result = await _positionService.UpdateAsync(id, newName);
+            if (result == null)
+                return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
+
+            return Ok(ApiResponse<ResponseModel.UpdatePosition>.ReturnResult("Update position success", result, 200));
         }
 
         /// <summary>
@@ -172,46 +125,28 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
-            try
+            var result = await _positionService.SoftDeleteAsync(id);
+            if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
+
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            Guid? managerDepartmentId = null;
+            if (userRole == "Manager")
             {
-                var result = await _positionService.SoftDeleteAsync(id);
-                if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
+                var user = await _userService.GetByIdAsync(userId);
+                if (user == null)
+                    return Unauthorized("User not found");
 
-                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                if (user.DepartmentId == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
 
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-                Guid? managerDepartmentId = null;
-                if (userRole == "Manager")
-                {
-                    var user = await _userService.GetByIdAsync(userId);
-                    if (user == null)
-                        return Unauthorized("User not found");
-
-                    if (user.DepartmentId == null)
-                        return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
-
-                    managerDepartmentId = user.DepartmentId;
-                }
-
-                return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
+                managerDepartmentId = user.DepartmentId;
             }
-            catch (ArgumentException argEx)
-            {
-                _logger.LogError(argEx, "ArgumentNullException in SoftDeletePosition");
-                return StatusCode(400, new { Message = "Position cannot be found", Detail = argEx.Message, StatusCode = 400 });
-            }
-            catch (DbUpdateException dbEx)
-            {
-                _logger.LogError(dbEx, "DbUpdateException in SoftDeletePosition");
-                return StatusCode(400, ApiResponse<string>.ReturnResult("Database update error", dbEx.InnerException?.Message ?? dbEx.Message, 400));
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in SoftDeletePosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Cannot find Position id", StatusCode = 500 });
-            }
+
+            return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
         }
 
         /// <summary>
@@ -221,43 +156,34 @@ namespace EmployeeAPI.Controllers
         [HttpGet("employee")]
         public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
         {
-            try
+            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+
+            if (!Guid.TryParse(userIdClaim, out var userId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            Guid? departmentId = null;
+
+            if (userRole == "Manager")
             {
-                var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-                var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                var user = await _userService.GetByIdAsync(userId);
+                if (user == null)
+                    return Unauthorized("User not found");
 
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                          return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+                if (user.DepartmentId == null)
+                    return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
 
-                Guid? departmentId = null;
-
-                if (userRole == "Manager")
-                {
-                    var user = await _userService.GetByIdAsync(userId);
-                    if (user == null)
-                        return Unauthorized("User not found");
-
-                    if(user.DepartmentId == null)
-                        return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
-
-                    departmentId = user.DepartmentId;
-                }
-
-                var pagedResult = await _positionService.GetStaffByPositionAsync(departmentId, PositionId, pageSize, pageIndex);
-                if (pagedResult == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
-
-                if (!pagedResult.Items.Any())
-                    return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
-
-                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
+                departmentId = user.DepartmentId;
             }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Exception thrown in GetEmployeeByPosition controller method.");
-                return StatusCode(500, new { Message = "Internal server error", Detail = ex.Message, StatusCode = 500 });
-            }
+
+            var pagedResult = await _positionService.GetStaffByPositionAsync(departmentId, PositionId, pageSize, pageIndex);
+            if (pagedResult == null)
+                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
+
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
+
+            return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
         }
-
     }
 }

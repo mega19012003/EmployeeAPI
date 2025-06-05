@@ -18,17 +18,45 @@ namespace EmployeeAPI.Services.AllowedIpServices
             _context = context;
         }
 
-        public async Task<List<AllowedIP>> GetAllAsync()
+        public async Task<PagedResult<AllowedIP>> GetAllAsync(string? IpAdress, int? pageIndex, int? pageSize)
         {
-            return await _allowedIPRepository.GetAllAsync();
+            //return await _allowedIPRepository.GetAllAsync();
+            pageIndex ??= 1;
+            pageSize ??= 10;
+
+            var query = _context.AllowedIPs
+                .Where(f => string.IsNullOrEmpty(IpAdress) || f.IPAddress.ToLower().Contains(IpAdress.ToLower()));
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(f => new AllowedIP
+                {
+                    AllowedIPId = f.AllowedIPId,
+                    IPAddress = f.IPAddress,
+                }).ToListAsync();
+            return new PagedResult<AllowedIP>
+            {
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
         }
 
         public async Task<AllowedIP> GetByIdAsync(Guid id)
         {
-            return await _allowedIPRepository.GetByIdAsync(id);
+            var result = await _allowedIPRepository.GetByIdAsync(id);
+            return new AllowedIP
+            {
+                AllowedIPId = result.AllowedIPId,
+                IPAddress = result.IPAddress
+            };
         }
 
-        public async Task AddAsync(string ip)
+        public async Task<AllowedIP> AddAsync(string ip)
         {
             if (await _allowedIPRepository.ExistsAsync(ip))
                 throw new ArgumentException("IP đã tồn tại trong danh sách.");
@@ -41,12 +69,21 @@ namespace EmployeeAPI.Services.AllowedIpServices
 
             await _allowedIPRepository.AddAsync(allowedIP);
             await _context.SaveChangesAsync();
+
+            return new AllowedIP
+            {
+                AllowedIPId = allowedIP.AllowedIPId,
+                IPAddress = allowedIP.IPAddress
+            };
         }
 
-        public async Task DeleteAsync(Guid id)
+        public async Task<string> DeleteAsync(Guid id)
         {
+            var result = await _allowedIPRepository.GetByIdAsync(id);
             await _allowedIPRepository.DeleteAsync(id);
             await _context.SaveChangesAsync();
+
+            return "Đã xóa ip: " + result.IPAddress;
         }
 
         public async Task<bool> IsIPAllowedAsync(string ip)
@@ -106,7 +143,6 @@ namespace EmployeeAPI.Services.AllowedIpServices
 
             return true;
         }
-
     }
 }
 
