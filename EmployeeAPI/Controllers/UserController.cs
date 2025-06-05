@@ -18,7 +18,7 @@ namespace EmployeeAPI.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [SwaggerGroupOrder(2)]
-    public class UserController : Controller
+    public class UserController : ControllerBase
     {
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
