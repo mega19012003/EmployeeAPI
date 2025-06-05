@@ -473,8 +473,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 .Where(u => !checkedInUserIds.Contains(u.UserId))
                 .ToList();
 
-           
-
             foreach (var user in absentUsers)
             {
 

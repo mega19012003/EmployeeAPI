@@ -70,8 +70,7 @@ builder.Services.AddScoped<IUserRepository, EFUserRepository>();
 builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
 builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfigRepository>();
 builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
-builder.Services.AddScoped<IHolidayRepository, EmployeeAPI.Repositories.Holidays.EFHolidayRepository>();
-
+builder.Services.AddScoped<IHolidayRepository, EFHolidayRepository>();
 
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
