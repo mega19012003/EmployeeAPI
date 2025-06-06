@@ -4,17 +4,11 @@ namespace EmployeeAPI.Repositories.Positions
 {
     public interface IPositionRepository
     {
-        /*public Task<IEnumerable<Position>> GetAllAsync();
-        public Task<Position> GetByIdAsync(Guid id);
-        public Task<Position> AddAsync(string Name);
-        public Task<Position> UpdateAsync(Guid id, string Name);
-        public Task<Position> SoftDeleteAsync(Guid id);
-        public Task<Position> GetAllEmployee(string name);*/
         IQueryable<Position> GetQueryable();
-        Task<Position?> GetByIdAsync(Guid id);
-        Task<Position> AddAsync(Position position);
-        Task<Position> UpdateAsync(Position position);
-        Task<Position> SoftDeleteAsync(Guid id);
+        Task<Position> GetByIdAsync(Guid id);
+        Task AddAsync(Position position);
+        Task UpdateAsync(Position position);
+        //Task<Position> SoftDeleteAsync(Guid id);
         Task<Position?> GetAllEmployee(string name);
         Task<IEnumerable<Position>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex);
     }

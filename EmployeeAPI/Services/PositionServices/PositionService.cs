@@ -130,19 +130,18 @@ namespace EmployeeAPI.Services.PositionServices
                     DepartmentId = departmentId,
                 };
 
-                var entity = await _positionRepository.AddAsync(model);
-
+                await _positionRepository.AddAsync(model);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 //var result = await _context.Positions.Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == entity.Id);
-                var result = await _positionRepository.GetByIdAsync(entity.Id);
+                var result = await _positionRepository.GetByIdAsync(model.Id);
 
                 return new ResponseModel.PositionDTO
                 {
-                    Id = result.Id,
-                    Name = result.Name,
-                    Department = result.Department.Name,
+                    Id = model.Id,
+                    Name = model.Name,
+                    Department = model.Department.Name,
                 };
             }
             catch (Exception ex)
@@ -163,17 +162,14 @@ namespace EmployeeAPI.Services.PositionServices
                     throw new ArgumentException("Cannot find position");
 
                 result.Name = newName;
-                var updated = await _positionRepository.UpdateAsync(result);
-                if (updated == null) return null;
-
+                await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
-
                 await transaction.CommitAsync();
 
                 return new ResponseModel.UpdatePosition
                 {
-                    PositionId = updated.Id,
-                    Name = updated.Name,
+                    PositionId = result.Id,
+                    Name = result.Name,
                 };
             }
             catch (Exception ex)
@@ -193,9 +189,8 @@ namespace EmployeeAPI.Services.PositionServices
                 if (result == null)
                     throw new ArgumentException("Cannot find position");
 
-                //result.IsDeleted = true;
-
-                await _positionRepository.SoftDeleteAsync(id);
+                result.IsDeleted = true;
+                await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 

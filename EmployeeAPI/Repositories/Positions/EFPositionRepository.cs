@@ -16,37 +16,19 @@ namespace EmployeeAPI.Repositories.Positions
             return _context.Positions.AsNoTracking().Where(p => !p.IsDeleted);
         }
 
-        public async Task<Position?> GetByIdAsync(Guid id)
+        public async Task<Position> GetByIdAsync(Guid id)
         {
-            return await _context.Positions.AsNoTracking().Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            return await _context.Positions.Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
-        public async Task<Position> AddAsync(Position position)
+        public async Task AddAsync(Position position)
         {
             await _context.Positions.AddAsync(position);
-            //await _context.SaveChangesAsync();
-            return position;
         }
 
-        public async Task<Position?> UpdateAsync(Position position)
+        public async Task UpdateAsync(Position position)
         {
-            var entity = await _context.Positions.FirstOrDefaultAsync(p => p.Id == position.Id && !p.IsDeleted);
-            if (entity == null) return null;
-
-            entity.Name = position.Name;
-            //_context.Positions.Update(entity);
-            //await _context.SaveChangesAsync();
-            return entity;
-        }
-
-        public async Task<Position> SoftDeleteAsync(Guid id)
-        {
-            var entity = await _context.Positions.FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
-            if (entity == null) return null;
-            entity.IsDeleted = true;
-            //_context.Positions.Update(entity);
-            //await _context.SaveChangesAsync();
-            return entity;
+            _context.Positions.Update(position);
         }
 
         public async Task<Position?> GetAllEmployee(string name)
