@@ -21,8 +21,8 @@ using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.CheckinStatusConfigServices;
 using EmployeeAPI.Services.DepartmentServices;
 using EmployeeAPI.Services.DutyServices;
-using EmployeeAPI.Services.FileServices;
 using EmployeeAPI.Services.HolidayServices;
+using EmployeeAPI.Services.ImageServices;
 using EmployeeAPI.Services.PayrollServices;
 using EmployeeAPI.Services.PositionServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
@@ -76,7 +76,6 @@ builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfig
 builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
 builder.Services.AddScoped<IHolidayRepository, EFHolidayRepository>();
 
-builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
 builder.Services.AddScoped<IDutyService, DutyService>();
@@ -88,7 +87,7 @@ builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
 builder.Services.AddScoped<ICheckinStatusConfigService, CheckinStatusConfigService>();
 builder.Services.AddScoped<IAllowedIPService, AllowedIPService>();
 builder.Services.AddScoped<IHolidayService, HolidayService>();
-
+builder.Services.AddScoped<ICloudImageService, CloudImageService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

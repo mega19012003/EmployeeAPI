@@ -5,7 +5,7 @@ using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AuthServices;
-using EmployeeAPI.Services.FileServices;
+using EmployeeAPI.Services.ImageServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
 using System.Security.Cryptography;
@@ -18,14 +18,14 @@ namespace EmployeeAPI.Services.UserService
     {
         private readonly IUserRepository _userRepository;
         private readonly IDepartmentRepository _departmentRepository;
-        private readonly IFileService _fileService;
+        private readonly ICloudImageService _cloudImageService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public UserService(IUserRepository userRepository, IFileService fileService, AppDbContext context, ILogger<AuthService> logger, IDepartmentRepository departmentRepository)
+        public UserService(IUserRepository userRepository, ICloudImageService cloudImageService, AppDbContext context, ILogger<AuthService> logger, IDepartmentRepository departmentRepository)
         {
             _userRepository = userRepository;
             _departmentRepository = departmentRepository;
-            _fileService = fileService;
+            _cloudImageService = cloudImageService;
             _context = context;
             _logger = logger;
         }
@@ -35,22 +35,37 @@ namespace EmployeeAPI.Services.UserService
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
-
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
-                if (existingUser == null) throw new ArgumentException("User không tồn tại");
+                if (existingUser == null)
+                    throw new ArgumentException("User không tồn tại");
 
-                if (dto.ImageUrl != null)
-                {
-                    existingUser.ImageUrl = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
-                }
-
+                // Cập nhật thông tin cơ bản
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
                 if (dto.BasicSalary != default) existingUser.BasicSalary = (double)dto.BasicSalary;
                 existingUser.IsActive = dto.IsActive;
 
+                // Xử lý ảnh đại diện
+                if (dto.ImageUrl != null)
+                {
+                    if (!string.IsNullOrEmpty(existingUser.ImageUrl))
+                    {
+                        var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
+                        Console.WriteLine($"🔍 Old ImageUrl: {existingUser.ImageUrl}");
+                        Console.WriteLine($"🧩 Extracted publicId: {oldPublicId}");
+
+                        if (!string.IsNullOrEmpty(oldPublicId))
+                        {
+                            await _cloudImageService.DeleteImageAsync(oldPublicId);
+                        }
+                    }
+
+                    var uploadedImageUrl = await _cloudImageService.UploadImageAsync(dto.ImageUrl);
+                    existingUser.ImageUrl = uploadedImageUrl;
+                }
+
+                // Xử lý Department và Position
                 if (dto.DepartmentId.HasValue)
                 {
                     existingUser.DepartmentId = dto.DepartmentId;
@@ -59,41 +74,36 @@ namespace EmployeeAPI.Services.UserService
                     {
                         var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
                         if (department == null)
-                            throw new ArgumentException("Department does not exist");
+                            throw new ArgumentException("Phòng ban không tồn tại");
 
                         bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                         if (!isValidPosition)
-                            throw new ArgumentException("Position does not exist in the new department");
+                            throw new ArgumentException("Chức vụ không hợp lệ trong phòng ban mới");
 
                         existingUser.PositionId = dto.PositionId;
                     }
-                    else
-                    {
-                    }
                 }
-                else
+                else if (dto.PositionId.HasValue)
                 {
-                    if (dto.PositionId.HasValue)
-                    {
-                        if (!existingUser.DepartmentId.HasValue)
-                            throw new ArgumentException("User does not belong to any department");
+                    if (!existingUser.DepartmentId.HasValue)
+                        throw new ArgumentException("Nhân viên chưa thuộc phòng ban nào");
 
-                        var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
-                        if (department == null)
-                            throw new ArgumentException("Current department does not exist");
+                    var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
+                    if (department == null)
+                        throw new ArgumentException("Phòng ban hiện tại không tồn tại");
 
-                        bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
-                        if (!isValidPosition)
-                            throw new ArgumentException("Position does not exist in the current department");
+                    bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+                    if (!isValidPosition)
+                        throw new ArgumentException("Chức vụ không hợp lệ trong phòng ban hiện tại");
 
-                        existingUser.PositionId = dto.PositionId;
-                    }
+                    existingUser.PositionId = dto.PositionId;
                 }
 
-
+                // Lưu thay đổi
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
+                // Load các navigation properties nếu cần
                 await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
                 await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
 
@@ -109,23 +119,121 @@ namespace EmployeeAPI.Services.UserService
                     BasicSalary = existingUser.BasicSalary,
                     DepartmentName = existingUser.Department?.Name,
                     PositionName = existingUser.Position?.Name,
-                    ImageUrl = existingUser.ImageUrl,
+                    ImageUrl = existingUser.ImageUrl
                 };
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Lỗi khi cập nhật nhân viên. Message: {Message}", ex.Message);
+                _logger.LogError(ex, "Lỗi khi cập nhật nhân viên: {Message}", ex.Message);
                 throw;
             }
         }
+
+
+        //public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
+        //{
+        //    using var transaction = await _context.Database.BeginTransactionAsync();
+        //    try
+        //    {
+        //        var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
+        //        if (existingUser == null) throw new ArgumentException("User không tồn tại");
+
+        //        if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
+        //        if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
+        //        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
+        //        if (dto.BasicSalary != default) existingUser.BasicSalary = (double)dto.BasicSalary;
+        //        existingUser.IsActive = dto.IsActive;
+
+        //        if (dto.ImageUrl != null)
+        //        {
+        //            if (!string.IsNullOrEmpty(existingUser.ImageUrl))
+        //            {
+        //                var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
+        //                if (!string.IsNullOrEmpty(oldPublicId))
+        //                {
+        //                    await _cloudImageService.DeleteImageAsync(oldPublicId);
+        //                }
+        //            }
+
+        //            var uploadedImageUrl = await _cloudImageService.UploadImageAsync(dto.ImageUrl);
+        //            existingUser.ImageUrl = uploadedImageUrl;
+        //        }
+
+        //        if (dto.DepartmentId.HasValue)
+        //        {
+        //            existingUser.DepartmentId = dto.DepartmentId;
+
+        //            if (dto.PositionId.HasValue)
+        //            {
+        //                var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
+        //                if (department == null)
+        //                    throw new ArgumentException("Department does not exist");
+
+        //                bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+        //                if (!isValidPosition)
+        //                    throw new ArgumentException("Position does not exist in the new department");
+
+        //                existingUser.PositionId = dto.PositionId;
+        //            }
+        //            else
+        //            {
+        //            }
+        //        }
+        //        else
+        //        {
+        //            if (dto.PositionId.HasValue)
+        //            {
+        //                if (!existingUser.DepartmentId.HasValue)
+        //                    throw new ArgumentException("User does not belong to any department");
+
+        //                var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
+        //                if (department == null)
+        //                    throw new ArgumentException("Current department does not exist");
+
+        //                bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+        //                if (!isValidPosition)
+        //                    throw new ArgumentException("Position does not exist in the current department");
+
+        //                existingUser.PositionId = dto.PositionId;
+        //            }
+        //        }
+
+
+        //        await _userRepository.UpdateAsync(existingUser);
+        //        await _context.SaveChangesAsync();
+
+        //        await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
+        //        await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
+
+        //        await transaction.CommitAsync();
+
+        //        return new ResponseModel.UserDto
+        //        {
+        //            userId = existingUser.UserId,
+        //            Fullname = existingUser.Fullname,
+        //            RoleName = existingUser.Role.ToString(),
+        //            Address = existingUser.Address,
+        //            PhoneNumber = existingUser.PhoneNumber,
+        //            BasicSalary = existingUser.BasicSalary,
+        //            DepartmentName = existingUser.Department?.Name,
+        //            PositionName = existingUser.Position?.Name,
+        //            ImageUrl = existingUser.ImageUrl,
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        _logger.LogError(ex, "Lỗi khi cập nhật nhân viên. Message: {Message}", ex.Message);
+        //        throw;
+        //    }
+        //}
 
         public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                string uploadsFolder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images");
 
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("User Not found");
@@ -143,7 +251,17 @@ namespace EmployeeAPI.Services.UserService
 
                 if (dto.ImageUrl != null)
                 {
-                    existingUser.ImageUrl = await _fileService.UpdateFileAsync(dto.ImageUrl, uploadsFolder, existingUser.ImageUrl);
+                    if (!string.IsNullOrEmpty(existingUser.ImageUrl))
+                    {
+                        var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
+                        if (!string.IsNullOrEmpty(oldPublicId))
+                        {
+                            await _cloudImageService.DeleteImageAsync(oldPublicId);
+                        }
+                    }
+
+                    var uploadedImageUrl = await _cloudImageService.UploadImageAsync(dto.ImageUrl);
+                    existingUser.ImageUrl = uploadedImageUrl;
                 }
 
                 existingUser.DepartmentId = manager.DepartmentId;

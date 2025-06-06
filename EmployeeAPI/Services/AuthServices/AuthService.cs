@@ -9,8 +9,6 @@ using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Positions;
-
-using EmployeeAPI.Services.FileServices;
 using EmployeeAPI.Helpers;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;

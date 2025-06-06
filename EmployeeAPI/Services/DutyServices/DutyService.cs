@@ -2,7 +2,6 @@
 using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Duties;
-using EmployeeAPI.Services.FileServices;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Services.DutyServices
