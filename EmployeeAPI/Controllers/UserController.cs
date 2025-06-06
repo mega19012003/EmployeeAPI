@@ -99,7 +99,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Admin có thể lấy thông tin của người dùng, manager lấy danh sách theo phòng ban
+        /// Admin có thể lấy danh sách thông tin của người dùng, manager lấy danh sách theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
@@ -135,7 +135,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Admin có thể lấy thông tin của nhiều người dùng, manager chỉ có thể lấy thông tin user theo phòng ban
+        /// Admin có thể lấy thông tin của người dùng, manager chỉ có thể lấy thông tin user theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("id")] 
