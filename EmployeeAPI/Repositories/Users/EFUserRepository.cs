@@ -21,26 +21,9 @@ namespace EmployeeAPI.Repositories.Users
         }
         public async Task<User> UpdateAsync(User user)
         {
-            var existingUser = await _context.Users
-                .Include(p => p.Department)
-                .Include(p => p.Position)
-                .FirstOrDefaultAsync(p => p.UserId == user.UserId && !p.IsDeleted && p.IsActive);
+            _context.Users.Update(user);
 
-            if (existingUser == null)
-                return null;
-
-            existingUser.Fullname = user.Fullname;
-            existingUser.Address = user.Address;
-            existingUser.PhoneNumber = user.PhoneNumber;
-            existingUser.Role = user.Role;
-            existingUser.BasicSalary = user.BasicSalary;
-            existingUser.PositionId = user.PositionId;
-            existingUser.DepartmentId = user.DepartmentId;
-            existingUser.ImageUrl = user.ImageUrl;
-            existingUser.IsActive = user.IsActive;
-
-            // Bỏ SaveChangesAsync ở đây
-            return existingUser;
+            return user;
         }
         public async Task<User> SoftDeleteAsync(User User)
         {
