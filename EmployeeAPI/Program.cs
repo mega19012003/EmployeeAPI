@@ -28,6 +28,7 @@ using EmployeeAPI.Services.PositionServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
 using EmployeeAPI.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
@@ -35,7 +36,9 @@ using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 var CustomCors = "_customCors";
-
+builder.Logging.ClearProviders();
+builder.Logging.AddConsole();
+builder.Logging.SetMinimumLevel(LogLevel.Debug);
 
 builder.Services.AddCors(options =>
 {
@@ -159,7 +162,20 @@ app.MapGet("/", context =>
     context.Response.Redirect("/swagger/index.html");
     return Task.CompletedTask;
 });
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var errorFeature = context.Features.Get<IExceptionHandlerFeature>();
+        var exception = errorFeature?.Error;
 
+        var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        logger.LogError(exception, "Unhandled exception");
+
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsync("Internal Server Error");
+    });
+});
 app.UseSwagger();           
 app.UseSwaggerUI();      
 app.UseHttpsRedirection();
