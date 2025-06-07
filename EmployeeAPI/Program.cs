@@ -162,7 +162,7 @@ app.MapGet("/", context =>
     context.Response.Redirect("/swagger/index.html");
     return Task.CompletedTask;
 });
-app.UseExceptionHandler(errorApp =>
+/*app.UseExceptionHandler(errorApp =>
 {
     errorApp.Run(async context =>
     {
@@ -175,7 +175,7 @@ app.UseExceptionHandler(errorApp =>
         context.Response.StatusCode = 500;
         await context.Response.WriteAsync("Internal Server Error");
     });
-});
+});*/
 app.UseSwagger();           
 app.UseSwaggerUI();      
 app.UseHttpsRedirection();
