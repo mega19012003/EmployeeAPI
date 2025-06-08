@@ -25,11 +25,24 @@ namespace EmployeeAPI.Services.ImageServices
 
         public async Task<string> UploadImageAsync(IFormFile file)
         {
+            const int maxFileSize = 10 * 1024 * 1024;
+
+            if (file.Length > maxFileSize)
+            {
+                throw new Exception("Image size too large. Please chosse an image that below 10MB.");
+            }
+
             await using var stream = file.OpenReadStream();
             var uploadParams = new ImageUploadParams
             {
                 File = new FileDescription(file.FileName, stream),
-                Folder = "UserProfilePicture"
+                Folder = "UserProfilePicture",
+
+                Transformation = new Transformation()
+                    .Width(500)
+                    .Height(500)
+                    .Crop("fill")
+                    .Gravity("auto")
             };
 
             var uploadResult = await _cloudinary.UploadAsync(uploadParams);
@@ -38,7 +51,7 @@ namespace EmployeeAPI.Services.ImageServices
                 return uploadResult.SecureUrl.ToString();
             }
 
-            throw new Exception("Upload ảnh thất bại");
+            throw new Exception("Upload image failed");
         }
 
         public async Task<bool> DeleteImageAsync(string publicId)
