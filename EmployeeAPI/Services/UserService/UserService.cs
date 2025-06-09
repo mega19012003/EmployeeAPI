@@ -74,11 +74,11 @@ namespace EmployeeAPI.Services.UserService
                     {
                         var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
                         if (department == null)
-                            throw new ArgumentException("Phòng ban không tồn tại");
+                            throw new ArgumentException("Department not found");
 
                         bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                         if (!isValidPosition)
-                            throw new ArgumentException("Chức vụ không hợp lệ trong phòng ban mới");
+                            throw new ArgumentException("Position does not belong to this department");
 
                         existingUser.PositionId = dto.PositionId;
                     }
@@ -86,15 +86,15 @@ namespace EmployeeAPI.Services.UserService
                 else if (dto.PositionId.HasValue)
                 {
                     if (!existingUser.DepartmentId.HasValue)
-                        throw new ArgumentException("Nhân viên chưa thuộc phòng ban nào");
+                        throw new ArgumentException("User does not have a department");
 
                     var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
                     if (department == null)
-                        throw new ArgumentException("Phòng ban hiện tại không tồn tại");
+                        throw new ArgumentException("Department not found");
 
                     bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                     if (!isValidPosition)
-                        throw new ArgumentException("Chức vụ không hợp lệ trong phòng ban hiện tại");
+                        throw new ArgumentException("Position does not belong to this department");
 
                     existingUser.PositionId = dto.PositionId;
                 }
@@ -131,104 +131,6 @@ namespace EmployeeAPI.Services.UserService
         }
 
 
-        //public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
-        //{
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
-        //        if (existingUser == null) throw new ArgumentException("User không tồn tại");
-
-        //        if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
-        //        if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
-        //        if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
-        //        if (dto.BasicSalary != default) existingUser.BasicSalary = (double)dto.BasicSalary;
-        //        existingUser.IsActive = dto.IsActive;
-
-        //        if (dto.ImageUrl != null)
-        //        {
-        //            if (!string.IsNullOrEmpty(existingUser.ImageUrl))
-        //            {
-        //                var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
-        //                if (!string.IsNullOrEmpty(oldPublicId))
-        //                {
-        //                    await _cloudImageService.DeleteImageAsync(oldPublicId);
-        //                }
-        //            }
-
-        //            var uploadedImageUrl = await _cloudImageService.UploadImageAsync(dto.ImageUrl);
-        //            existingUser.ImageUrl = uploadedImageUrl;
-        //        }
-
-        //        if (dto.DepartmentId.HasValue)
-        //        {
-        //            existingUser.DepartmentId = dto.DepartmentId;
-
-        //            if (dto.PositionId.HasValue)
-        //            {
-        //                var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
-        //                if (department == null)
-        //                    throw new ArgumentException("Department does not exist");
-
-        //                bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
-        //                if (!isValidPosition)
-        //                    throw new ArgumentException("Position does not exist in the new department");
-
-        //                existingUser.PositionId = dto.PositionId;
-        //            }
-        //            else
-        //            {
-        //            }
-        //        }
-        //        else
-        //        {
-        //            if (dto.PositionId.HasValue)
-        //            {
-        //                if (!existingUser.DepartmentId.HasValue)
-        //                    throw new ArgumentException("User does not belong to any department");
-
-        //                var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
-        //                if (department == null)
-        //                    throw new ArgumentException("Current department does not exist");
-
-        //                bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
-        //                if (!isValidPosition)
-        //                    throw new ArgumentException("Position does not exist in the current department");
-
-        //                existingUser.PositionId = dto.PositionId;
-        //            }
-        //        }
-
-
-        //        await _userRepository.UpdateAsync(existingUser);
-        //        await _context.SaveChangesAsync();
-
-        //        await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
-        //        await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
-
-        //        await transaction.CommitAsync();
-
-        //        return new ResponseModel.UserDto
-        //        {
-        //            userId = existingUser.UserId,
-        //            Fullname = existingUser.Fullname,
-        //            RoleName = existingUser.Role.ToString(),
-        //            Address = existingUser.Address,
-        //            PhoneNumber = existingUser.PhoneNumber,
-        //            BasicSalary = existingUser.BasicSalary,
-        //            DepartmentName = existingUser.Department?.Name,
-        //            PositionName = existingUser.Position?.Name,
-        //            ImageUrl = existingUser.ImageUrl,
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        _logger.LogError(ex, "Lỗi khi cập nhật nhân viên. Message: {Message}", ex.Message);
-        //        throw;
-        //    }
-        //}
-
         public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -240,7 +142,7 @@ namespace EmployeeAPI.Services.UserService
 
                 var manager = await _userRepository.GetByIdAsync(managerId);
                 if (manager == null || manager.DepartmentId == null)
-                    throw new ArgumentException("Manager không có phòng ban. Vui lòng liên hệ admin để thêm phòng ban.");
+                    throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
 
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
