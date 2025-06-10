@@ -1,11 +1,14 @@
-﻿using EmployeeAPI.Enums;
+﻿using System.ComponentModel.DataAnnotations;
+using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Models
 {
     [Index(nameof(Username), IsUnique = true)]
-    public class User
+    public class User //: BaseEntity
     {
+        [Key]
         public Guid UserId { get; set; }
         public string Username { get; set; }
         public string Password { get; set; } 

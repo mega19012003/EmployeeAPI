@@ -77,7 +77,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
             //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
-            var result = await _positionService.AddAsync(dto);
+            var result = await _positionService.AddAsync(dto, User);
             return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
         }
 
@@ -111,7 +111,7 @@ namespace EmployeeAPI.Controllers
                 managerDepartmentId = user.DepartmentId;
             }
 
-            var result = await _positionService.UpdateAsync(id, newName);
+            var result = await _positionService.UpdateAsync(id, newName, User);
             if (result == null)
                 return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
 
@@ -125,7 +125,7 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
-            var result = await _positionService.SoftDeleteAsync(id);
+            var result = await _positionService.SoftDeleteAsync(id, User);
             if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
 
             var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;

@@ -1,19 +1,21 @@
-﻿namespace EmployeeAPI.Services.DepartmentServices
+﻿using EmployeeAPI.Base;
+
+namespace EmployeeAPI.Services.DepartmentServices
 {
     public static class ResponseModel
     {
-        public record DepartmentDto
+        public class DepartmentDto //: BaseDto
         {
             public Guid DepartmentId { get; set; }
             public string Name { get; set; }
             public bool IsDeleted { get; set; } = false;
         }
-        public record CreateDepartment
+        public class CreateDepartment //: BaseDto
         {
             public Guid DepartmentId { get; set; }
             public string Name { get; set; }
         }
-        public record UpdateDepartment
+        public class UpdateDepartment //: BaseDto
         {
             public Guid DepartmentId { get; set; }
             public string Name { get; set; }
@@ -27,7 +29,7 @@
             public string DepartmentName { get; set; }
         }
 
-        public class UserFilter
+        public class UserFilter //: BaseDto
         {
             public Guid UserId { get; set; }
             public string Name { get; set; }

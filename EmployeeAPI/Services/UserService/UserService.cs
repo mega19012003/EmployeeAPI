@@ -8,6 +8,7 @@ using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.ImageServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using static EmployeeAPI.Services.UserService.ResponseModel;
@@ -30,16 +31,17 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
+        public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto, ClaimsPrincipal user)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var updatedBy = user.FindFirstValue("FullName") ?? null;
+
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null)
-                    throw new ArgumentException("User không tồn tại");
+                    throw new ArgumentException("Cannot find user");
 
-                // Cập nhật thông tin cơ bản
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
@@ -52,8 +54,8 @@ namespace EmployeeAPI.Services.UserService
                     if (!string.IsNullOrEmpty(existingUser.ImageUrl))
                     {
                         var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
-                        Console.WriteLine($"🔍 Old ImageUrl: {existingUser.ImageUrl}");
-                        Console.WriteLine($"🧩 Extracted publicId: {oldPublicId}");
+                        Console.WriteLine($"Old ImageUrl: {existingUser.ImageUrl}");
+                        Console.WriteLine($"Extracted publicId: {oldPublicId}");
 
                         if (!string.IsNullOrEmpty(oldPublicId))
                         {
@@ -99,7 +101,9 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.PositionId = dto.PositionId;
                 }
 
-                // Lưu thay đổi
+                /*existingUser.UpdatedAt = DateTime.UtcNow;
+                existingUser.UpdatedBy = updatedBy;*/
+
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
@@ -119,7 +123,11 @@ namespace EmployeeAPI.Services.UserService
                     BasicSalary = existingUser.BasicSalary,
                     DepartmentName = existingUser.Department?.Name,
                     PositionName = existingUser.Position?.Name,
-                    ImageUrl = existingUser.ImageUrl
+                    ImageUrl = existingUser.ImageUrl,
+                    /*CreatedAt = existingUser.CreatedAt,
+                    CreatedBy = existingUser.CreatedBy,
+                    UpdatedAt = existingUser.UpdatedAt,
+                    UpdatedBy = existingUser.UpdatedBy,*/
                 };
             }
             catch (Exception ex)
@@ -131,24 +139,27 @@ namespace EmployeeAPI.Services.UserService
         }
 
 
-        public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
+        public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId, ClaimsPrincipal user)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-
+                var updatedBy = user.FindFirstValue("FullName") ?? null;
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
-                if (existingUser == null) throw new ArgumentException("User Not found");
+                if (existingUser == null) throw new ArgumentException("Cannot find user");
 
                 var manager = await _userRepository.GetByIdAsync(managerId);
                 if (manager == null || manager.DepartmentId == null)
                     throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
 
+                if (existingUser.DepartmentId == null || existingUser.DepartmentId != manager.DepartmentId)
+                    throw new UnauthorizedAccessException("Manager can only update for user in the same department");
+
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
                 if (dto.PositionId.HasValue) existingUser.PositionId = dto.PositionId.Value;
-                //if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
+                if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
                 //if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
 
                 if (dto.ImageUrl != null)
@@ -167,6 +178,8 @@ namespace EmployeeAPI.Services.UserService
                 }
 
                 existingUser.DepartmentId = manager.DepartmentId;
+                /*existingUser.UpdatedAt = DateTime.UtcNow;
+                existingUser.UpdatedBy = updatedBy;*/
 
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
@@ -188,6 +201,10 @@ namespace EmployeeAPI.Services.UserService
                     DepartmentName = existingUser.Department?.Name,
                     PositionName = existingUser.Position?.Name,
                     ImageUrl = existingUser.ImageUrl,
+                    /*CreatedAt = existingUser.CreatedAt,
+                    CreatedBy = existingUser.CreatedBy,
+                    UpdatedAt = existingUser.UpdatedAt,
+                    UpdatedBy = existingUser.UpdatedBy,*/
                 };
             }
             catch (Exception ex)
@@ -198,15 +215,18 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<string> SoftDeleteAsync(Guid Id)
+        public async Task<string> SoftDeleteAsync(Guid Id, ClaimsPrincipal user)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var updatedBy = user.FindFirstValue("FullName") ?? null;
                 var existingUser = await _userRepository.GetByIdAsync(Id);
                 if (existingUser == null)
-                    throw new ArgumentException("Cannot find User");
+                    throw new ArgumentException("Cannot find user");
 
+                /*existingUser.UpdatedAt = DateTime.UtcNow;
+                existingUser.UpdatedBy = updatedBy;*/
                 await _userRepository.SoftDeleteAsync(existingUser);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -288,6 +308,10 @@ namespace EmployeeAPI.Services.UserService
                 PositionName = results.Position?.Name ?? "No Position",
                 BasicSalary = results.BasicSalary,
                 ImageUrl = results.ImageUrl,
+                /*CreatedAt = results.CreatedAt,
+                CreatedBy = results.CreatedBy,
+                UpdatedAt = results.UpdatedAt,
+                UpdatedBy = results.UpdatedBy*/
             };
         }
     
@@ -317,6 +341,10 @@ namespace EmployeeAPI.Services.UserService
                 PositionName = u.Position?.Name ?? null,
                 BasicSalary = u.BasicSalary,
                 ImageUrl = u.ImageUrl,
+                /*CreatedAt = u.CreatedAt,
+                CreatedBy = u.CreatedBy,
+                UpdatedAt = u.UpdatedAt,
+                UpdatedBy = u.UpdatedBy*/
             }).AsQueryable();
             return userDtos;
         }

@@ -13,7 +13,7 @@ namespace EmployeeAPI.Services.AuthServices
         Task<ResponseModel.AuthDto> RegisterAsync(ResponseModel.RegisterDto dto, ClaimsPrincipal user);
         Task<User> LoginAsync(string username, string password);
         Task<string> ChangePasswordAsync(Guid userId, string oldPassword, string confirmPassword, string newPassword);
-        Task<string> ResetPasswordAsync(Guid userId);
+        Task<string> ResetPasswordAsync(Guid userId, ClaimsPrincipal claim);
         /*Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.UpdateUser dto);
         Task<string> SoftDeleteAsync(Guid id);
 

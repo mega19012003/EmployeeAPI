@@ -1,6 +1,8 @@
-﻿namespace EmployeeAPI.Models
+﻿using EmployeeAPI.Base;
+
+namespace EmployeeAPI.Models
 {
-    public class Holiday
+    public class Holiday //: BaseEntity
     {
         public Guid Id { get; set; }
         public string name { get; set; }

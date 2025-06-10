@@ -60,8 +60,13 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)
         {
             // Lấy userId từ Claims (ngầm định user đã đăng nhập)
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
                 return Unauthorized(new { Message = "User ID not found in token." });
@@ -80,7 +85,7 @@ namespace EmployeeAPI.Controllers
             }
             //dto.IpAddress = ip ?? "Unknown";
 
-            var created = await _checkinService.CreateAsync(dto);
+            var created = await _checkinService.CreateAsync(dto, currentUserId, currentUserRoles);
             if (created == null)
             {
                 return BadRequest();
@@ -99,6 +104,12 @@ namespace EmployeeAPI.Controllers
         [HttpPost("Chekout")]
         public async Task<IActionResult> Checkout([FromBody] ResponseModel.CreateCheckout dto)
         {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
             {
@@ -112,7 +123,7 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(403, new { Message = $"IP address {ip} is not allowed to check out.", Data = ip });
             }
 
-            var result = await _checkinService.CheckoutAsync(dto);
+            var result = await _checkinService.CheckoutAsync(dto, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkout success", result, 200));
         }
 

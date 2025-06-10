@@ -1,4 +1,5 @@
 ﻿using System.Reflection.Metadata.Ecma335;
+using System.Security.Claims;
 using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Duties;
@@ -63,13 +64,20 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = d.StartDate,
                     AssignedById = d.AssignedById,
                     AssignedBy = d.AssignedBy.Fullname,
+                    /*CreatedAt = d.CreatedAt,
+                    CreatedBy = d.CreatedBy,
+                    UpdatedAt = d.UpdatedAt,
+                    UpdatedBy = d.UpdatedBy,*/
                     DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = dd.DutyDetailId,
                         userId = dd.UserId,
                         Description = dd.Description,
                         Name = dd.Users.Fullname,
-                        
+                        /*CreatedAt = dd.CreatedAt,
+                        CreatedBy = dd.CreatedBy,
+                        UpdatedAt = dd.UpdatedAt,
+                        UpdatedBy = dd.UpdatedBy,*/
                     }).ToList()
                 })
                 .AsNoTracking()
@@ -122,20 +130,29 @@ namespace EmployeeAPI.Services.DutyServices
                 StartDate = duty.StartDate,
                 AssignedById = duty.AssignedById,
                 AssignedBy = duty.AssignedBy?.Fullname,
+                /*CreatedAt = duty.CreatedAt,
+                CreatedBy = duty.CreatedBy,
+                UpdatedAt = duty.UpdatedAt,
+                UpdatedBy = duty.UpdatedBy,*/
                 DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
                     DutyDetailId = d.DutyDetailId,
                     userId = d.UserId,
                     Description = d.Description,
                     Name = d.Users?.Fullname,
+                    /*CreatedAt = d.CreatedAt,
+                    CreatedBy = d.CreatedBy,
+                    UpdatedAt = d.UpdatedAt,
+                    UpdatedBy = d.UpdatedBy*/
                 }).ToList()
             };
         }
-        public async Task<ResponseModel.DutyDto> AddDutyAsync(ResponseModel.CreateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDto> AddDutyAsync(ResponseModel.CreateDuty dto, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
@@ -181,11 +198,19 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = dto.Name,
                     StartDate = DateTime.Now,
                     AssignedById = currentUserId,
+                    /*CreatedAt = DateTime.Now,
+                    CreatedBy = currentUserFullName,
+                    UpdatedAt = DateTime.MinValue,
+                    UpdatedBy = string.Empty,*/
                     DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                     {
                         UserId = d.userId,
                         Description = d.Description,
-                        IsDeleted = false
+                        IsDeleted = false,
+                        /*CreatedAt = DateTime.Now,
+                        CreatedBy = currentUserFullName,
+                        UpdatedAt = DateTime.MinValue,
+                        UpdatedBy = string.Empty,*/
                     }).ToList()
                 };
 
@@ -206,13 +231,21 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = result.StartDate,
                     AssignedById = result.AssignedById,
                     AssignedBy = result.AssignedBy?.Fullname,
+                    /*UpdatedAt = result.UpdatedAt,
+                    UpdatedBy = result.UpdatedBy,
+                    CreatedAt = result.CreatedAt,
+                    CreatedBy = result.CreatedBy,*/
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
-                        IsDeleted = d.IsDeleted
+                        IsDeleted = d.IsDeleted,
+                        /*CreatedAt = d.CreatedAt,
+                        CreatedBy = d.CreatedBy,
+                        UpdatedAt = d.UpdatedAt,
+                        UpdatedBy = d.UpdatedBy*/
                     }).ToList()
                 };
             }
@@ -223,11 +256,12 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claims)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                //var currentUserFullName = claims.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null) throw new ArgumentException("Cannot find current user");
 
@@ -279,7 +313,11 @@ namespace EmployeeAPI.Services.DutyServices
                         {
                             UserId = detailDto.userId,
                             Description = detailDto.Description,
-                            DutyId = duty.Id
+                            DutyId = duty.Id,
+                            /*CreatedAt = DateTime.Now,
+                            CreatedBy = currentUserFullName,
+                            UpdatedAt = DateTime.MinValue,
+                            UpdatedBy = string.Empty,*/
                         });
                     }
                 }
@@ -295,12 +333,20 @@ namespace EmployeeAPI.Services.DutyServices
                     Id = result.Id,
                     Name = result.Name ?? null,
                     AssignedBy = result.AssignedBy?.Fullname,
+                    /*UpdatedAt = result.UpdatedAt,
+                    UpdatedBy = result.UpdatedBy,
+                    CreatedAt = result.CreatedAt,
+                    CreatedBy = result.CreatedBy,*/
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
+                        /*CreatedAt = d.CreatedAt,
+                        CreatedBy = d.CreatedBy,
+                        UpdatedAt = d.UpdatedAt,
+                        UpdatedBy = d.UpdatedBy,*/
                     }).ToList()
                 };
             }
@@ -312,11 +358,12 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
-        public async Task<ResponseModel.DutyDto> UpdateDutyAsync(ResponseModel.UpdateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDto> UpdateDutyAsync(ResponseModel.UpdateDuty dto, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
@@ -347,7 +394,8 @@ namespace EmployeeAPI.Services.DutyServices
 
                 existingDuty.Name = dto.Name;
                 existingDuty.IsCompleted = dto.IsCompleted;
-
+                /*existingDuty.UpdatedAt = DateTime.Now;
+                existingDuty.UpdatedBy = currentUserFullName;*/
                 await _dutyRepository.UpdateDutyAsync(existingDuty);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -360,12 +408,20 @@ namespace EmployeeAPI.Services.DutyServices
                     IsCompleted = existingDuty.IsCompleted,
                     StartDate = existingDuty.StartDate,
                     AssignedBy = existingDuty.AssignedBy?.Fullname,
+                    /*CreatedAt = existingDuty.CreatedAt,
+                    CreatedBy = existingDuty.CreatedBy,
+                    UpdatedAt = existingDuty.UpdatedAt,
+                    UpdatedBy = currentUserFullName,*/
                     DutyDetails = existingDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
                         Name = d.Users?.Fullname,
-                        Description = d.Description ?? null
+                        Description = d.Description ?? null,
+                        /*CreatedAt = d.CreatedAt,
+                        CreatedBy = d.CreatedBy,
+                        UpdatedAt = d.UpdatedAt,
+                        UpdatedBy = d.UpdatedBy,*/
                     }).ToList(),
                 };
             }
@@ -376,11 +432,12 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<ResponseModel.DutyDetailDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDetailDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
@@ -417,6 +474,8 @@ namespace EmployeeAPI.Services.DutyServices
                 existingDutyDetail.DutyDetailId = dto.DutyDetailId;
                 existingDutyDetail.UserId = dto.userId;
                 existingDutyDetail.Description = dto.Description;
+                /*existingDutyDetail.UpdatedBy = currentUserFullName;
+                existingDutyDetail.UpdatedAt = DateTime.Now;*/
 
                 var result = await _dutyRepository.UpdateDutyDetailAsync(existingDutyDetail);
                 await _context.SaveChangesAsync();
@@ -427,7 +486,11 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = result.DutyDetailId,
                     userId = result.UserId,
                     Name = result.Users?.Fullname,
-                    Description = result.Description
+                    Description = result.Description,
+                    /*CreatedAt = result.CreatedAt,
+                    CreatedBy = result.CreatedBy,
+                    UpdatedAt = result.UpdatedAt,
+                    UpdatedBy = result.UpdatedBy*/
                 };
             }
             catch (Exception ex)
@@ -437,11 +500,12 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
@@ -462,9 +526,13 @@ namespace EmployeeAPI.Services.DutyServices
                         {
                             throw new UnauthorizedAccessException("Manager cannot delete duty from other department");
                         }
+                        /*detail.UpdatedAt = DateTime.Now;
+                        detail.UpdatedBy = currentUserFullName;*/
                     }
                 }
 
+                /*entity.UpdatedBy = currentUserFullName;
+                entity.UpdatedAt = DateTime.Now;*/
                 entity.IsDeleted = true;
                 foreach (var detail in entity.DutyDetails)
                 {
@@ -482,10 +550,11 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try {
+                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
@@ -506,6 +575,8 @@ namespace EmployeeAPI.Services.DutyServices
                     }
                 }
 
+                /*entity.UpdatedBy = currentUserFullName;
+                entity.UpdatedAt = DateTime.Now;*/
                 entity.IsDeleted = true;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();

@@ -1,9 +1,10 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using EmployeeAPI.Base;
 using Microsoft.EntityFrameworkCore;
 namespace EmployeeAPI.Models
 {
-    public class DutyDetail
+    public class DutyDetail //: BaseEntity
     {
         [Key]
         public Guid DutyDetailId { get; set; } = Guid.NewGuid();

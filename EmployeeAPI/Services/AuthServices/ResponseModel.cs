@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
+using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 
@@ -7,7 +8,7 @@ namespace EmployeeAPI.Services.AuthServices
 {
     public class ResponseModel
     {
-        public class AuthDto
+        public class AuthDto //: BaseDto
         {
             public Guid userId { get; set; }
             public String Username { get; set; }
@@ -55,7 +56,7 @@ namespace EmployeeAPI.Services.AuthServices
             public RoleType Role { get; set; }
         }
 
-        public class GetUserLogin
+        public class GetUserLogin //: BaseDto
         {
             public string UserName { get; set; }
         }

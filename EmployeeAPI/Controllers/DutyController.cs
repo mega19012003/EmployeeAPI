@@ -84,7 +84,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _dutyService.AddDutyAsync(dto, currentUserId, currentUserRoles);
+                var result = await _dutyService.AddDutyAsync(dto, currentUserId, currentUserRoles, User);
 
                 return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty success", result, 200));
             }
@@ -120,7 +120,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _dutyService.AddDutyDetailAsync(dto, dto.Id, currentUserId, currentUserRoles);
+                var result = await _dutyService.AddDutyDetailAsync(dto, dto.Id, currentUserId, currentUserRoles, User);
 
                 return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty detail success", result, 200));
             }
@@ -156,7 +156,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _dutyService.UpdateDutyAsync(dto, currentUserId, currentUserRoles);
+                var result = await _dutyService.UpdateDutyAsync(dto, currentUserId, currentUserRoles, User);
 
                 if (result == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Database update error", "Invalid input", 400));
@@ -196,7 +196,7 @@ namespace EmployeeAPI.Controllers
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var result = await _dutyService.UpdateDutyDetailAsync(dto, currentUserId, currentUserRoles);
+                var result = await _dutyService.UpdateDutyDetailAsync(dto, currentUserId, currentUserRoles, User);
 
                 if (result == null)
                     return BadRequest(ApiResponse<string>.ReturnResult("Database update error", "Invalid input", 400));
@@ -235,7 +235,7 @@ namespace EmployeeAPI.Controllers
                     return Unauthorized("UserId invalid");
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-                var result = await _dutyService.SoftDeleteDutyAsync(id, currentUserId, currentUserRoles);
+                var result = await _dutyService.SoftDeleteDutyAsync(id, currentUserId, currentUserRoles, User);
                 return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
             }
             catch (ArgumentException argEx)
@@ -268,7 +268,7 @@ namespace EmployeeAPI.Controllers
                     return Unauthorized("UserId invalid");
 
                 var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-                var result = await _dutyService.SoftDeleteDutyDetailAsync(id, currentUserId, currentUserRoles);
+                var result = await _dutyService.SoftDeleteDutyDetailAsync(id, currentUserId, currentUserRoles, User);
                 return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
             }
             catch (ArgumentException argEx)

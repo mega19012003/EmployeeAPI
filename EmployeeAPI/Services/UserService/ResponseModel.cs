@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Enums;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
@@ -6,7 +7,7 @@ namespace EmployeeAPI.Services.UserService
 {
     public class ResponseModel
     {
-        public class UserDto
+        public class UserDto //: BaseDto
         {
             public Guid userId { get; set; }
             public string? Fullname { get; set; }

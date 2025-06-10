@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text.Json.Serialization;
+using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
@@ -8,7 +9,7 @@ namespace EmployeeAPI.Services.CheckinServices
 {
     public class ResponseModel
     {
-        public record CheckinDto
+        public class CheckinDto 
         {
             public Guid CheckinId { get; set; }
             public Guid userId { get; set; }
@@ -20,14 +21,16 @@ namespace EmployeeAPI.Services.CheckinServices
             public string Checkin { get; set; }
             public string Checkout { get; set; }
             public double SalaryPerDay { get; set; } = 0.0;
+            public string updateBy { get; set; }
+            public DateTime UpdateAt { get; set; }
         }
-        public record CreateCheckin
+        public class CreateCheckin
         {
             //public Guid Id { get; set; }
-            [JsonIgnore]
             public Guid userId { get; set; }
-
+            [JsonIgnore]
             public DateTime? CheckinDate { get; set; } = DateTime.Now;
+            [JsonIgnore]
             public DateTime? CheckoutDate { get; set; } = DateTime.Now;
             [JsonIgnore]
             public CheckinStatus CheckinStatus { get; set; }
@@ -39,8 +42,9 @@ namespace EmployeeAPI.Services.CheckinServices
 
         public class CreateCheckout
         {
-            [JsonIgnore]
+         
             public Guid userId { get; set; }
+            [JsonIgnore]
             public DateTime? CheckoutDate { get; set; } 
             [JsonIgnore]
             public CheckinStatus CheckoutStatus { get; set; } 
@@ -48,7 +52,7 @@ namespace EmployeeAPI.Services.CheckinServices
             //public string IpAddress { get; set; }
         }
 
-        public record UpdateCheckin
+        public class UpdateCheckin
         {
             public Guid CheckinId { get; set; }
             //public Guid userId { get; set; }

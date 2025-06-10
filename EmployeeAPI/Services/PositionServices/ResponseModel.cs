@@ -1,10 +1,11 @@
-﻿using static EmployeeAPI.Services.UserService.ResponseModel;
+﻿using EmployeeAPI.Base;
+using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Services.PositionServices
 {
     public class ResponseModel
     {
-        public class PositionDTO
+        public class PositionDTO //: BaseDto
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
@@ -17,7 +18,7 @@ namespace EmployeeAPI.Services.PositionServices
             public Guid? DepartmentId { get; set; }
             public string Name { get; set; }
         }
-        public class UpdatePosition
+        public class UpdatePosition //: BaseDto
         {
             public Guid PositionId { get; set; }
             public string Name { get; set; }
@@ -28,7 +29,7 @@ namespace EmployeeAPI.Services.PositionServices
             public bool IsDeleted { get; set; }
         }
 
-        public class UserFilter
+        public class UserFilter //: BaseDto
         {
             public Guid UserId { get; set; }
             public string Name { get; set; }

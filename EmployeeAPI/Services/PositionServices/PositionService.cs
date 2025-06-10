@@ -52,7 +52,11 @@ namespace EmployeeAPI.Services.PositionServices
                         Id = f.Id,
                         Name = f.Name,
                         IsDeleted = f.IsDeleted,
-                        Department = f.Department.Name
+                        Department = f.Department.Name,
+                        /*CreatedAt = f.CreatedAt,
+                        CreatedBy = f.CreatedBy,
+                        UpdatedAt = f.UpdatedAt,
+                        UpdatedBy = f.UpdatedBy*/
                     })
                     .ToListAsync();
 
@@ -92,12 +96,13 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePosition dto)
+        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePosition dto, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if(dto.Name == null)
+                //var currentUserFullName = claim.FindFirstValue("Fullname");
+                if (dto.Name == null)
                     throw new ArgumentException("Position name cannot be null or empty");
 
                 var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
@@ -128,6 +133,10 @@ namespace EmployeeAPI.Services.PositionServices
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
                     DepartmentId = departmentId,
+                    /*CreatedAt = DateTime.UtcNow,
+                    CreatedBy = currentUserFullName,
+                    UpdatedAt = DateTime.MinValue,
+                    UpdatedBy = string.Empty,*/
                 };
 
                 await _positionRepository.AddAsync(model);
@@ -142,6 +151,10 @@ namespace EmployeeAPI.Services.PositionServices
                     Id = model.Id,
                     Name = model.Name,
                     Department = model.Department.Name,
+                    /*UpdatedAt = model.UpdatedAt,
+                    UpdatedBy = model.UpdatedBy,
+                    CreatedAt = model.CreatedAt,
+                    CreatedBy = model.CreatedBy,*/
                 };
             }
             catch (Exception ex)
@@ -152,15 +165,18 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName)
+        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                //////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find position");
 
+               /* result.UpdatedAt = DateTime.UtcNow;
+                result.UpdatedBy = currentUserFullName;*/
                 result.Name = newName;
                 await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
@@ -170,6 +186,10 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     PositionId = result.Id,
                     Name = result.Name,
+                    /*CreatedAt = result.CreatedAt,
+                    CreatedBy = result.CreatedBy,
+                    UpdatedAt = result.UpdatedAt,
+                    UpdatedBy = result.UpdatedBy*/
                 };
             }
             catch (Exception ex)
@@ -180,21 +200,24 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<string> SoftDeleteAsync(Guid id)
+        public async Task<string> SoftDeleteAsync(Guid id, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find position");
 
+                /*result.UpdatedAt = DateTime.UtcNow;
+                result.UpdatedBy = currentUserFullName;*/
                 result.IsDeleted = true;
                 await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return "Đã xóa vị trí: " + result.Name;
+                return "Đã xóa position: " + result.Name;
             }
             catch (Exception ex)
             {
@@ -233,6 +256,10 @@ namespace EmployeeAPI.Services.PositionServices
                         Position = st.Position.Name,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
+                        /*CreatedBy = st.CreatedBy,
+                        CreatedAt = st.CreatedAt,
+                        UpdatedBy = st.UpdatedBy,
+                        UpdatedAt = st.UpdatedAt*/
                     })
                     .ToList();
 

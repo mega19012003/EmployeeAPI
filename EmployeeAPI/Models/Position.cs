@@ -1,8 +1,9 @@
 ﻿using System.Text.Json.Serialization;
+using EmployeeAPI.Base;
 
 namespace EmployeeAPI.Models
 {
-    public class Position
+    public class Position //: BaseEntity
     {
         public Guid Id { get; set; }
         public string Name { get; set; }

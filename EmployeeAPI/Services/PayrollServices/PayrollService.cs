@@ -255,7 +255,7 @@ namespace EmployeeAPI.Services.PayrollServices
             double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
 
             // Tính tổng ngày làm việc dựa vào số checkin hợp lệ
-            var totalDayWorked = checkinsInMonth.Select(c => c.CheckinDate.Date).Distinct().Count();
+            var totalDayWorked = checkinsInMonth.Where(p => p.CheckinStatus != CheckinStatus.Absent || p.CheckoutStatus != CheckinStatus.Absent).Select(c => c.CheckinDate.Date).Distinct().Count();
 
             var payroll = new Payroll
             {
@@ -268,6 +268,7 @@ namespace EmployeeAPI.Services.PayrollServices
             };
 
             await _payrollRepository.CreatePayrollAsync(payroll);
+            await _context.SaveChangesAsync();
 
             return new PaidPayroll
             {

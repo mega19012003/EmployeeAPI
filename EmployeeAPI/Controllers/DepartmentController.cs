@@ -56,7 +56,7 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
-            var result = await _departmentService.AddAsync(Name);
+            var result = await _departmentService.AddAsync(Name, User);
             return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("Department added success", result, 200));
         }
 
@@ -67,7 +67,7 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
-            var result = await _departmentService.UpdateAsync(id, newName);
+            var result = await _departmentService.UpdateAsync(id, newName, User);
             return Ok(ApiResponse<ResponseModel.UpdateDepartment>.ReturnResult("Updated Department Success", result, 200));
         }
 
@@ -78,7 +78,7 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
-            var result = await _departmentService.SoftDeleteAsync(id);
+            var result = await _departmentService.SoftDeleteAsync(id, User);
             //if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("", result, 400));
             return Ok(ApiResponse<string>.ReturnResult("Delete department success", result, 200));
         }

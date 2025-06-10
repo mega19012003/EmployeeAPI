@@ -10,8 +10,8 @@ namespace EmployeeAPI.Services.CheckinServices
     {
         Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id);
-        Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto);
-        Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto);
+        Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto, Guid currentUserId, IList<string> currentUserRoles);
+        Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto, Guid currentUserId, IList<string> currentUserRoles);
         Task AutoMarkAbsentAsync(TimeOnly endTime);
         Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto, Guid currentUserId, IList<string> currentUserRoles);
         //Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);

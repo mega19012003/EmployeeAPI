@@ -79,12 +79,12 @@ namespace EmployeeAPI.Services.ImageServices
                 var match = Regex.Match(path, @"/upload/(?:v\d+/)?(.+)\.\w+$");
                 if (match.Success)
                 {
-                    return match.Groups[1].Value; // VD: UserProfilePicture/abc123
+                    return match.Groups[1].Value; 
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // ignore
+                throw new Exception("Invalid image URL format", ex);
             }
 
             return null;

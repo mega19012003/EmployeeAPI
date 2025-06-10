@@ -41,7 +41,7 @@ namespace EmployeeAPI.Controllers
         {
             /* var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
              var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
-            var result = await _userService.AdminUpdateStaffAsync(dto);
+            var result = await _userService.AdminUpdateStaffAsync(dto, User);
 
             return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update user success", result, 200));
         }
@@ -56,7 +56,8 @@ namespace EmployeeAPI.Controllers
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var result = await _userService.ManagerUpdateStaffAsync(dto, dto.UserId);
+            var managerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var result = await _userService.ManagerUpdateStaffAsync(dto, managerId, User);
 
             return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
         }
@@ -87,13 +88,9 @@ namespace EmployeeAPI.Controllers
                 var findUser = await _userService.GetByIdAsync(Id);
                 if (findUser.DepartmentId != currentUser.DepartmentId)
                     return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager cannot delete user from other department", StatusCode = 400 });
-
-                var managerResult = await _userService.SoftDeleteAsync(findUser.userId);
-
-                return Ok(ApiResponse<string>.ReturnResult("Delete user success", managerResult, 200));
             }
 
-            var result = await _userService.SoftDeleteAsync(Id);
+            var result = await _userService.SoftDeleteAsync(Id, User);
 
             return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
         }

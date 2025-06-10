@@ -44,7 +44,11 @@ namespace EmployeeAPI.Services.DepartmentServices
                     {
                         DepartmentId = f.Id,
                         Name = f.Name,
-                        IsDeleted = f.isDeleted
+                        IsDeleted = f.isDeleted,
+                        /*CreatedAt = f.CreatedAt,
+                        CreatedBy = f.CreatedBy,
+                        UpdatedAt = f.UpdatedAt,
+                        UpdatedBy = f.UpdatedBy*/
                     }).ToListAsync();
                 return new PagedResult<ResponseModel.DepartmentDto>
                 {
@@ -60,7 +64,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 throw;
             }
         }
-        public async Task<ResponseModel.DepartmentDto> GetByIdAsync(Guid id)
+        /*public async Task<ResponseModel.DepartmentDto> GetByIdAsync(Guid id)
         {
             try
             {
@@ -70,7 +74,11 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     DepartmentId = departmant.Id,
                     Name = departmant.Name,
-                    IsDeleted = departmant.isDeleted
+                    IsDeleted = departmant.isDeleted,
+                    CreatedAt = departmant.CreatedAt,
+                    CreatedBy = departmant.CreatedBy,
+                    UpdatedAt = departmant.UpdatedAt,
+                    UpdatedBy = departmant.UpdatedBy
                 };
             }
             catch (Exception ex)
@@ -78,20 +86,25 @@ namespace EmployeeAPI.Services.DepartmentServices
                 _logger.LogError(ex, "Error occurred while retrieving department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
-        }
+        }*/
 
-        public async Task<ResponseModel.CreateDepartment> AddAsync(string name)
+        public async Task<ResponseModel.CreateDepartment> AddAsync(string name, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if(!string.IsNullOrEmpty(name))
+                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
+                if (string.IsNullOrEmpty(name))
                     throw new ArgumentException("Department name cannot be null or empty");
 
                 var model = new Department
                 {
                     Id = Guid.NewGuid(),
                     Name = name,
+                    /*CreatedBy = currentUserFullName,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedBy = string.Empty,
+                    UpdatedAt = DateTime.MinValue,*/
                 };
 
                 await _repository.AddAsync(model);
@@ -102,6 +115,8 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     DepartmentId = model.Id,
                     Name = model.Name,
+                    /*CreatedBy = model.CreatedBy,
+                    CreatedAt = model.CreatedAt,*/
                 };
             }
             catch (Exception ex)
@@ -112,16 +127,18 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName)
+        public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try {
+                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find department");
 
                 result.Name = newName;
-
+                /*result.UpdatedBy = currentUserFullName;
+                result.UpdatedAt = DateTime.UtcNow;*/
                 await _repository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -130,6 +147,10 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     DepartmentId = result.Id,
                     Name = result.Name,
+                    /*CreatedBy = result.CreatedBy,
+                    CreatedAt = result.CreatedAt,
+                    UpdatedBy = result.UpdatedBy,
+                    UpdatedAt = result.UpdatedAt*/
                 };
             }
             catch (Exception ex)
@@ -140,15 +161,18 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<string> SoftDeleteAsync(Guid id)
+        public async Task<string> SoftDeleteAsync(Guid id, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find department");
 
+                /*result.UpdatedAt = DateTime.UtcNow;
+                result.UpdatedBy = currentUserFullName;*/
                 result.isDeleted = true;
                 await _repository.SoftDeleteAsync(result.Id);
                 await _context.SaveChangesAsync();
@@ -175,25 +199,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     throw new ArgumentException("Cannot find department");
                 }
-                /*var currentUserId = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                var role = _httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.Role).Value;
-
-                var currentUser = await _context.Users.FindAsync(Guid.Parse(currentUserId));
-
-                if (role == "Manager")
-                {
-                    if (departmentId.HasValue && departmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Mananager cannot use other departmentId");
-
-                    departmentId = currentUser.DepartmentId;
-                }
-
-                else if (role == "Admin")
-                {
-                    if (!departmentId.HasValue)
-                        throw new ArgumentException("Admi must input departmentId");
-                }
-                */
                 var query = _context.Departments
                     .Include(d => d.Users)
                     .Where(d => !d.isDeleted && d.Id == departmentId);
@@ -214,7 +219,11 @@ namespace EmployeeAPI.Services.DepartmentServices
                         Name = st.Fullname,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
-                        Department = st.Department.Name
+                        Department = st.Department.Name,
+                        /*CreatedAt = st.CreatedAt,
+                        UpdatedAt = st.UpdatedAt,
+                        CreatedBy = st.CreatedBy,
+                        UpdatedBy = st.UpdatedBy*/
                     })
                     .ToListAsync();
 

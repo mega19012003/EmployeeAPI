@@ -1,10 +1,11 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Services.PayrollServices
 {
     public class ResponseModel
     {
-        public record PayrollDto
+        public class PayrollDto //: BaseDto
         {
             public Guid Id { get; set; }
             public Guid UserId { get; set; }
@@ -18,21 +19,21 @@ namespace EmployeeAPI.Services.PayrollServices
             //public bool IsPaid { get; set; } = false; //đã trả lương
         }
 
-        public record CreatePayroll
+        public class CreatePayroll
         {
             public Guid UserId { get; set; }
             public string Note { get; set; }
             public DateTime CreatedDate { get; set; } 
         }
 
-        public record UpdatePayroll
+        public class UpdatePayroll
         {
             public Guid Id { get; set; }
             public Guid UserId { get; set; }
             public string Note { get; set; }
         }
 
-        public record PaidPayroll
+        public class PaidPayroll
         {
             public Guid Id { get; set; }
             public Guid UserId { get; set; }

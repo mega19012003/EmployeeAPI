@@ -206,7 +206,11 @@ namespace EmployeeAPI.Controllers
                 userEntity.BasicSalary,
                 userEntity.IsActive,
                 userEntity.IsDeleted,
-                userEntity.ImageUrl
+                userEntity.ImageUrl,
+                /*userEntity.CreatedAt,
+                userEntity.CreatedBy,
+                userEntity.UpdatedAt,
+                userEntity.UpdatedBy,*/
             };
             return Ok(new ApiResponse<object>
             {
@@ -241,7 +245,7 @@ namespace EmployeeAPI.Controllers
         [HttpPut("reset-password")]
         public async Task<IActionResult> ResetPassword([FromForm] Guid id)
         {
-            var result = await _authService.ResetPasswordAsync(id);
+            var result = await _authService.ResetPasswordAsync(id, User);
             return Ok(ApiResponse<string>.ReturnResult("Reset password success", result, 200));
         }
     }
