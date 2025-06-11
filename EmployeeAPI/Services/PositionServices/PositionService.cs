@@ -3,6 +3,7 @@ using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Positions;
+using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
 
@@ -11,13 +12,15 @@ namespace EmployeeAPI.Services.PositionServices
     public class PositionService : IPositionService
     {
         private readonly IPositionRepository _positionRepository;
+        private readonly IUserRepository _userRepository;
         private readonly IHttpContextAccessor _httpContextAccessor;
         private readonly AppDbContext _context;
         private readonly ILogger<PositionService> _logger;
 
-        public PositionService( IPositionRepository PositionRepository, IHttpContextAccessor httpContextAccessor, AppDbContext context, ILogger<PositionService> logger)
+        public PositionService( IPositionRepository PositionRepository, IUserRepository userRepository, IHttpContextAccessor httpContextAccessor, AppDbContext context, ILogger<PositionService> logger)
         {
             _positionRepository = PositionRepository;
+            _userRepository = userRepository;
             _context = context;
             _httpContextAccessor = httpContextAccessor;
             _logger = logger;
@@ -170,14 +173,34 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
+                var userIdStr = claim.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdStr, out Guid currentUserId))
+                    throw new UnauthorizedAccessException("Invalid user ID");
+
+                var roles = claim.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+                //var isAdmin = roles.Contains("Admin");
+                var isManager = roles.Contains("Manager");
+
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find position");
+                    throw new ArgumentException("Position not found");
 
-               /* result.UpdatedAt = DateTime.UtcNow;
-                result.UpdatedBy = currentUserFullName;*/
+                // Nếu là Manager thì chỉ được chỉnh Position có nhân viên thuộc phòng ban của mình
+                if (isManager)
+                {
+                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new Exception("User not found");
+
+                    bool isUsedInSameDepartment = await _context.Users.AnyAsync(u =>
+                        u.PositionId == id && u.DepartmentId == currentUser.DepartmentId);
+
+                    if (!isUsedInSameDepartment)
+                        throw new UnauthorizedAccessException("Manager can only update position from the same department");
+                }
+
                 result.Name = newName;
+
                 await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -186,16 +209,12 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     PositionId = result.Id,
                     Name = result.Name,
-                    /*CreatedAt = result.CreatedAt,
-                    CreatedBy = result.CreatedBy,
-                    UpdatedAt = result.UpdatedAt,
-                    UpdatedBy = result.UpdatedBy*/
                 };
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync(); 
-                _logger.LogError("An error occurred while updating User. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                await transaction.RollbackAsync();
+                _logger.LogError("An error occurred while updating Position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
@@ -205,13 +224,32 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
+                var userIdStr = claim.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!Guid.TryParse(userIdStr, out Guid currentUserId))
+                    throw new UnauthorizedAccessException("Invalid user ID");
+
+                var roles = claim.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+                var isManager = roles.Contains("Manager");
+
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find position");
 
+                if(isManager)
+                {
+                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new Exception("User not found");
+
+                    bool isUsedInSameDepartment = await _context.Users.AnyAsync(u =>
+                        u.PositionId == id && u.DepartmentId == currentUser.DepartmentId);
+
+                    if (!isUsedInSameDepartment)
+                        throw new UnauthorizedAccessException("Manager can only delete position from the same department");
+                }
                 /*result.UpdatedAt = DateTime.UtcNow;
                 result.UpdatedBy = currentUserFullName;*/
+
                 result.IsDeleted = true;
                 await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();

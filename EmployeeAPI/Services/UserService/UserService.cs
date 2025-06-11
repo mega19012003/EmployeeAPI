@@ -138,7 +138,6 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-
         public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId, ClaimsPrincipal user)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -240,7 +239,6 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-
         public async Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageIndex, int? pageSize)
         {
             try
@@ -314,7 +312,6 @@ namespace EmployeeAPI.Services.UserService
                 UpdatedBy = results.UpdatedBy*/
             };
         }
-    
         public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser()
         {
             var users = await _userRepository.GetAll().ToListAsync();

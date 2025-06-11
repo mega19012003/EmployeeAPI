@@ -147,7 +147,7 @@ namespace EmployeeAPI.Services.DutyServices
                 }).ToList()
             };
         }
-        public async Task<ResponseModel.DutyDto> AddDutyAsync(ResponseModel.CreateDuty dto, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
+        public async Task<ResponseModel.DutyDto> AddDutyAsync(ResponseModel.CreateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -256,7 +256,7 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claims)
+        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -358,44 +358,33 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
-        public async Task<ResponseModel.DutyDto> UpdateDutyAsync(ResponseModel.UpdateDuty dto, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
+        public async Task<ResponseModel.DutyDto> UpdateDutyAsync(ResponseModel.UpdateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var existingDuty = await _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).Include(d => d.AssignedBy).FirstOrDefaultAsync(d => d.Id == dto.Id);
+                var existingDuty = await _context.Duties
+                    .Include(d => d.DutyDetails)
+                        .ThenInclude(dd => dd.Users)
+                    .Include(d => d.AssignedBy)
+                    .FirstOrDefaultAsync(d => d.Id == dto.Id && !d.IsDeleted);
 
                 if (existingDuty == null)
                     throw new ArgumentException("Duty not found");
 
-                if (currentUserRoles.Contains("Administrator"))
+                if (currentUserRoles.Contains("Manager"))
                 {
-               
-                }
-                else if (currentUserRoles.Contains("Manager"))
-                {
-                    if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");
-
-                    // Manager: chỉ được sửa nếu chính họ là người được assign
-                    var isManagerAssigned = existingDuty.AssignedById.Equals(currentUserId);
-                    if (!isManagerAssigned)
-                        throw new UnauthorizedAccessException("Manager can only update duties assigned to themselves");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("You do not have permission to update this duty");
+                    if (existingDuty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
                 }
 
                 existingDuty.Name = dto.Name;
                 existingDuty.IsCompleted = dto.IsCompleted;
-                /*existingDuty.UpdatedAt = DateTime.Now;
-                existingDuty.UpdatedBy = currentUserFullName;*/
+
                 await _dutyRepository.UpdateDutyAsync(existingDuty);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -408,20 +397,12 @@ namespace EmployeeAPI.Services.DutyServices
                     IsCompleted = existingDuty.IsCompleted,
                     StartDate = existingDuty.StartDate,
                     AssignedBy = existingDuty.AssignedBy?.Fullname,
-                    /*CreatedAt = existingDuty.CreatedAt,
-                    CreatedBy = existingDuty.CreatedBy,
-                    UpdatedAt = existingDuty.UpdatedAt,
-                    UpdatedBy = currentUserFullName,*/
                     DutyDetails = existingDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
                         Name = d.Users?.Fullname,
-                        Description = d.Description ?? null,
-                        /*CreatedAt = d.CreatedAt,
-                        CreatedBy = d.CreatedBy,
-                        UpdatedAt = d.UpdatedAt,
-                        UpdatedBy = d.UpdatedBy,*/
+                        Description = d.Description
                     }).ToList(),
                 };
             }
@@ -432,50 +413,37 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<ResponseModel.DutyDetailDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
+
+        public async Task<ResponseModel.DutyDetailDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var existingDutyDetail = await _context.DutyDetail.Include(dd => dd.Users).Where(dd => !dd.Users.IsDeleted && dd.Users.IsActive).FirstOrDefaultAsync(d => d.DutyDetailId == dto.DutyDetailId && !d.IsDeleted);
+                var existingDutyDetail = await _context.DutyDetail
+                    .Include(dd => dd.Users)
+                    .Include(dd => dd.Duty)
+                    .Where(dd => !dd.Users.IsDeleted && dd.Users.IsActive)
+                    .FirstOrDefaultAsync(dd => dd.DutyDetailId == dto.DutyDetailId && !dd.IsDeleted);
+
                 if (existingDutyDetail == null)
                     throw new ArgumentException("Duty detail not found");
 
-                if (currentUserRoles.Contains("Administrator"))
+                if (currentUserRoles.Contains("Manager"))
                 {
-                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
-                    if (userToAssign == null)
-                        throw new ArgumentException("Cannot assign this employee");
-                }
-                else if (currentUserRoles.Contains("Manager"))
-                {
-                    if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");
-
-                    var userIdsToAssign = dto.userId;
-
-                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
-                    if (userToAssign == null)
-                        throw new ArgumentException("Cannot assign this employee");
-
-                    if(userToAssign.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager can only assign users from the same department");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
+                    if (existingDutyDetail.Duty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only update duty details assigned by themselves");
                 }
 
-                existingDutyDetail.DutyDetailId = dto.DutyDetailId;
+                var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
+                if (userToAssign == null)
+                    throw new ArgumentException("Cannot assign this employee");
+
                 existingDutyDetail.UserId = dto.userId;
                 existingDutyDetail.Description = dto.Description;
-                /*existingDutyDetail.UpdatedBy = currentUserFullName;
-                existingDutyDetail.UpdatedAt = DateTime.Now;*/
 
                 var result = await _dutyRepository.UpdateDutyDetailAsync(existingDutyDetail);
                 await _context.SaveChangesAsync();
@@ -486,11 +454,7 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = result.DutyDetailId,
                     userId = result.UserId,
                     Name = result.Users?.Fullname,
-                    Description = result.Description,
-                    /*CreatedAt = result.CreatedAt,
-                    CreatedBy = result.CreatedBy,
-                    UpdatedAt = result.UpdatedAt,
-                    UpdatedBy = result.UpdatedBy*/
+                    Description = result.Description
                 };
             }
             catch (Exception ex)
@@ -500,39 +464,86 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
+
+
+        //public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
+        //{
+        //    using var transaction = await _context.Database.BeginTransactionAsync();
+        //    try
+        //    {
+        //        //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
+        //        var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+        //        if (currentUser == null)
+        //            throw new ArgumentException("Cannot find current user");
+
+        //        var entity = await _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).FirstOrDefaultAsync(d => d.Id == dutyId && !d.IsDeleted);
+
+        //        if (entity == null)
+        //            throw new ArgumentException("Cannot find duty " + dutyId);
+
+        //        if (currentUserRoles.Contains("Manager"))
+        //        {
+        //            if (currentUser.DepartmentId == null)
+        //                throw new Exception("Manager does not belong to any department");
+
+        //            foreach (var detail in entity.DutyDetails)
+        //            {
+        //                if (detail.Users != null && detail.Users.DepartmentId != currentUser.DepartmentId)
+        //                {
+        //                    throw new UnauthorizedAccessException("Manager cannot delete duty from other department");
+        //                }
+        //                /*detail.UpdatedAt = DateTime.Now;
+        //                detail.UpdatedBy = currentUserFullName;*/
+        //            }
+        //        }
+
+        //        /*entity.UpdatedBy = currentUserFullName;
+        //        entity.UpdatedAt = DateTime.Now;*/
+        //        entity.IsDeleted = true;
+        //        foreach (var detail in entity.DutyDetails)
+        //        {
+        //            detail.IsDeleted = true;
+        //        }
+
+        //        await _context.SaveChangesAsync();
+        //        await transaction.CommitAsync();
+        //        return $"Delete duty '{entity.Name}' success";
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        await transaction.RollbackAsync();
+        //        _logger.LogError(ex, "An error occurred while soft deleting the duty. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+        //        throw;
+        //    }
+        //}
+        public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var entity = await _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).FirstOrDefaultAsync(d => d.Id == dutyId && !d.IsDeleted);
+                var entity = await _context.Duties
+                    .Include(d => d.DutyDetails)
+                    .ThenInclude(dd => dd.Users)
+                    .FirstOrDefaultAsync(d => d.Id == dutyId && !d.IsDeleted);
 
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty " + dutyId);
 
-                if (currentUserRoles.Contains("Manager"))
-                {
-                    if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");
+                bool isAdmin = currentUserRoles.Contains("Admin");
+                bool isManager = currentUserRoles.Contains("Manager");
 
-                    foreach (var detail in entity.DutyDetails)
+                if (!isAdmin)
+                {
+                    if (!isManager || entity.AssignedById != currentUserId)
                     {
-                        if (detail.Users != null && detail.Users.DepartmentId != currentUser.DepartmentId)
-                        {
-                            throw new UnauthorizedAccessException("Manager cannot delete duty from other department");
-                        }
-                        /*detail.UpdatedAt = DateTime.Now;
-                        detail.UpdatedBy = currentUserFullName;*/
+                        throw new UnauthorizedAccessException("Only the assigned user can delete this duty");
                     }
                 }
 
-                /*entity.UpdatedBy = currentUserFullName;
-                entity.UpdatedAt = DateTime.Now;*/
                 entity.IsDeleted = true;
                 foreach (var detail in entity.DutyDetails)
                 {
@@ -550,37 +561,38 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles, ClaimsPrincipal claim)
+        public async Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
-            try {
-                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
+            try
+            {
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var entity = await _context.DutyDetail.Include(dd => dd.Users).FirstOrDefaultAsync(dd => dd.DutyDetailId == dutyDetailId && !dd.IsDeleted);
+                var entity = await _context.DutyDetail
+                    .Include(dd => dd.Users)
+                    .Include(dd => dd.Duty)
+                    .FirstOrDefaultAsync(dd => dd.DutyDetailId == dutyDetailId && !dd.IsDeleted);
 
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty detail " + dutyDetailId);
 
-                if (currentUserRoles.Contains("Manager"))
-                {
-                    if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");
+                bool isAdmin = currentUserRoles.Contains("Admin");
+                bool isManager = currentUserRoles.Contains("Manager");
 
-                    if (entity.Users != null && entity.Users.DepartmentId != currentUser.DepartmentId)
+                if (!isAdmin)
+                {
+                    if (!isManager || entity.Duty.AssignedById != currentUserId)
                     {
-                        throw new UnauthorizedAccessException("Manager cannot delete duty detail from other department");
+                        throw new UnauthorizedAccessException("Only the assigned user can delete this duty detail");
                     }
                 }
 
-                /*entity.UpdatedBy = currentUserFullName;
-                entity.UpdatedAt = DateTime.Now;*/
                 entity.IsDeleted = true;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return $"Delete duty detail'{entity.DutyDetailId}' success";
+                return $"Delete duty detail '{entity.DutyDetailId}' success";
             }
             catch (Exception ex)
             {
@@ -589,5 +601,6 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
+
     }
 }

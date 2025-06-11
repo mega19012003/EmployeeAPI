@@ -161,7 +161,7 @@ namespace EmployeeAPI.Controllers
 
                 // Manager chỉ được xem user trong cùng phòng ban
                 if (result.DepartmentId != currentUser.DepartmentId)
-                    return StatusCode(403, new { Message = "User does not exist in this department or has been deleted." });
+                    return StatusCode(403, new { Message = "Get user failed", Detail = "User does not exist in this department or has been deleted.", StatusCode = 403 });
 
                 return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
             }
