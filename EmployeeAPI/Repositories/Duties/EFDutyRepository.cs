@@ -45,6 +45,7 @@ namespace EmployeeAPI.Repositories.Duties
             return await _context.DutyDetail
                 .AsNoTracking()
                 .Include(p => p.Users)
+                .Include(p => p.Duty)
                 .FirstOrDefaultAsync(p => p.DutyDetailId == id);
         }
 

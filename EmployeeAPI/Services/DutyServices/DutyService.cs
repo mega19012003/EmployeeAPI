@@ -465,57 +465,6 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
-
-        //public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
-        //{
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
-        //        var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
-        //        if (currentUser == null)
-        //            throw new ArgumentException("Cannot find current user");
-
-        //        var entity = await _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).FirstOrDefaultAsync(d => d.Id == dutyId && !d.IsDeleted);
-
-        //        if (entity == null)
-        //            throw new ArgumentException("Cannot find duty " + dutyId);
-
-        //        if (currentUserRoles.Contains("Manager"))
-        //        {
-        //            if (currentUser.DepartmentId == null)
-        //                throw new Exception("Manager does not belong to any department");
-
-        //            foreach (var detail in entity.DutyDetails)
-        //            {
-        //                if (detail.Users != null && detail.Users.DepartmentId != currentUser.DepartmentId)
-        //                {
-        //                    throw new UnauthorizedAccessException("Manager cannot delete duty from other department");
-        //                }
-        //                /*detail.UpdatedAt = DateTime.Now;
-        //                detail.UpdatedBy = currentUserFullName;*/
-        //            }
-        //        }
-
-        //        /*entity.UpdatedBy = currentUserFullName;
-        //        entity.UpdatedAt = DateTime.Now;*/
-        //        entity.IsDeleted = true;
-        //        foreach (var detail in entity.DutyDetails)
-        //        {
-        //            detail.IsDeleted = true;
-        //        }
-
-        //        await _context.SaveChangesAsync();
-        //        await transaction.CommitAsync();
-        //        return $"Delete duty '{entity.Name}' success";
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        _logger.LogError(ex, "An error occurred while soft deleting the duty. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-        //        throw;
-        //    }
-        //}
         public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -525,23 +474,19 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var entity = await _context.Duties
-                    .Include(d => d.DutyDetails)
-                    .ThenInclude(dd => dd.Users)
-                    .FirstOrDefaultAsync(d => d.Id == dutyId && !d.IsDeleted);
+                var entity = await _dutyRepository.GetDutyByIdAsync(dutyId);
 
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty " + dutyId);
 
-                bool isAdmin = currentUserRoles.Contains("Admin");
-                bool isManager = currentUserRoles.Contains("Manager");
+                var isAdmin = currentUserRoles.Contains("Admin");
+                var isManager = currentUserRoles.Contains("Manager");
 
                 if (!isAdmin)
                 {
-                    if (!isManager || entity.AssignedById != currentUserId)
-                    {
-                        throw new UnauthorizedAccessException("Only the assigned user can delete this duty");
-                    }
+
+                    if (entity.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only delete duties they assigned");
                 }
 
                 entity.IsDeleted = true;
@@ -552,7 +497,7 @@ namespace EmployeeAPI.Services.DutyServices
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return $"Delete duty '{entity.Name}' success";
+                return "Delete duty" + entity.Name + "success";
             }
             catch (Exception ex)
             {
@@ -570,29 +515,24 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var entity = await _context.DutyDetail
-                    .Include(dd => dd.Users)
-                    .Include(dd => dd.Duty)
-                    .FirstOrDefaultAsync(dd => dd.DutyDetailId == dutyDetailId && !dd.IsDeleted);
+                var entity = await _dutyRepository.GetDutyDetailByIdAsync(dutyDetailId);
 
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty detail " + dutyDetailId);
 
-                bool isAdmin = currentUserRoles.Contains("Admin");
-                bool isManager = currentUserRoles.Contains("Manager");
+                var isAdmin = currentUserRoles.Contains("Admin");
+                var isManager = currentUserRoles.Contains("Manager");
 
                 if (!isAdmin)
                 {
-                    if (!isManager || entity.Duty.AssignedById != currentUserId)
-                    {
-                        throw new UnauthorizedAccessException("Only the assigned user can delete this duty detail");
-                    }
+                    if (entity.Duty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only delete duty details of duties they assigned");
                 }
 
                 entity.IsDeleted = true;
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return $"Delete duty detail '{entity.DutyDetailId}' success";
+                return "Delete duty detail " + entity.DutyDetailId + " success";
             }
             catch (Exception ex)
             {
@@ -601,6 +541,5 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-
     }
 }
