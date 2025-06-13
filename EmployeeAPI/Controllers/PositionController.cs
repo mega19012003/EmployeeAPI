@@ -41,27 +41,13 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllPositions(string? name, int? pageIndex, int? pageSize)
         {
-            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            Guid? departmentId = null;
-
-            if (userRole == "Manager")
-            {
-                var user = await _userService.GetByIdAsync(userId);
-                if (user == null)
-                    return Unauthorized("User not found");
-
-                if (user.DepartmentId == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("User does not belong to any department", null, 400));
-
-                departmentId = user.DepartmentId;
-            }
-
-            var result = await _positionService.GetAllAsync(name, departmentId, pageIndex, pageSize);
+            var result = await _positionService.GetAllAsync(name, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!result.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
@@ -76,8 +62,13 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
         {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
             //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
-            var result = await _positionService.AddAsync(dto, User);
+            var result = await _positionService.AddAsync(dto, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
         }
 
@@ -88,30 +79,13 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
         {
-            if (id == Guid.Empty || string.IsNullOrWhiteSpace(newName))
-                return BadRequest(ApiResponse<string>.ReturnResult("Invalid input", null, 404));
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-            Guid? managerDepartmentId = null;
-
-            if (userRole == "Manager")
-            {
-                var user = await _userService.GetByIdAsync(userId);
-                if (user == null)
-                    return Unauthorized("User not found");
-
-                if (user.DepartmentId == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
-
-                managerDepartmentId = user.DepartmentId;
-            }
-
-            var result = await _positionService.UpdateAsync(id, newName, User);
+            var result = await _positionService.UpdateAsync(id, newName, currentUserId, currentUserRoles);
             if (result == null)
                 return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
 
@@ -125,26 +99,12 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
         {
-            var result = await _positionService.SoftDeleteAsync(id, User);
-            if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the position id", null, 404));
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
-
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-            Guid? managerDepartmentId = null;
-            if (userRole == "Manager")
-            {
-                var user = await _userService.GetByIdAsync(userId);
-                if (user == null)
-                    return Unauthorized("User not found");
-
-                if (user.DepartmentId == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
-
-                managerDepartmentId = user.DepartmentId;
-            }
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var result = await _positionService.SoftDeleteAsync(id, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
         }
@@ -156,29 +116,13 @@ namespace EmployeeAPI.Controllers
         [HttpGet("employee")]
         public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
         {
-            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            Guid? departmentId = null;
-
-            if (userRole == "Manager")
-            {
-                var user = await _userService.GetByIdAsync(userId);
-                if (user == null)
-                    return Unauthorized("User not found");
-
-                if (user.DepartmentId == null)
-                    return BadRequest(ApiResponse<string>.ReturnResult("Manager does not belong to any department", null, 400));
-
-                departmentId = user.DepartmentId;
-            }
-
-            var pagedResult = await _positionService.GetStaffByPositionAsync(departmentId, PositionId, pageSize, pageIndex);
-            if (pagedResult == null)
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the Position", null, 404));
+            var pagedResult = await _positionService.GetStaffByPositionAsync(PositionId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));

@@ -31,12 +31,12 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto, ClaimsPrincipal user)
+        public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var updatedBy = user.FindFirstValue("FullName") ?? null;
+               // var updatedBy = user.FindFirstValue("FullName") ?? null;
 
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null)
@@ -138,12 +138,12 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId, ClaimsPrincipal user)
+        public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var updatedBy = user.FindFirstValue("FullName") ?? null;
+               // var updatedBy = user.FindFirstValue("FullName") ?? null;
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("Cannot find user");
 
@@ -214,19 +214,35 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<string> SoftDeleteAsync(Guid Id, ClaimsPrincipal user)
+        public async Task<string> SoftDeleteAsync(Guid Id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var updatedBy = user.FindFirstValue("FullName") ?? null;
+                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                if (currentUser == null)
+                    throw new ArgumentException("Cannot find current user");
+
                 var existingUser = await _userRepository.GetByIdAsync(Id);
                 if (existingUser == null)
                     throw new ArgumentException("Cannot find user");
 
-                /*existingUser.UpdatedAt = DateTime.UtcNow;
-                existingUser.UpdatedBy = updatedBy;*/
-                await _userRepository.SoftDeleteAsync(existingUser);
+                var isAdmin = currentUserRoles.Contains("Administrator");
+                var isManager = currentUserRoles.Contains("Manager");
+
+                if (isManager && !isAdmin)
+                {
+                    if (!currentUser.DepartmentId.HasValue)
+                        throw new Exception("Manager does not belong to any department");
+
+                    if (existingUser.DepartmentId != currentUser.DepartmentId)
+                        throw new Exception("Manager cannot delete user from other department");
+                }
+
+                existingUser.IsDeleted = true;
+                existingUser.IsActive = false;
+
+                await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -288,11 +304,24 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<ResponseModel.UserDto> GetByIdAsync(Guid id)
+        public async Task<ResponseModel.UserDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
+            var isAdmin = currentUserRoles.Contains("Administrator");
+            var isManager = currentUserRoles.Contains("Manager");
+
             var results = await _userRepository.GetByIdAsync(id);
             if (results == null)
                 throw new ArgumentException("Cannot find User");
+
+            if (isManager) 
+            {
+                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                if (currentUser?.DepartmentId == null)
+                    throw new ArgumentException("Manager does not belong to any department");
+
+                if (results.DepartmentId != currentUser.DepartmentId)
+                    throw new UnauthorizedAccessException("Manager can only access users in their department");
+            }
 
             return new ResponseModel.UserDto
             {
@@ -306,42 +335,44 @@ namespace EmployeeAPI.Services.UserService
                 PositionName = results.Position?.Name ?? "No Position",
                 BasicSalary = results.BasicSalary,
                 ImageUrl = results.ImageUrl,
-                /*CreatedAt = results.CreatedAt,
-                CreatedBy = results.CreatedBy,
-                UpdatedAt = results.UpdatedAt,
-                UpdatedBy = results.UpdatedBy*/
             };
         }
-        public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser()
+        public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser(Guid currentUserId, IList<string> currentUserRoles, Guid? departmentId)
         {
-            var users = await _userRepository.GetAll().ToListAsync();
+            var isAdmin = currentUserRoles.Contains("Administrator");
+            var isManager = currentUserRoles.Contains("Manager");
 
-            var validDepartmentIds = await _context.Departments.Select(d => d.Id).ToListAsync();
+            var query = _userRepository.GetAll(); 
 
-            var invalidUsers = users
-                .Where(u => u.DepartmentId != null && !validDepartmentIds.Contains(u.DepartmentId.Value))
-                .ToList();
-
-            if (invalidUsers == null)
+            if (isManager)
             {
-                throw new ArgumentException("Department not found");
+                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                if (currentUser == null || currentUser.DepartmentId == null)
+                    throw new ArgumentException("Manager does not belong to any department");
+
+                var managerDeptId = currentUser.DepartmentId.Value;
+
+                query = query.Where(u => u.DepartmentId == managerDeptId);
+            }
+            else if (isAdmin && departmentId != null)
+            {
+                query = query.Where(u => u.DepartmentId == departmentId.Value);
             }
 
-            var userDtos = users.Select(u => new ResponseModel.UserDto
+            var validDepartmentIds = await _context.Departments.Select(d => d.Id).ToListAsync();
+            query = query.Where(u => u.DepartmentId == null || validDepartmentIds.Contains(u.DepartmentId.Value));
+
+            var userDtos = query.Select(u => new ResponseModel.UserDto
             {
                 userId = u.UserId,
                 Fullname = u.Fullname,
                 RoleName = u.Role.ToString(),
                 Address = u.Address,
                 PhoneNumber = u.PhoneNumber,
-                DepartmentName = u.Department?.Name ?? null,
-                PositionName = u.Position?.Name ?? null,
+                DepartmentName = u.Department.Name ?? null,
+                PositionName = u.Position.Name ?? null,
                 BasicSalary = u.BasicSalary,
                 ImageUrl = u.ImageUrl,
-                /*CreatedAt = u.CreatedAt,
-                CreatedBy = u.CreatedBy,
-                UpdatedAt = u.UpdatedAt,
-                UpdatedBy = u.UpdatedBy*/
             }).AsQueryable();
             return userDtos;
         }

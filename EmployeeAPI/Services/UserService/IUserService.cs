@@ -8,13 +8,13 @@ namespace EmployeeAPI.Services.UserService
     {
       
         //Task<ResponseModel.UserDto> UpdateAsync(ResponseModel.AdminUpdateDto userRole, Guid currentUserId);
-        Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto, ClaimsPrincipal user);
-        Task<ResponseModel.UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId, ClaimsPrincipal user);
-        Task<string> SoftDeleteAsync(Guid id, ClaimsPrincipal user);
+        Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto/*, ClaimsPrincipal user*/);
+        Task<ResponseModel.UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId/*, ClaimsPrincipal user*/);
+        Task<string> SoftDeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
 
         Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex);
         //Task<ResponseModel.UserDto> GetAllUser();
-        Task<ResponseModel.UserDto> GetByIdAsync(Guid id);
-        Task<IQueryable<ResponseModel.UserDto>> GetAllUser();
+        Task<ResponseModel.UserDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
+        Task<IQueryable<ResponseModel.UserDto>> GetAllUser(Guid currentUserId, IList<string> currentUserRoles, Guid? departmentId);
     }
 }

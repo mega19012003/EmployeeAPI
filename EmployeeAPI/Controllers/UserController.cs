@@ -41,7 +41,7 @@ namespace EmployeeAPI.Controllers
         {
             /* var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
              var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
-            var result = await _userService.AdminUpdateStaffAsync(dto, User);
+            var result = await _userService.AdminUpdateStaffAsync(dto);
 
             return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update user success", result, 200));
         }
@@ -57,7 +57,7 @@ namespace EmployeeAPI.Controllers
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
             var managerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _userService.ManagerUpdateStaffAsync(dto, managerId, User);
+            var result = await _userService.ManagerUpdateStaffAsync(dto, managerId);
 
             return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
         }
@@ -69,28 +69,12 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            var isManager = User.IsInRole("Manager");
-            var isAdmin = User.IsInRole("Administrator");
-
-            if (isManager && !isAdmin)
-            {
-                var currentUser = await _userService.GetByIdAsync(currentUserId);
-                if (currentUser == null)
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-                if (!currentUser.DepartmentId.HasValue)
-                    return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
-
-                var findUser = await _userService.GetByIdAsync(Id);
-                if (findUser.DepartmentId != currentUser.DepartmentId)
-                    return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager cannot delete user from other department", StatusCode = 400 });
-            }
-
-            var result = await _userService.SoftDeleteAsync(Id, User);
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var result = await _userService.SoftDeleteAsync(Id, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
         }
@@ -102,28 +86,13 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            var isManager = User.IsInRole("Manager");
-            var isAdmin = User.IsInRole("Administrator");
-
-            if (isManager && !isAdmin)
-            {
-                var result = await _userService.GetByIdAsync(currentUserId);
-                if (result == null)
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-                if (!result.DepartmentId.HasValue)
-                    return StatusCode(400, new { Message = "Delete user failed", Detail = "Manager chưa có phòng ban", StatusCode = 400 });
-
-                departmentId = result.DepartmentId;
-            }
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
             var pagedResult = await _userService.GetAllAsync(Name, departmentId, pageIndex, pageSize);
-            if (pagedResult == null)
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));
@@ -138,33 +107,13 @@ namespace EmployeeAPI.Controllers
         [HttpGet("id")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid id)
         {
-            var userIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdStr) || !Guid.TryParse(userIdStr, out Guid currentUserId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            var isManager = User.IsInRole("Manager");
-            var isAdmin = User.IsInRole("Administrator");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _userService.GetByIdAsync(id);
-            if (result == null)
-                return StatusCode(400, new { Message = "Get user failed", Detail = "User not found", StatusCode = 400 });
-
-
-            if (isManager)
-            {
-                var currentUser = await _userService.GetByIdAsync(currentUserId);
-                if (currentUser == null)
-                    return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
-
-                if (!currentUser.DepartmentId.HasValue)
-                    return StatusCode(400, new { Message = "Get user failed", Detail = "Manager does not have department", StatusCode = 400 });
-
-                // Manager chỉ được xem user trong cùng phòng ban
-                if (result.DepartmentId != currentUser.DepartmentId)
-                    return StatusCode(403, new { Message = "Get user failed", Detail = "User does not exist in this department or has been deleted.", StatusCode = 403 });
-
-                return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
-            }
+            var result = await _userService.GetByIdAsync(id, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
         }

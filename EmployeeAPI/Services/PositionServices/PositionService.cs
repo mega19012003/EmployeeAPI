@@ -26,12 +26,23 @@ namespace EmployeeAPI.Services.PositionServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, Guid? departmentId,int? pageIndex, int? pageSize)
+        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
+                var isManager = currentUserRole.Contains("Manager");
+                var isAdmin = currentUserRole.Contains("Administrator");
+                Guid? departmentId = null;
+
+                if (isManager)
+                {
+                    var user = await _userRepository.GetByIdAsync(currentUserId);
+                    if (user == null || user.DepartmentId == null)
+                        throw new Exception("Manager does not have department, Please contact admin to add Department");
+                    departmentId = user.DepartmentId;
+                }
 
                 var query = _positionRepository.GetQueryable(); 
 
@@ -99,36 +110,37 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePosition dto, ClaimsPrincipal claim)
+        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePosition dto, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //var currentUserFullName = claim.FindFirstValue("Fullname");
-                if (dto.Name == null)
+                if (string.IsNullOrWhiteSpace(dto.Name))
                     throw new ArgumentException("Position name cannot be null or empty");
-
-                var userRole = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.Role)?.Value;
-                var userIdClaim = _httpContextAccessor.HttpContext?.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                if (!Guid.TryParse(userIdClaim, out var userId))
-                    throw new UnauthorizedAccessException("Invalid user");
 
                 Guid departmentId;
 
-                if (userRole == "Manager")
+                var isManager = currentUserRole.Contains("Manager");
+                var isAdmin = currentUserRole.Contains("Administrator");
+
+                if (isManager)
                 {
-                    var user = await _context.Users.FindAsync(userId);
-                    if (user == null || user.DepartmentId == null)
-                        throw new Exception("Manager does not have department, Please contact admin to add Department");
+                    var user = await _userRepository.GetByIdAsync(currentUserId);
+                    if (user?.DepartmentId == null)
+                        throw new ArgumentException("Manager does not belong to any department. Please contact admin to add department id.");
 
                     departmentId = user.DepartmentId.Value;
                 }
+                else if (isAdmin)
+                {
+                    if (!dto.DepartmentId.HasValue)
+                        throw new ArgumentException("Admin must provide a department ID.");
+
+                    departmentId = dto.DepartmentId.Value;
+                }
                 else
                 {
-                    if (dto.DepartmentId == null)
-                        throw new ArgumentException("Admin must input department");
-                    departmentId = dto.DepartmentId.Value;
+                    throw new UnauthorizedAccessException("Only administrators or managers can add a position.");
                 }
 
                 var model = new Position
@@ -136,17 +148,12 @@ namespace EmployeeAPI.Services.PositionServices
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
                     DepartmentId = departmentId,
-                    /*CreatedAt = DateTime.UtcNow,
-                    CreatedBy = currentUserFullName,
-                    UpdatedAt = DateTime.MinValue,
-                    UpdatedBy = string.Empty,*/
                 };
 
                 await _positionRepository.AddAsync(model);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                //var result = await _context.Positions.Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == entity.Id);
                 var result = await _positionRepository.GetByIdAsync(model.Id);
 
                 return new ResponseModel.PositionDTO
@@ -154,10 +161,6 @@ namespace EmployeeAPI.Services.PositionServices
                     Id = model.Id,
                     Name = model.Name,
                     Department = model.Department.Name,
-                    /*UpdatedAt = model.UpdatedAt,
-                    UpdatedBy = model.UpdatedBy,
-                    CreatedAt = model.CreatedAt,
-                    CreatedBy = model.CreatedBy,*/
                 };
             }
             catch (Exception ex)
@@ -168,35 +171,26 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName, ClaimsPrincipal claim)
+        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var userIdStr = claim.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!Guid.TryParse(userIdStr, out Guid currentUserId))
-                    throw new UnauthorizedAccessException("Invalid user ID");
-
-                var roles = claim.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
                 //var isAdmin = roles.Contains("Admin");
-                var isManager = roles.Contains("Manager");
+                var isManager = currentUserRole.Contains("Manager");
 
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Position not found");
 
-                // Nếu là Manager thì chỉ được chỉnh Position có nhân viên thuộc phòng ban của mình
                 if (isManager)
                 {
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new Exception("User not found");
+                    if (currentUser?.DepartmentId == null)
+                        throw new ArgumentException("Manager does not belong to any department");
 
-                    bool isUsedInSameDepartment = await _context.Users.AnyAsync(u =>
-                        u.PositionId == id && u.DepartmentId == currentUser.DepartmentId);
-
-                    if (!isUsedInSameDepartment)
-                        throw new UnauthorizedAccessException("Manager can only update position from the same department");
+                    if (result.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager can only update positions in their department.");
                 }
 
                 result.Name = newName;
@@ -219,17 +213,12 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<string> SoftDeleteAsync(Guid id, ClaimsPrincipal claim)
+        public async Task<string> SoftDeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var userIdStr = claim.FindFirstValue(ClaimTypes.NameIdentifier);
-                if (!Guid.TryParse(userIdStr, out Guid currentUserId))
-                    throw new UnauthorizedAccessException("Invalid user ID");
-
-                var roles = claim.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-                var isManager = roles.Contains("Manager");
+                var isManager = currentUserRole.Contains("Manager");
 
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
@@ -238,17 +227,12 @@ namespace EmployeeAPI.Services.PositionServices
                 if(isManager)
                 {
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new Exception("User not found");
+                    if (currentUser?.DepartmentId == null)
+                        throw new ArgumentException("Manager does not belong to any department");
 
-                    bool isUsedInSameDepartment = await _context.Users.AnyAsync(u =>
-                        u.PositionId == id && u.DepartmentId == currentUser.DepartmentId);
-
-                    if (!isUsedInSameDepartment)
-                        throw new UnauthorizedAccessException("Manager can only delete position from the same department");
+                    if (result.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager can only delete positions in their department.");
                 }
-                /*result.UpdatedAt = DateTime.UtcNow;
-                result.UpdatedBy = currentUserFullName;*/
 
                 result.IsDeleted = true;
                 await _positionRepository.UpdateAsync(result);
@@ -265,14 +249,23 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid? departmentId, Guid positionId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
-
+                Guid? departmentId = null;
                 var query = await _positionRepository.GetStaffByPositionAsync(positionId, pageSize, pageIndex);
+                
+                var isManager = currentUserRole.Contains("Manager");
+                if (isManager)
+                {
+                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    if (currentUser?.DepartmentId == null)
+                        throw new Exception("Manager does not have department, please contact admin to add department.");
+                    departmentId = currentUser.DepartmentId;
+                }
 
                 var result = await _positionRepository.GetByIdAsync(positionId);
                 if (result == null)
@@ -294,10 +287,6 @@ namespace EmployeeAPI.Services.PositionServices
                         Position = st.Position.Name,
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
-                        /*CreatedBy = st.CreatedBy,
-                        CreatedAt = st.CreatedAt,
-                        UpdatedBy = st.UpdatedBy,
-                        UpdatedAt = st.UpdatedAt*/
                     })
                     .ToList();
 

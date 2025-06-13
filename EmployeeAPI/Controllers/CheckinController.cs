@@ -150,14 +150,14 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckin dto)
         {
-                var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-                if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                    return Unauthorized("UserId invalid");
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-                var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-                var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
-                return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("", updated, 200));
+            var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("", updated, 200));
         }
 
         /// <summary>

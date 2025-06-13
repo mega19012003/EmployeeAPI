@@ -66,10 +66,6 @@ namespace EmployeeAPI.Services.AuthServices
                     DepartmentId = null,
                     PositionId = null,
                     BasicSalary = 0,
-                    /*CreatedAt = DateTime.UtcNow,
-                    CreatedBy = currentUserFullName,
-                    UpdatedAt = DateTime.MinValue,
-                    UpdatedBy = string.Empty,*/
                 };
 
                 _context.Users.Add(entity);
@@ -82,8 +78,6 @@ namespace EmployeeAPI.Services.AuthServices
                     Username = entity.Username,
                     Fullname = entity.Fullname,
                     RoleName = entity.Role.ToString(),
-                    /*CreatedAt = entity.CreatedAt,
-                    CreatedBy = entity.CreatedBy,*/
                 };
             }
             catch (Exception ex)
@@ -106,9 +100,9 @@ namespace EmployeeAPI.Services.AuthServices
             {
                 var user = await _repository.LoginAsync(username, password);
                 if (user == null)
-                    throw new Exception("Wrong Username or Password ");
+                    throw new ArgumentException("Wrong Username or Password ");
                 if(user.IsDeleted)
-                    throw new Exception("UserAccount has been deleted");
+                    throw new ArgumentException("UserAccount has been deleted");
 
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
@@ -165,28 +159,6 @@ namespace EmployeeAPI.Services.AuthServices
         }
         public async Task<string> ResetPasswordAsync(Guid userId, ClaimsPrincipal claim)
         {
-            //using var transaction = await _context.Database.BeginTransactionAsync();
-            //try
-            //{
-            //    var currentUserFullName = claim.FindFirstValue("FullName");
-            //    var user = await _repository.GetByIdAsync(userId);
-            //    if (user == null)
-            //        throw new ArgumentException("User not found");
-
-            //    user.Password = HashPassword.ComputeHash("123456");
-            //    user.UpdatedAt = DateTime.UtcNow;
-            //    user.UpdatedBy = currentUserFullName;
-            //    await _repository.UpdateUserAsync(user);
-
-            //    await transaction.CommitAsync();
-            //    return "Reset password to 123456 success";
-            //}
-            //catch (Exception ex)
-            //{
-            //    await transaction.RollbackAsync();
-            //    _logger.LogError(ex, "Error occurred while resetting password");
-            //    throw;
-            //}
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -208,8 +180,6 @@ namespace EmployeeAPI.Services.AuthServices
                 }
 
                 user.Password = HashPassword.ComputeHash("123456");
-                /*user.UpdatedAt = DateTime.UtcNow;
-                user.UpdatedBy = currentUserFullName;*/
 
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();

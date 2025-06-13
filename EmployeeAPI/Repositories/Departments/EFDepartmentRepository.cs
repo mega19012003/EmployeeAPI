@@ -13,7 +13,7 @@ namespace EmployeeAPI.Repositories.Departments
             _context = context;
             _authRepository = authRepository;
         }
-        public async Task<IEnumerable<Department>> GetAllAsync(string? name, int? pageIndex, int? pageSize)
+        public async Task<IEnumerable<Department>> GetAllAsync()
         {
             return await _context.Departments.Where(p => p.isDeleted).AsNoTracking().ToListAsync();
         }
@@ -51,12 +51,12 @@ namespace EmployeeAPI.Repositories.Departments
             }
             return results;
         }
-        public async Task<IEnumerable<Department>> GetStaffByDepartmentAsync(string positionName, int? pageSize, int? pageIndex)
+        public async Task<IEnumerable<Department>> GetStaffByDepartmentAsync()
         {
             return await _context.Departments.Include(p => p.Users.Where(u => !u.IsDeleted && u.IsActive)).Where(p => !p.isDeleted).ToListAsync();
         }
 
-        public async Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid? id, int? pageSize, int? pageIndex)
+        public async Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid? id)
         {
             return await _context.Departments.Where(p => !p.isDeleted && p.Id == id).Include(p => p.Positions.Where(p => !p.IsDeleted)).AsNoTracking().ToListAsync();
         }

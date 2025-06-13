@@ -39,8 +39,6 @@ namespace EmployeeAPI.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
         {
-            /*var result = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
-            return Ok(result);*/
             var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
@@ -56,7 +54,7 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
-            var result = await _departmentService.AddAsync(Name, User);
+            var result = await _departmentService.AddAsync(Name);
             return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("Department added success", result, 200));
         }
 
@@ -67,7 +65,7 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
-            var result = await _departmentService.UpdateAsync(id, newName, User);
+            var result = await _departmentService.UpdateAsync(id, newName);
             return Ok(ApiResponse<ResponseModel.UpdateDepartment>.ReturnResult("Updated Department Success", result, 200));
         }
 
@@ -78,7 +76,7 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("id")]
         public async Task<IActionResult> SoftDeleteDepartment(Guid id)
         {
-            var result = await _departmentService.SoftDeleteAsync(id, User);
+            var result = await _departmentService.SoftDeleteAsync(id);
             //if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("", result, 400));
             return Ok(ApiResponse<string>.ReturnResult("Delete department success", result, 200));
         }
@@ -90,30 +88,13 @@ namespace EmployeeAPI.Controllers
         [HttpGet("employee")]
         public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
         {
-            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Unauthorized("Invalid user");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            Guid? id = null;
-
-            if (userRole == "Manager")
-            {
-                var user = await _userService.GetByIdAsync(userId);
-                if (user == null)
-                    return Unauthorized("User not found");
-                id = user.DepartmentId;
-
-            }
-            if (userRole == "Administrator")
-            {
-                id = departmentId;
-            }
-
-            var pagedResult = await _departmentService.GetStaffByDepartmentAsync(id, pageSize, pageIndex);
-            if (pagedResult == null)
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
+            var pagedResult = await _departmentService.GetStaffByDepartmentAsync(departmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
@@ -128,30 +109,13 @@ namespace EmployeeAPI.Controllers
         [HttpGet("position")]
         public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
         {
-            var userRole = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
-            var userIdClaim = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-            if (!Guid.TryParse(userIdClaim, out var userId))
-                return Unauthorized("Invalid user");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            Guid? id = null;
-
-            if (userRole == "Manager")
-            {
-                var user = await _userService.GetByIdAsync(userId);
-                if (user == null)
-                    return Unauthorized("Position not found");
-                id = user.DepartmentId;
-
-            }
-            if (userRole == "Administrator")
-            {
-                id = DepartmentId;
-            }
-
-            var pagedResult = await _departmentService.GetListPositionAsync(id, pageSize, pageIndex);
-            if (pagedResult == null)
-                return BadRequest(ApiResponse<string>.ReturnResult("Cannot find the department", null, 404));
+            var pagedResult = await _departmentService.GetListPositionAsync(DepartmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<PagedResult<PositionByDepartment>>.ReturnResult("Get list posistion by department success", pagedResult, 200));
         }

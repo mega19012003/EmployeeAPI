@@ -25,18 +25,6 @@ namespace EmployeeAPI.Repositories.Users
 
             return user;
         }
-        public async Task<User> SoftDeleteAsync(User User)
-        {
-            if (User == null)
-                return null;
-
-            User.IsDeleted = true;
-            //User.IsActive = false;
-
-            _context.Users.Update(User);
-
-            return User;
-        }
 
         public IQueryable<User> GetAll()
         {
@@ -45,8 +33,6 @@ namespace EmployeeAPI.Repositories.Users
                 .Include(u => u.Position)
                 .Where(u => u.IsActive && !u.IsDeleted)
                 .AsNoTracking();
-
-
             return result;
         }
         public async Task<User> GetByIdAsync(Guid id)

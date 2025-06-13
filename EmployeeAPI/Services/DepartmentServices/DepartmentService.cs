@@ -3,6 +3,7 @@ using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Departments;
+using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.UserService;
 using Microsoft.EntityFrameworkCore;
 
@@ -14,13 +15,14 @@ namespace EmployeeAPI.Services.DepartmentServices
     public class DepartmentService : IDepartmentService
     {
         private readonly IDepartmentRepository _repository;
-        //private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<DepartmentService> _logger;
 
-        public DepartmentService(IDepartmentRepository repository, AppDbContext context, ILogger<DepartmentService> logger)
+        public DepartmentService(IDepartmentRepository repository, IUserRepository userRepository, AppDbContext context, ILogger<DepartmentService> logger)
         {
             _repository = repository;
+            _userRepository = userRepository;
             _context = context;
             _logger = logger;
         }
@@ -45,10 +47,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                         DepartmentId = f.Id,
                         Name = f.Name,
                         IsDeleted = f.isDeleted,
-                        /*CreatedAt = f.CreatedAt,
-                        CreatedBy = f.CreatedBy,
-                        UpdatedAt = f.UpdatedAt,
-                        UpdatedBy = f.UpdatedBy*/
                     }).ToListAsync();
                 return new PagedResult<ResponseModel.DepartmentDto>
                 {
@@ -64,36 +62,12 @@ namespace EmployeeAPI.Services.DepartmentServices
                 throw;
             }
         }
-        /*public async Task<ResponseModel.DepartmentDto> GetByIdAsync(Guid id)
-        {
-            try
-            {
-                var departmant = await _repository.GetByIdAsync(id);
 
-                return new DepartmentDto
-                {
-                    DepartmentId = departmant.Id,
-                    Name = departmant.Name,
-                    IsDeleted = departmant.isDeleted,
-                    CreatedAt = departmant.CreatedAt,
-                    CreatedBy = departmant.CreatedBy,
-                    UpdatedAt = departmant.UpdatedAt,
-                    UpdatedBy = departmant.UpdatedBy
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while retrieving department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
-            }
-        }*/
-
-        public async Task<ResponseModel.CreateDepartment> AddAsync(string name, ClaimsPrincipal claim)
+        public async Task<ResponseModel.CreateDepartment> AddAsync(string name)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 if (string.IsNullOrEmpty(name))
                     throw new ArgumentException("Department name cannot be null or empty");
 
@@ -101,10 +75,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     Id = Guid.NewGuid(),
                     Name = name,
-                    /*CreatedBy = currentUserFullName,
-                    CreatedAt = DateTime.UtcNow,
-                    UpdatedBy = string.Empty,
-                    UpdatedAt = DateTime.MinValue,*/
                 };
 
                 await _repository.AddAsync(model);
@@ -115,8 +85,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     DepartmentId = model.Id,
                     Name = model.Name,
-                    /*CreatedBy = model.CreatedBy,
-                    CreatedAt = model.CreatedAt,*/
                 };
             }
             catch (Exception ex)
@@ -127,18 +95,16 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName, ClaimsPrincipal claim)
+        public async Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string newName)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try {
-                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find department");
 
                 result.Name = newName;
-                /*result.UpdatedBy = currentUserFullName;
-                result.UpdatedAt = DateTime.UtcNow;*/
+
                 await _repository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -147,10 +113,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                 {
                     DepartmentId = result.Id,
                     Name = result.Name,
-                    /*CreatedBy = result.CreatedBy,
-                    CreatedAt = result.CreatedAt,
-                    UpdatedBy = result.UpdatedBy,
-                    UpdatedAt = result.UpdatedAt*/
                 };
             }
             catch (Exception ex)
@@ -161,18 +123,15 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<string> SoftDeleteAsync(Guid id, ClaimsPrincipal claim)
+        public async Task<string> SoftDeleteAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Cannot find department");
 
-                /*result.UpdatedAt = DateTime.UtcNow;
-                result.UpdatedBy = currentUserFullName;*/
                 result.isDeleted = true;
                 await _repository.SoftDeleteAsync(result.Id);
                 await _context.SaveChangesAsync();
@@ -188,22 +147,46 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(Guid? departmentId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
-                var result = await _repository.GetByIdAsync(departmentId.Value);
-                if (result == null)
+
+                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                if (currentUser == null)
+                    throw new ArgumentException("Cannot find current user");
+
+                var isAdmin = currentUserRoles.Contains("Administrator");
+                var isManager = currentUserRoles.Contains("Manager");
+                Guid? filterDepartmentId;
+
+                if (isAdmin)
                 {
-                    throw new ArgumentException("Cannot find department");
+                    filterDepartmentId = departmentId;
+
+                    var dept = await _repository.GetByIdAsync(departmentId.Value);
+                    if (dept == null)
+                       throw new ArgumentException("Cannot find department");
+
                 }
+                else if (isManager)
+                {
+                    if (!currentUser.DepartmentId.HasValue)
+                        throw new Exception("Manager does not belong to any department");
+
+                    filterDepartmentId = currentUser.DepartmentId;
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException("You do not have permission to view this data");
+                }
+
                 var query = _context.Departments
                     .Include(d => d.Users)
-                    .Where(d => !d.isDeleted && d.Id == departmentId);
+                    .Where(d => !d.isDeleted && d.Id == filterDepartmentId);
                 
-
                 var allStaffs = query
                     .SelectMany(d => d.Users
                     .Where(s => s.IsActive && !s.IsDeleted));
@@ -220,10 +203,6 @@ namespace EmployeeAPI.Services.DepartmentServices
                         BasicSalary = st.BasicSalary,
                         ImageUrl = st.ImageUrl,
                         Department = st.Department.Name,
-                        /*CreatedAt = st.CreatedAt,
-                        UpdatedAt = st.UpdatedAt,
-                        CreatedBy = st.CreatedBy,
-                        UpdatedBy = st.UpdatedBy*/
                     })
                     .ToListAsync();
 
@@ -242,18 +221,41 @@ namespace EmployeeAPI.Services.DepartmentServices
             }
         }
 
-        public async Task<PagedResult<PositionByDepartment>> GetListPositionAsync(Guid? departmentId, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<PositionByDepartment>> GetListPositionAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            var result = await _repository.GetByIdAsync(departmentId.Value);
-            if (result == null)
+            var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+            if (currentUser == null)
+                throw new ArgumentException("Cannot find current user");
+
+            var isAdmin = currentUserRoles.Contains("Administrator");
+            var isManager = currentUserRoles.Contains("Manager");
+            Guid? filterDepartmentId;
+
+            if (isAdmin)
             {
-                throw new ArgumentException("Cannot find department");
+                filterDepartmentId = departmentId;
+
+                var dept = await _repository.GetByIdAsync(departmentId.Value);
+                if (dept == null)
+                    throw new ArgumentException("Cannot find department");
+
+            }
+            else if (isManager)
+            {
+                if (!currentUser.DepartmentId.HasValue)
+                    throw new Exception("Manager does not belong to any department");
+
+                filterDepartmentId = currentUser.DepartmentId;
+            }
+            else
+            {
+                throw new UnauthorizedAccessException("You do not have permission to view this data");
             }
 
-            var query = await _repository.GetPositionsByDepartmentAsync(departmentId, pageSize, pageIndex);
+            var query = await _repository.GetPositionsByDepartmentAsync(filterDepartmentId);
             var lstPosition = query.SelectMany(d => d.Positions).ToList();
 
             var totalCount = query.Count();
