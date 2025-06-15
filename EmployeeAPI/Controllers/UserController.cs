@@ -92,7 +92,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _userService.GetAllAsync(Name, departmentId, pageIndex, pageSize);
+            var pagedResult = await _userService.GetAllAsync(Name, departmentId, currentUserId, currentUserRoles, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));

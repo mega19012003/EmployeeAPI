@@ -27,15 +27,14 @@ namespace EmployeeAPI.Services.CheckinServices
         public class CreateCheckin
         {
             //public Guid Id { get; set; }
-            public Guid userId { get; set; }
-            [JsonIgnore]
+            public Guid? userId { get; set; }
+            /*[JsonIgnore]
             public DateTime? CheckinDate { get; set; } = DateTime.Now;
             [JsonIgnore]
-            public DateTime? CheckoutDate { get; set; } = DateTime.Now;
-            [JsonIgnore]
-            public CheckinStatus CheckinStatus { get; set; }
-            [JsonIgnore]
-            public CheckinStatus CheckoutStatus { get; set; } 
+            public DateTime? CheckoutDate { get; set; } = DateTime.Now;*/
+            public CheckinStatus? CheckinStatus { get; set; }
+            /*[JsonIgnore]
+            public CheckinStatus? CheckoutStatus { get; set; } */
             //[JsonIgnore]
             //public string IpAddress { get; set; }
         }
@@ -43,11 +42,11 @@ namespace EmployeeAPI.Services.CheckinServices
         public class CreateCheckout
         {
          
-            public Guid userId { get; set; }
-            [JsonIgnore]
-            public DateTime? CheckoutDate { get; set; } 
-            [JsonIgnore]
-            public CheckinStatus CheckoutStatus { get; set; } 
+            public Guid? userId { get; set; }
+            //[JsonIgnore]
+            //public DateTime? CheckoutDate { get; set; } 
+            //[JsonIgnore]
+            public CheckinStatus? CheckoutStatus { get; set; } 
             //[JsonIgnore]
             //public string IpAddress { get; set; }
         }

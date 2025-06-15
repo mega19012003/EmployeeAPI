@@ -255,7 +255,7 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -264,11 +264,29 @@ namespace EmployeeAPI.Services.UserService
 
                 var query = _userRepository.GetAll();
 
-                if (!string.IsNullOrEmpty(SearchTerm))
-                    query = query.Where(x => x.Fullname.ToLower().Contains(SearchTerm.ToLower()));
+                var isAdmin = currentUserRoles.Contains("Administrator");
+                var isManager = currentUserRoles.Contains("Manager");
 
-                if (departmentId.HasValue)
-                    query = query.Where(x => x.DepartmentId == departmentId.Value);
+                if (isManager)
+                {
+                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    if (currentUser == null || currentUser.DepartmentId == null)
+                        throw new ArgumentException("Manager không thuộc phòng ban nào");
+
+                    var managerDeptId = currentUser.DepartmentId.Value;
+
+                    query = query.Where(u => u.DepartmentId.HasValue && u.DepartmentId.Value == managerDeptId);
+                }
+
+                if (isAdmin && departmentId.HasValue)
+                {
+                    query = query.Where(u => u.DepartmentId == departmentId.Value);
+                }
+
+                if (!string.IsNullOrEmpty(SearchTerm))
+                {
+                    query = query.Where(u => u.Fullname.ToLower().Contains(SearchTerm.ToLower()));
+                }
 
                 var totalCount = await query.CountAsync();
 
@@ -336,45 +354,6 @@ namespace EmployeeAPI.Services.UserService
                 BasicSalary = results.BasicSalary,
                 ImageUrl = results.ImageUrl,
             };
-        }
-        public async Task<IQueryable<ResponseModel.UserDto>> GetAllUser(Guid currentUserId, IList<string> currentUserRoles, Guid? departmentId)
-        {
-            var isAdmin = currentUserRoles.Contains("Administrator");
-            var isManager = currentUserRoles.Contains("Manager");
-
-            var query = _userRepository.GetAll(); 
-
-            if (isManager)
-            {
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                if (currentUser == null || currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager does not belong to any department");
-
-                var managerDeptId = currentUser.DepartmentId.Value;
-
-                query = query.Where(u => u.DepartmentId == managerDeptId);
-            }
-            else if (isAdmin && departmentId != null)
-            {
-                query = query.Where(u => u.DepartmentId == departmentId.Value);
-            }
-
-            var validDepartmentIds = await _context.Departments.Select(d => d.Id).ToListAsync();
-            query = query.Where(u => u.DepartmentId == null || validDepartmentIds.Contains(u.DepartmentId.Value));
-
-            var userDtos = query.Select(u => new ResponseModel.UserDto
-            {
-                userId = u.UserId,
-                Fullname = u.Fullname,
-                RoleName = u.Role.ToString(),
-                Address = u.Address,
-                PhoneNumber = u.PhoneNumber,
-                DepartmentName = u.Department.Name ?? null,
-                PositionName = u.Position.Name ?? null,
-                BasicSalary = u.BasicSalary,
-                ImageUrl = u.ImageUrl,
-            }).AsQueryable();
-            return userDtos;
         }
     }
 }

@@ -13,6 +13,7 @@ using EmployeeAPI.Repositories.Holidays;
 using EmployeeAPI.Repositories.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 
 namespace EmployeeAPI.Services.CheckinServices
 {
@@ -129,391 +130,86 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<CheckinDto> CreateAsync(CreateCheckin dto, Guid currentUserId, IList<string> roles)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
+            var isAdmin = roles.Contains("Admin");
+            var isManager = roles.Contains("Manager");
+            var isEmployee = roles.Contains("Employee");
+
+            Guid targetUserId;
+
+            if (isAdmin)
             {
-                var isAdmin = currentUserRoles.Contains("Admin");
-                var isManager = currentUserRoles.Contains("Manager");
-                var isEmployee = currentUserRoles.Contains("Employee");
-
-                Guid targetUserId;
-
-                if (isAdmin)
+                targetUserId = dto.userId == null || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
+            }
+            else if (isManager)
+            {
+                if (dto.userId == null || dto.userId == Guid.Empty)
+                    targetUserId = currentUserId;
+                else
                 {
-                    targetUserId = dto.userId == Guid.Empty ? currentUserId : dto.userId;
-                }
-                else if (isManager)
-                {
-                    targetUserId = dto.userId == Guid.Empty ? currentUserId : dto.userId;
+                    targetUserId = dto.userId.Value;
 
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
                     var targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
-                    if (currentUser == null || targetUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng.");
-
                     if (currentUser.DepartmentId != targetUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager chỉ được check-in cho nhân viên cùng phòng ban.");
+                        throw new UnauthorizedAccessException("Không được check-in hộ nhân viên khác phòng.");
                 }
-                else if (isEmployee)
-                {
-                    targetUserId = currentUserId; // Bỏ qua dto.userId
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("Vai trò không hợp lệ để thực hiện check-in.");
-                }
-
-                var existUser = await _userRepository.GetByIdAsync(targetUserId);
-                if (existUser == null)
-                    throw new ArgumentException("Không tìm thấy người dùng.");
-
-                // TimeZone VN
-                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-
-                // Xử lý thời gian
-                DateTime utcCheckinDate;
-                DateTime vnCheckinDate;
-
-                if (dto.CheckinDate.HasValue)
-                {
-                    var inputDate = dto.CheckinDate.Value;
-                    if (inputDate.Kind == DateTimeKind.Utc)
-                    {
-                        vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(inputDate, vnTimeZone);
-                        utcCheckinDate = inputDate;
-                    }
-                    else if (inputDate.Kind == DateTimeKind.Local)
-                    {
-                        utcCheckinDate = inputDate.ToUniversalTime();
-                        vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(utcCheckinDate, vnTimeZone);
-                    }
-                    else
-                    {
-                        vnCheckinDate = inputDate;
-                        utcCheckinDate = TimeZoneInfo.ConvertTimeToUtc(vnCheckinDate, vnTimeZone);
-                    }
-                }
-                else
-                {
-                    utcCheckinDate = DateTime.UtcNow;
-                    vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(utcCheckinDate, vnTimeZone);
-                }
-
-                // Kiểm tra đã check-in ngày đó chưa (giờ VN)
-                var alreadyCheckedIn = _context.Checkins
-                    .Where(c => c.UserId == targetUserId && !c.IsDeleted)
-                    .AsEnumerable()
-                    .Any(c =>
-                        TimeZoneInfo.ConvertTimeFromUtc(c.CheckinDate, vnTimeZone).Date == vnCheckinDate.Date
-                    );
-
-                if (alreadyCheckedIn)
-                    throw new ArgumentException("Bạn đã check-in ngày này rồi.");
-
-                var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-                if (schedule == null)
-                    throw new Exception("Chưa thiết lập giờ làm việc.");
-
-                var lateTime = schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes);
-                var currentTimeOnly = TimeOnly.FromDateTime(vnCheckinDate);
-
-                bool isSunday = vnCheckinDate.DayOfWeek == DayOfWeek.Sunday;
-                bool isHoliday = await _holidayRepository.IsHolidayAsync(utcCheckinDate);
-
-                CheckinStatus status;
-                if (isSunday || isHoliday)
-                    status = CheckinStatus.Overtime;
-                else if (currentTimeOnly <= lateTime)
-                    status = CheckinStatus.OnTime;
-                else
-                    status = CheckinStatus.Late;
-
-                var checkin = new Checkin
-                {
-                    Id = Guid.NewGuid(),
-                    CheckinDate = utcCheckinDate,
-                    CheckinStatus = status,
-                    UserId = targetUserId,
-                    /*updateBy = string.Empty,
-                    UpdateAt = DateTime.MinValue,*/
-                };
-
-                await _checkinRepository.CreateAsync(checkin);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return new ResponseModel.CheckinDto
-                {
-                    CheckinId = checkin.Id,
-                    CheckinDate = checkin.CheckinDate,
-                    CheckinStatus = checkin.CheckinStatus,
-                    Checkin = checkin.CheckinStatus.ToString(),
-                    CheckoutDate = checkin.CheckoutDate,
-                    CheckoutStatus = checkin.CheckoutStatus,
-                    Checkout = checkin.CheckoutStatus.ToString(),
-                    userId = checkin.UserId,
-                    Name = existUser.Fullname,
-                    /*UpdateAt = checkin.UpdateAt,
-                    updateBy = checkin.updateBy,*/
-                };
             }
-            catch (Exception ex)
+            else if (isEmployee)
             {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Lỗi khi tạo check-in");
-                throw;
+                targetUserId = currentUserId;
             }
+            else
+            {
+                throw new UnauthorizedAccessException("Vai trò không hợp lệ.");
+            }
+
+            var user = await _userRepository.GetByIdAsync(targetUserId);
+            if (user == null)
+                throw new ArgumentException("Không tìm thấy người dùng.");
+
+            var nowUtc = DateTime.UtcNow;
+            var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+
+            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+            var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
+            var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
+
+            var checkinStatus = isSunday || isHoliday
+                ? CheckinStatus.Overtime
+                : (TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes)
+                    ? CheckinStatus.OnTime
+                    : CheckinStatus.Late);
+
+            if (isEmployee)
+            {
+                dto.CheckinStatus = checkinStatus;
+            }
+
+            var checkin = new Checkin
+            {
+                Id = Guid.NewGuid(),
+                UserId = targetUserId,
+                CheckinDate = nowUtc,
+                CheckinStatus = dto.CheckinStatus ?? checkinStatus,
+                CheckoutStatus = dto.CheckinStatus ?? CheckinStatus.Absent
+            };
+
+            await _checkinRepository.CreateAsync(checkin);
+            await _context.SaveChangesAsync();
+
+            return new CheckinDto
+            {
+                CheckinId = checkin.Id,
+                CheckinDate = checkin.CheckinDate,
+                CheckinStatus = checkin.CheckinStatus,
+                CheckoutStatus = checkin.CheckoutStatus,
+                userId = targetUserId,
+                Name = user.Fullname
+            };
         }
-        //public async Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto)
-        //{
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        var existUsers = await _userRepository.GetByIdAsync(dto.userId);
-        //        if (existUsers == null)
-        //            throw new ArgumentException("Cannot find Users");
-
-        //        // 2. Lấy múi giờ VN
-        //        var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-
-        //        // 3. Xử lý thời gian check-in:
-        //        // Nếu client gửi thời gian rồi (giờ VN) thì convert sang UTC để lưu DB
-        //        // Nếu không thì lấy giờ hiện tại UTC để lưu
-        //        DateTime utcCheckinDate;
-        //        DateTime vnCheckinDate;
-
-        //        if (dto.CheckinDate.HasValue)
-        //        {
-        //            var inputDate = dto.CheckinDate.Value;
-
-        //            if (inputDate.Kind == DateTimeKind.Utc)
-        //            {
-        //                // Nếu client gửi giờ UTC, convert sang giờ VN để xử lý
-        //                vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(inputDate, vnTimeZone);
-        //                utcCheckinDate = inputDate; // Giữ nguyên UTC để lưu DB
-        //            }
-        //            else if (inputDate.Kind == DateTimeKind.Local)
-        //            {
-        //                // Nếu local, convert local sang UTC
-        //                utcCheckinDate = inputDate.ToUniversalTime();
-        //                vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(utcCheckinDate, vnTimeZone);
-        //            }
-        //            else
-        //            {
-        //                // Unspecified (không có Kind), giả định đây là giờ VN
-        //                vnCheckinDate = inputDate;
-        //                utcCheckinDate = TimeZoneInfo.ConvertTimeToUtc(vnCheckinDate, vnTimeZone);
-        //            }
-        //        }
-        //        else
-        //        {
-        //            utcCheckinDate = DateTime.UtcNow;
-        //            vnCheckinDate = TimeZoneInfo.ConvertTimeFromUtc(utcCheckinDate, vnTimeZone);
-        //        }
-
-        //        // 4. Kiểm tra đã check-in ngày đó chưa (theo giờ VN)
-        //        var alreadyCheckedIn = _context.Checkins
-        //            .Where(c => c.UserId == dto.userId)
-        //            .AsEnumerable()
-        //            .Any(c =>
-        //                TimeZoneInfo.ConvertTimeFromUtc(c.CheckinDate, vnTimeZone).Date == vnCheckinDate.Date
-        //            );
-
-        //        if (alreadyCheckedIn)
-        //            throw new ArgumentException("Bạn đã check-in ngày này rồi.");
-
-        //        // 5. Lấy giờ làm việc trong bảng cấu hình
-        //        var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-        //        if (schedule == null)
-        //            throw new Exception("Chưa thiết lập giờ làm việc");
-
-        //        // 6. Tính thời gian muộn
-        //        var lateTime = schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes);
-
-        //        // Giờ hiện tại (theo VN) dưới dạng TimeOnly để so sánh với giờ bắt đầu
-        //        var currentTimeOnly = TimeOnly.FromDateTime(vnCheckinDate);
-
-        //        // 7. Kiểm tra ngày nghỉ lễ hoặc Chủ Nhật
-        //        bool isSunday = vnCheckinDate.DayOfWeek == DayOfWeek.Sunday;
-        //        bool isHoliday = await _holidayRepository.IsHolidayAsync(utcCheckinDate); // dùng UTC để chuẩn hóa
-
-        //        // 8. Xác định trạng thái check-in
-        //        CheckinStatus status;
-        //        if (isSunday || isHoliday)
-        //        {
-        //            status = CheckinStatus.Overtime;
-        //        }
-        //        else if (currentTimeOnly <= lateTime)
-        //        {
-        //            status = CheckinStatus.OnTime;
-        //        }
-        //        else
-        //        {
-        //            status = CheckinStatus.Late;
-        //        }
-
-        //        var checkin = new Checkin
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            CheckinDate = utcCheckinDate,
-        //            CheckinStatus = status,
-        //            UserId = dto.userId,
-        //            updateBy = string.Empty,
-        //            UpdateAt = DateTime.MinValue,
-        //        };
-
-        //        await _checkinRepository.CreateAsync(checkin);
-        //        await _context.SaveChangesAsync();
-        //        await transaction.CommitAsync();
-
-        //        return new ResponseModel.CheckinDto
-        //        {
-        //            CheckinId = checkin.Id,
-        //            CheckinDate = checkin.CheckinDate,
-        //            CheckinStatus = checkin.CheckinStatus,
-        //            Checkin = checkin.CheckinStatus.ToString(),
-        //            CheckoutDate = checkin.CheckoutDate,
-        //            CheckoutStatus = checkin.CheckoutStatus,
-        //            Checkout = checkin.CheckoutStatus.ToString(),
-        //            userId = checkin.UserId,
-        //            Name = existUsers.Fullname,
-        //            UpdateAt = checkin.UpdateAt,
-        //            updateBy = checkin.updateBy,
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        _logger.LogError(ex, "Error while creating checkin");
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto)
-        //{
-        //    using var transaction = await _context.Database.BeginTransactionAsync();
-        //    try
-        //    {
-        //        var existUser = await _userRepository.GetByIdAsync(dto.userId);
-        //        if (existUser == null)
-        //            throw new ArgumentException("Cannot find User");
-
-        //        var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        //        DateTime nowVn;
-
-        //        if (dto.CheckoutDate.HasValue)
-        //        {
-        //            var dt = dto.CheckoutDate.Value;
-        //            // Nếu Kind = Unspecified, giả định là giờ local VN
-        //            if (dt.Kind == DateTimeKind.Unspecified)
-        //            {
-        //                dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
-        //            }
-        //            // Convert giờ local hoặc UTC về giờ VN
-        //            nowVn = dt.Kind == DateTimeKind.Utc
-        //                ? TimeZoneInfo.ConvertTimeFromUtc(dt, vnTimeZone)
-        //                : TimeZoneInfo.ConvertTime(dt, vnTimeZone);
-        //        }
-        //        else
-        //        {
-        //            // Lấy giờ hiện tại theo giờ VN
-        //            var nowUtc = DateTime.UtcNow;
-        //            nowVn = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTimeZone);
-        //        }
-
-        //        var checkins = await _context.Checkins
-        //            .Where(c => c.UserId == dto.userId && !c.IsDeleted && c.CheckoutDate == default)
-        //            .ToListAsync();
-
-        //        // Tìm checkin hôm nay theo giờ VN
-        //        var todayCheckin = checkins.FirstOrDefault(c =>
-        //        {
-        //            // Đảm bảo CheckinDate có Kind phù hợp
-        //            var checkinDate = c.CheckinDate;
-        //            if (checkinDate.Kind == DateTimeKind.Unspecified)
-        //            {
-        //                // Giả định giờ trong DB là UTC (hoặc tùy theo bạn lưu thế nào)
-        //                checkinDate = DateTime.SpecifyKind(checkinDate, DateTimeKind.Utc);
-        //            }
-
-        //            var vnDate = checkinDate.Kind == DateTimeKind.Utc
-        //                ? TimeZoneInfo.ConvertTimeFromUtc(checkinDate, vnTimeZone)
-        //                : TimeZoneInfo.ConvertTime(checkinDate, vnTimeZone);
-
-        //            return vnDate.Date == nowVn.Date;
-        //        });
-
-        //        if (todayCheckin == null)
-        //            throw new ArgumentException("Bạn chưa check-in hôm nay hoặc đã checkout rồi.");
-
-        //        // Lấy cấu hình giờ làm việc
-        //        var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-        //        if (schedule == null)
-        //            throw new Exception("Chưa thiết lập giờ làm việc");
-
-        //        var endWorkTime = schedule.EndTime; 
-
-        //        var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
-
-        //        CheckinStatus newStatus;
-
-        //        if (currentTimeOnly > endWorkTime)
-        //        {
-        //            newStatus = CheckinStatus.Overtime;
-        //        }
-        //        else if (currentTimeOnly < endWorkTime)
-        //        {
-        //            newStatus = CheckinStatus.LeaveEarly;
-        //        }
-        //        else
-        //        {
-        //            newStatus = CheckinStatus.OnTime;
-        //        }
-
-        //        // Cập nhật giờ checkout, convert giờ VN về UTC trước khi lưu
-        //        var checkoutUtc = nowVn.Kind switch
-        //        {
-        //            DateTimeKind.Utc => nowVn,
-        //            DateTimeKind.Local => nowVn.ToUniversalTime(),
-        //            DateTimeKind.Unspecified => TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone),
-        //            _ => TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone)
-        //        };
-
-        //        todayCheckin.CheckoutDate = checkoutUtc;
-        //        todayCheckin.CheckoutStatus = newStatus;
-
-        //        todayCheckin.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
-
-        //        _context.Checkins.Update(todayCheckin);
-        //        await _context.SaveChangesAsync();
-        //        await transaction.CommitAsync();
-
-        //        return new ResponseModel.CheckinDto
-        //        {
-        //            CheckinId = todayCheckin.Id,
-        //            CheckinDate = todayCheckin.CheckinDate,
-        //            CheckinStatus = todayCheckin.CheckinStatus,
-        //            Checkin = todayCheckin.CheckinStatus.ToString(),
-        //            CheckoutDate = todayCheckin.CheckoutDate,
-        //            CheckoutStatus = todayCheckin.CheckoutStatus,
-        //            Checkout = todayCheckin.CheckoutStatus.ToString(),
-        //            userId = todayCheckin.UserId,
-        //            Name = existUser.Fullname,
-        //            SalaryPerDay = todayCheckin.SalaryPerDay,
-        //            updateBy = todayCheckin.updateBy,
-        //            UpdateAt = todayCheckin.UpdateAt
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        await transaction.RollbackAsync();
-        //        _logger.LogError(ex, "Error while creating checkout");
-        //        throw;
-        //    }
-        //}
 
         public async Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -528,11 +224,11 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (isAdmin)
                 {
-                    targetUserId = dto.userId == Guid.Empty ? currentUserId : dto.userId;
+                    targetUserId = !dto.userId.HasValue || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
                 }
                 else if (isManager)
                 {
-                    targetUserId = dto.userId == Guid.Empty ? currentUserId : dto.userId;
+                    targetUserId = !dto.userId.HasValue || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
 
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
                     var targetUser = await _userRepository.GetByIdAsync(targetUserId);
@@ -541,40 +237,26 @@ namespace EmployeeAPI.Services.CheckinServices
                         throw new ArgumentException("Không tìm thấy người dùng.");
 
                     if (currentUser.DepartmentId != targetUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager chỉ được checkout cho nhân viên cùng phòng ban.");
+                        throw new ArgumentException("Manager chỉ được checkout cho nhân viên cùng phòng ban.");
                 }
                 else if (isEmployee)
                 {
-                    targetUserId = currentUserId; // Bỏ qua dto.userId
+                    targetUserId = currentUserId;
                 }
                 else
                 {
-                    throw new UnauthorizedAccessException("Vai trò không hợp lệ để thực hiện checkout.");
+                    throw new Exception("");
                 }
 
                 var existUser = await _userRepository.GetByIdAsync(targetUserId);
                 if (existUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng.");
 
+                // Giờ hệ thống theo VN (ép ngầm)
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                DateTime nowVn;
+                var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
-                if (dto.CheckoutDate.HasValue)
-                {
-                    var dt = dto.CheckoutDate.Value;
-                    if (dt.Kind == DateTimeKind.Unspecified)
-                        dt = DateTime.SpecifyKind(dt, DateTimeKind.Local);
-
-                    nowVn = dt.Kind == DateTimeKind.Utc
-                        ? TimeZoneInfo.ConvertTimeFromUtc(dt, vnTimeZone)
-                        : TimeZoneInfo.ConvertTime(dt, vnTimeZone);
-                }
-                else
-                {
-                    var nowUtc = DateTime.UtcNow;
-                    nowVn = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTimeZone);
-                }
-
+                // Tìm check-in hôm nay chưa checkout
                 var checkins = await _context.Checkins
                     .Where(c => c.UserId == targetUserId && !c.IsDeleted && c.CheckoutDate == default)
                     .ToListAsync();
@@ -611,13 +293,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 else
                     newStatus = CheckinStatus.OnTime;
 
-                var checkoutUtc = nowVn.Kind switch
-                {
-                    DateTimeKind.Utc => nowVn,
-                    DateTimeKind.Local => nowVn.ToUniversalTime(),
-                    DateTimeKind.Unspecified => TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone),
-                    _ => TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone)
-                };
+                var checkoutUtc = TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone);
 
                 todayCheckin.CheckoutDate = checkoutUtc;
                 todayCheckin.CheckoutStatus = newStatus;
@@ -644,9 +320,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     Checkout = todayCheckin.CheckoutStatus.ToString(),
                     userId = todayCheckin.UserId,
                     Name = existUser.Fullname,
-                    SalaryPerDay = todayCheckin.SalaryPerDay,
-                    /*updateBy = todayCheckin.updateBy,
-                    UpdateAt = todayCheckin.UpdateAt*/
+                    SalaryPerDay = todayCheckin.SalaryPerDay
                 };
             }
             catch (Exception ex)

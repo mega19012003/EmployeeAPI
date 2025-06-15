@@ -57,41 +57,32 @@ namespace EmployeeAPI.Controllers
         /// </remarks>
         [Authorize]
         [HttpPost("Checkin")]
-        public async Task<IActionResult> Create([FromBody] ResponseModel.CreateCheckin dto)
+        public async Task<IActionResult> Create([FromForm] ResponseModel.CreateCheckin dto)
         {
-            // Lấy userId từ Claims (ngầm định user đã đăng nhập)
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            {
-                return Unauthorized(new { Message = "User ID not found in token." });
-            }
-
-            dto.userId = userId;
-
-            // Lấy IP client từ HttpContext
-            //var ip = HttpContext.Connection.RemoteIpAddress?.ToString();
+            // Lấy IP client
             var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
-
             var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
             if (!isAllowed)
             {
                 return StatusCode(403, new { Message = $"IP address {ip} is not allowed to check in.", Data = ip });
             }
-            //dto.IpAddress = ip ?? "Unknown";
 
-            var created = await _checkinService.CreateAsync(dto, currentUserId, currentUserRoles);
-            if (created == null)
+            if (dto.userId == null || dto.userId == Guid.Empty)
             {
-                return BadRequest();
+                dto.userId = currentUserId;
             }
 
-            return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkin create success", created, 200));
+            var result = await _checkinService.CreateAsync(dto, currentUserId, currentUserRoles);
+            if (result == null)
+                return BadRequest();
+
+            return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkin create success", result, 200));
         }
 
         /// <summary>
@@ -102,7 +93,7 @@ namespace EmployeeAPI.Controllers
         /// </remarks>
         [Authorize]
         [HttpPost("Chekout")]
-        public async Task<IActionResult> Checkout([FromBody] ResponseModel.CreateCheckout dto)
+        public async Task<IActionResult> Checkout([FromForm] ResponseModel.CreateCheckout dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -110,12 +101,6 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
-            {
-                return Unauthorized(new { Message = "User ID not found in token." });
-            }
-            dto.userId = userId;
             var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
             var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
             if (!isAllowed)
@@ -126,6 +111,7 @@ namespace EmployeeAPI.Controllers
             var result = await _checkinService.CheckoutAsync(dto, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkout success", result, 200));
         }
+
 
         /// <summary>
         /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban

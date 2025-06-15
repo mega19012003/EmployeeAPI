@@ -46,16 +46,6 @@ namespace EmployeeAPI.Repositories.Users
 
             return user;
         }
-        //public async Task<User> GetByIdAsync(Guid id)
-        //{
-        //    return await _context.Users.Include(p => p.Department).Include(p => p.Position)
-        //          .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
-        //}
-        //public async Task<IEnumerable<User>> GetAllAsync(string? SearchTerm, Guid? departmentId, int? pageSize, int? pageIndex)
-        //{
-        //    var user = await _context.Users.Where(p => p.IsActive == true && p.IsDeleted != true).AsNoTracking().ToListAsync();
 
-        //    return user;
-        //}
     }
 }
