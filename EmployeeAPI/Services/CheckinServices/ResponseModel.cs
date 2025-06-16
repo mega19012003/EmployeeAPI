@@ -21,8 +21,8 @@ namespace EmployeeAPI.Services.CheckinServices
             public string Checkin { get; set; }
             public string Checkout { get; set; }
             public double SalaryPerDay { get; set; } = 0.0;
-            public string updateBy { get; set; }
-            public DateTime UpdateAt { get; set; }
+            //public string updateBy { get; set; }
+            //public DateTime UpdateAt { get; set; }
         }
         public class CreateCheckin
         {
