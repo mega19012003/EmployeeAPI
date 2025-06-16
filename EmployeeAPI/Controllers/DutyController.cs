@@ -46,7 +46,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy công việc theo id
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize]
         [HttpGet("Id")]
         public async Task<IActionResult> GetByIdAsync(Guid id)
         {

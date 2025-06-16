@@ -34,16 +34,15 @@ namespace EmployeeAPI.Repositories.Duties
         {
             return await _context.Duties
                 .AsNoTracking()
-                .Include(p => p.DutyDetails)
+                .Include(p => p.DutyDetails.Where(dd => !dd.IsDeleted))
                 .ThenInclude(p => p.Users)
                 .Where(p => !p.IsDeleted)
-                .FirstOrDefaultAsync(p => p.Id == id);
+                .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
         public async Task<DutyDetail> GetDutyDetailByIdAsync(Guid id)
         {
             return await _context.DutyDetail
-                .AsNoTracking()
                 .Include(p => p.Users)
                 .Include(p => p.Duty)
                 .FirstOrDefaultAsync(p => p.DutyDetailId == id);
@@ -64,8 +63,8 @@ namespace EmployeeAPI.Repositories.Duties
 
         public async Task<DutyDetail> UpdateDutyDetailAsync(DutyDetail duty)
         {
-            var existingDuty = await _context.DutyDetail.FirstOrDefaultAsync(p => p.DutyDetailId == duty.DutyDetailId);
-            return existingDuty;
+            //var existingDuty = await _context.DutyDetail.Include(dd => dd.Users).FirstOrDefaultAsync(p => p.DutyDetailId == duty.DutyDetailId);
+            return await _context.DutyDetail.Include(dd => dd.Duty).Include(dd => dd.Users).FirstOrDefaultAsync(p => p.DutyDetailId == duty.DutyDetailId);
         }
 
         public async Task<Duty> SoftDeleteDutyAsync(Guid id)

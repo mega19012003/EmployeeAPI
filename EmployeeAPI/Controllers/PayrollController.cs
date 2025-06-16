@@ -49,14 +49,14 @@ namespace EmployeeAPI.Controllers
         /// Tình chấm công cho nhân viên, do admin/manager xử lý
         /// </summary>
         [HttpPost("calculate")]
-        public async Task<IActionResult> CalculatePayroll(Guid staffId)
+        public async Task<IActionResult> CalculatePayroll(Guid userId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var pagedResult = await _payrollService.CalculatePayrollAsync(staffId, currentUserId, currentRoles);
+            var pagedResult = await _payrollService.CalculatePayrollAsync(userId, currentUserId, currentRoles);
             return Ok(ApiResponse<ResponseModel.PaidPayroll>.ReturnResult("Calculate payroll success", pagedResult, 200));
         }
 
@@ -82,7 +82,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet("employee")]
-        public async Task<IActionResult> GetPayrollByStaff(Guid staffId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetPayrollByStaff(Guid userId, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -90,7 +90,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _payrollService.GetPayrollByUser(staffId, currentUserId, currentRoles, pageIndex, pageSize);
+            var pagedResult = await _payrollService.GetPayrollByUser(userId, currentUserId, currentRoles, pageIndex, pageSize);
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
             return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));

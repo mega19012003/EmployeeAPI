@@ -3,18 +3,22 @@ using System.Security.Claims;
 using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Duties;
+using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.DutyServices
 {
     public class DutyService : IDutyService
     {
         private readonly IDutyRepository _dutyRepository;
+        private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<DutyService> _logger;
-        public DutyService(IDutyRepository dutyRepository, AppDbContext context, ILogger<DutyService> logger)
+        public DutyService(IDutyRepository dutyRepository, IUserRepository userRepository, AppDbContext context, ILogger<DutyService> logger)
         {
             _dutyRepository = dutyRepository;
+            _userRepository = userRepository;
             _context = context;
             _logger = logger;
         }
@@ -24,7 +28,6 @@ namespace EmployeeAPI.Services.DutyServices
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            //var query = _context.Duties.Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).Where(d => !d.IsDeleted);
             var query = _dutyRepository.GetAllQueryable();
 
             if (currentUserRoles.Contains("Manager"))
@@ -36,7 +39,7 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser.DepartmentId == null)
                     throw new Exception("Manager does not belong to any department");
                 //query = query.Where(d => d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
-                query = query.Where(d => d.AssignedById == currentUserId); 
+                query = query.Where(d => d.AssignedById == currentUserId);
             }
             else if (currentUserRoles.Contains("Employee"))
             {
@@ -99,15 +102,14 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser.DepartmentId == null)
                     throw new Exception("Manager does not belong to any department");
 
-                var sameDepartment = duty.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId);
-                if (!sameDepartment)
-                    throw new UnauthorizedAccessException("Manager cannot access duties from other department");
+                if (duty.AssignedById != currentUserId)
+                    throw new UnauthorizedAccessException("Manager can only access duties they assigned");
             }
-            else
+            else if (currentUserRoles.Contains("Employee"))
             {
-                var isInDuty = duty.DutyDetails.Any(dd => dd.UserId == currentUserId);
-                if (!isInDuty)
-                    throw new UnauthorizedAccessException("You do not have permission to access this duty");
+                var isAssignedToUser = duty.DutyDetails.Any(dd => dd.UserId == currentUserId);
+                if (!isAssignedToUser)
+                    throw new UnauthorizedAccessException("employee cannot access duties from other department");
             }
 
             return new ResponseModel.DutyDto
@@ -127,6 +129,7 @@ namespace EmployeeAPI.Services.DutyServices
                 }).ToList()
             };
         }
+
         public async Task<ResponseModel.DutyDto> AddDutyAsync(ResponseModel.CreateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -136,39 +139,21 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
+                var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
+                var assignedUsers = await _context.Users
+                    .Where(u => userIdsToAssign.Contains(u.UserId))
+                    .ToListAsync();
+
+                if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
+                    throw new Exception("Cannot assign duty to deleted or inactive users");
+
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (currentUser.DepartmentId == null)
                         throw new Exception("Manager does not belong to any department");
 
-                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
-                    var assignedUsers = await _context.Users
-                        .Where(u => userIdsToAssign.Contains(u.UserId))
-                        .ToListAsync();
-
-                    if (assignedUsers.Count != userIdsToAssign.Count)
-                        throw new Exception("Cannot asign employee");
-
-                    if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                        throw new Exception("Cannot assign duty to deleted or inactive users");
-
-                    if (currentUserRoles.Contains("Manager") && assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
+                    if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new Exception("Manager can only assign users from the same department");
-
-                }
-                else if (currentUserRoles.Contains("Administrator"))
-                {
-                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
-
-                    var assignedUsers = await _context.Users.Where(u => userIdsToAssign.Contains(u.UserId)).ToListAsync();
-
-                    var anyDeletedUser = assignedUsers.Any(u => u.IsDeleted || !u.IsActive);
-                    if (anyDeletedUser)
-                        throw new Exception("Cannot assign duty to deleted or inactive users");
-                }
-                else if (!currentUserRoles.Contains("Administrator"))
-                {
-                    throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
                 }
 
                 var duty = new Duty
@@ -227,43 +212,31 @@ namespace EmployeeAPI.Services.DutyServices
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null) throw new ArgumentException("Cannot find current user");
 
+                var duty = await _dutyRepository.GetDutyByIdAsync(DutyId);
+                if (duty == null) throw new Exception("Duty not found");
+
+                var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
+                var assignedUsers = await _context.Users
+                    .Where(u => userIdsToAssign.Contains(u.UserId))
+                    .ToListAsync();
+
+                if (assignedUsers.Count != userIdsToAssign.Count)
+                    throw new Exception("One or more users not found");
+
+                if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
+                    throw new Exception("User not found");
+
                 if (currentUserRoles.Contains("Manager"))
                 {
-                    if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");
+                    if (duty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only modify duties they assigned");
 
-                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
-                    var assignedUsers = await _context.Users
-                        .Where(u => userIdsToAssign.Contains(u.UserId)) 
-                        .ToListAsync();
+                    //if (currentUser.DepartmentId == null)
+                    //    throw new Exception("Manager does not belong to any department");
 
-                    if (assignedUsers.Count != userIdsToAssign.Count)
-                        throw new Exception("Cannot asign employee");
-
-                    if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                        throw new Exception("Cannot assign duty to deleted or inactive users");
-
-                    if (currentUserRoles.Contains("Manager") && assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
+                    if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new Exception("Manager can only assign users from the same department");
                 }
-                else if (currentUserRoles.Contains("Administrator"))
-                {
-                    var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
-
-                    var assignedUsers = await _context.Users.Where(u => userIdsToAssign.Contains(u.UserId)).ToListAsync();
-
-                    var anyDeletedUser = assignedUsers.Any(u => !u.IsDeleted || u.IsActive);
-                    if (anyDeletedUser) throw new Exception("Cannot assign duty to deleted users");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("You do not have permission to assign users to duty");
-                }
-
-                var duty = await _dutyRepository.GetDutyByIdAsync(DutyId);
-
-                if (duty == null)
-                    throw new Exception("Duty not found");
 
                 // Thêm DutyDetail mới, tránh thêm trùng UserId
                 var existingUserIds = duty.DutyDetails.Select(dd => dd.UserId).ToHashSet();
@@ -317,12 +290,7 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var existingDuty = await _context.Duties
-                    .Include(d => d.DutyDetails)
-                        .ThenInclude(dd => dd.Users)
-                    .Include(d => d.AssignedBy)
-                    .FirstOrDefaultAsync(d => d.Id == dto.Id && !d.IsDeleted);
-
+                var existingDuty = await _dutyRepository.GetDutyByIdAsync(dto.Id);
                 if (existingDuty == null)
                     throw new ArgumentException("Duty not found");
 
@@ -330,6 +298,9 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (existingDuty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
+
+                    //if (currentUser.DepartmentId == null)
+                    //    throw new Exception("Manager does not belong to any department");
                 }
 
                 existingDuty.Name = dto.Name;
@@ -373,24 +344,26 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var existingDutyDetail = await _context.DutyDetail
-                    .Include(dd => dd.Users)
-                    .Include(dd => dd.Duty)
-                    .Where(dd => !dd.Users.IsDeleted && dd.Users.IsActive)
-                    .FirstOrDefaultAsync(dd => dd.DutyDetailId == dto.DutyDetailId && !dd.IsDeleted);
+                var existingDutyDetail = await _dutyRepository.GetDutyDetailByIdAsync(dto.DutyDetailId);
 
                 if (existingDutyDetail == null)
                     throw new ArgumentException("Duty detail not found");
 
-                if (currentUserRoles.Contains("Manager"))
-                {
-                    if (existingDutyDetail.Duty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only update duty details assigned by themselves");
-                }
-
                 var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
                 if (userToAssign == null)
-                    throw new ArgumentException("Cannot assign this employee");
+                    throw new ArgumentException("User not found");
+
+                if (currentUserRoles.Contains("Manager"))
+                {
+                    /*if (currentUser.DepartmentId == null)
+                        throw new Exception("Manager does not belong to any department");*/
+
+                    if (existingDutyDetail.Duty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
+
+                    if (userToAssign.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager can only assign users from the same department");
+                }
 
                 existingDutyDetail.UserId = dto.userId;
                 existingDutyDetail.Description = dto.Description;
@@ -403,7 +376,7 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     DutyDetailId = result.DutyDetailId,
                     userId = result.UserId,
-                    Name = result.Users?.Fullname,
+                    Name = result.Users.Fullname,
                     Description = result.Description
                 };
             }
@@ -429,12 +402,10 @@ namespace EmployeeAPI.Services.DutyServices
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty " + dutyId);
 
-                var isAdmin = currentUserRoles.Contains("Admin");
                 var isManager = currentUserRoles.Contains("Manager");
 
-                if (!isAdmin)
+                if (isManager)
                 {
-
                     if (entity.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager can only delete duties they assigned");
                 }
@@ -470,10 +441,9 @@ namespace EmployeeAPI.Services.DutyServices
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty detail " + dutyDetailId);
 
-                var isAdmin = currentUserRoles.Contains("Admin");
                 var isManager = currentUserRoles.Contains("Manager");
 
-                if (!isAdmin)
+                if (isManager)
                 {
                     if (entity.Duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager can only delete duty details of duties they assigned");

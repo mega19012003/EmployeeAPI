@@ -57,10 +57,8 @@ namespace EmployeeAPI.Repositories.Holidays
                 .AnyAsync(h =>
                     (h.startDate.Month < h.endDate.Month || h.startDate.Month == h.endDate.Month) &&
                     (
-                        // Nếu kỳ nghỉ chỉ trong 1 tháng
                         (h.startDate.Month == h.endDate.Month && h.startDate.Month == targetMonth && targetDay >= h.startDate.Day && targetDay <= h.endDate.Day)
                         ||
-                        // Nếu kỳ nghỉ kéo dài nhiều tháng
                         (h.startDate.Month < h.endDate.Month &&
                          (
                              (targetMonth == h.startDate.Month && targetDay >= h.startDate.Day) ||
