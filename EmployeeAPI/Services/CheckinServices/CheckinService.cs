@@ -128,89 +128,100 @@ namespace EmployeeAPI.Services.CheckinServices
         }
         public async Task<CheckinDto> CreateAsync(CreateCheckin dto, Guid currentUserId, IList<string> roles)
         {
-            var isAdmin = roles.Contains("Admin");
-            var isManager = roles.Contains("Manager");
-            var isEmployee = roles.Contains("Employee");
-
-            Guid targetUserId;
-
-            if (isAdmin)
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                targetUserId = dto.userId == null || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
-            }
-            else if (isManager)
-            {
-                if (dto.userId == null || dto.userId == Guid.Empty)
+                var isAdmin = roles.Contains("Admin");
+                var isManager = roles.Contains("Manager");
+                var isEmployee = roles.Contains("Employee");
+
+                Guid targetUserId;
+
+                if (isAdmin)
+                {
+                    targetUserId = dto.userId == null || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
+                }
+                else if (isManager)
+                {
+                    if (dto.userId == null || dto.userId == Guid.Empty)
+                        targetUserId = currentUserId;
+                    else
+                    {
+                        targetUserId = dto.userId.Value;
+
+                        var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                        var targetUser = await _userRepository.GetByIdAsync(targetUserId);
+
+                        if (currentUser.DepartmentId != targetUser.DepartmentId)
+                            throw new ArgumentException("Manager can only checkin for user in the same department");
+                    }
+                }
+                else if (isEmployee)
+                {
                     targetUserId = currentUserId;
+                }
                 else
                 {
-                    targetUserId = dto.userId.Value;
-
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    var targetUser = await _userRepository.GetByIdAsync(targetUserId);
-
-                    if (currentUser.DepartmentId != targetUser.DepartmentId)
-                        throw new ArgumentException("Manager can only checkin for user in the same department");
+                    throw new UnauthorizedAccessException("Access Denied");
                 }
+
+                var user = await _userRepository.GetByIdAsync(targetUserId);
+                if (user == null)
+                    throw new ArgumentException("User not found");
+
+                var nowUtc = DateTime.UtcNow;
+                var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+
+                var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+                var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
+                var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
+
+                var checkinStatus = isSunday || isHoliday
+                    ? CheckinStatus.Overtime
+                    : (
+                        TimeOnly.FromDateTime(vnTime) > schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes)
+                            ? CheckinStatus.Overtime
+                            : (
+                                TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes)
+                                    ? CheckinStatus.OnTime
+                                    : CheckinStatus.Late
+                            )
+                      );
+
+                if (isEmployee)
+                {
+                    dto.CheckinStatus = checkinStatus;
+                }
+
+                var checkin = new Checkin
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = targetUserId,
+                    CheckinDate = nowUtc,
+                    CheckinStatus = dto.CheckinStatus ?? checkinStatus,
+                    CheckoutStatus = dto.CheckinStatus ?? CheckinStatus.Absent
+                };
+
+                await _checkinRepository.CreateAsync(checkin);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new CheckinDto
+                {
+                    CheckinId = checkin.Id,
+                    CheckinDate = checkin.CheckinDate,
+                    CheckinStatus = checkin.CheckinStatus,
+                    CheckoutStatus = checkin.CheckoutStatus,
+                    userId = targetUserId,
+                    Name = user.Fullname
+                };
             }
-            else if (isEmployee)
+            catch (Exception ex)
             {
-                targetUserId = currentUserId;
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error when creating checkin");
+                throw;
             }
-            else
-            {
-                throw new UnauthorizedAccessException("Access Denied");
-            }
-
-            var user = await _userRepository.GetByIdAsync(targetUserId);
-            if (user == null)
-                throw new ArgumentException("User not found");
-
-            var nowUtc = DateTime.UtcNow;
-            var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
-
-            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-            var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
-            var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
-
-            var checkinStatus = isSunday || isHoliday
-                ? CheckinStatus.Overtime
-                : (
-                    TimeOnly.FromDateTime(vnTime) > schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes)
-                        ? CheckinStatus.Overtime
-                        : (
-                            TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes)
-                                ? CheckinStatus.OnTime
-                                : CheckinStatus.Late
-                        )
-                  );
-
-            if (isEmployee)
-            {
-                dto.CheckinStatus = checkinStatus;
-            }
-
-            var checkin = new Checkin
-            {
-                Id = Guid.NewGuid(),
-                UserId = targetUserId,
-                CheckinDate = nowUtc,
-                CheckinStatus = dto.CheckinStatus ?? checkinStatus,
-                CheckoutStatus = dto.CheckinStatus ?? CheckinStatus.Absent
-            };
-
-            await _checkinRepository.CreateAsync(checkin);
-            await _context.SaveChangesAsync();
-
-            return new CheckinDto
-            {
-                CheckinId = checkin.Id,
-                CheckinDate = checkin.CheckinDate,
-                CheckinStatus = checkin.CheckinStatus,
-                CheckoutStatus = checkin.CheckoutStatus,
-                userId = targetUserId,
-                Name = user.Fullname
-            };
         }
 
         public async Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto, Guid currentUserId, IList<string> currentUserRoles)

@@ -144,7 +144,6 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Làm mới token
         /// </summary>
-        [Authorize]
         [HttpPost, Route("refresh-token")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
         {
