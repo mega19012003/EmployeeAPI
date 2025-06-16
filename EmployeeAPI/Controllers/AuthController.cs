@@ -29,7 +29,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Đăng ký người dùng, sẽ do admin/manager tạo, Manger chỉ dc phep tạo user với role là employee
+        /// Đăng ký người dùng, sẽ do admin/manager tạo, Manager chỉ dc phep tạo user với role là employee
         /// </summary>
         /// <remarks>         
         /// RoleType enum values:
@@ -49,11 +49,7 @@ namespace EmployeeAPI.Controllers
         /// Đăng nhập người dùng
         /// </summary>
         /// <remarks>
-        /// - TK admin
-        ///{
-        ///  "username": "Admin123",
-        ///  "password": "anno123"
-        ///}
+        /// - TK admin               { "username": "Admin123", "password": "anno123" }
         /// - Tk manager Thu ngân    { "username": "Manager123", "password": "anno123" }
         /// - Tk manager It          { "username": "Manager456", "password": "anno123" }
         /// - Tk manager sửa chữa    { "username": "Manager789", "password": "anno123" }
