@@ -145,7 +145,7 @@ namespace EmployeeAPI.Services.DutyServices
                     .ToListAsync();
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                    throw new Exception("Cannot assign duty to deleted or inactive users");
+                    throw new Exception("User not found");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
@@ -170,24 +170,19 @@ namespace EmployeeAPI.Services.DutyServices
                     }).ToList()
                 };
 
-                var created = await _dutyRepository.AddAsync(duty);
+                await _dutyRepository.AddAsync(duty);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                var result = await _dutyRepository.GetDutyByIdAsync(created.Id);
-
-                if (result == null)
-                    throw new Exception("Cannot load result info after creation");
-
                 return new ResponseModel.DutyDto
                 {
-                    Id = result.Id,
-                    Name = result.Name,
-                    IsCompleted = result.IsCompleted,
-                    StartDate = result.StartDate,
-                    AssignedById = result.AssignedById,
-                    AssignedBy = result.AssignedBy?.Fullname,
-                    DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    Id = duty.Id,
+                    Name = duty.Name,
+                    IsCompleted = duty.IsCompleted,
+                    StartDate = duty.StartDate,
+                    AssignedById = duty.AssignedById,
+                    AssignedBy = duty.AssignedBy?.Fullname,
+                    DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
@@ -263,6 +258,8 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     Id = result.Id,
                     Name = result.Name ?? null,
+                    StartDate = result.StartDate,
+                    AssignedById = result.AssignedById,
                     AssignedBy = result.AssignedBy?.Fullname,
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
@@ -368,16 +365,16 @@ namespace EmployeeAPI.Services.DutyServices
                 existingDutyDetail.UserId = dto.userId;
                 existingDutyDetail.Description = dto.Description;
 
-                var result = await _dutyRepository.UpdateDutyDetailAsync(existingDutyDetail);
+                await _dutyRepository.UpdateDutyDetailAsync(existingDutyDetail);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
                 return new ResponseModel.DutyDetailDto
                 {
-                    DutyDetailId = result.DutyDetailId,
-                    userId = result.UserId,
-                    Name = result.Users.Fullname,
-                    Description = result.Description
+                    DutyDetailId = existingDutyDetail.DutyDetailId,
+                    userId = existingDutyDetail.UserId,
+                    Name = existingDutyDetail.Users.Fullname,
+                    Description = existingDutyDetail.Description
                 };
             }
             catch (Exception ex)
@@ -398,7 +395,6 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new ArgumentException("Cannot find current user");
 
                 var entity = await _dutyRepository.GetDutyByIdAsync(dutyId);
-
                 if (entity == null)
                     throw new ArgumentException("Cannot find duty " + dutyId);
 
@@ -416,9 +412,10 @@ namespace EmployeeAPI.Services.DutyServices
                     detail.IsDeleted = true;
                 }
 
+                await _dutyRepository.UpdateDutyAsync(entity);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return "Delete duty" + entity.Name + "success";
+                return "Delete duty " + entity.Name + " success";
             }
             catch (Exception ex)
             {
@@ -450,6 +447,7 @@ namespace EmployeeAPI.Services.DutyServices
                 }
 
                 entity.IsDeleted = true;
+                await _dutyRepository.UpdateDutyDetailAsync(entity);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
                 return "Delete duty detail " + entity.DutyDetailId + " success";
