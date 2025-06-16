@@ -59,7 +59,27 @@ namespace EmployeeAPI.Services.AllowedIpServices
         public async Task<AllowedIP> AddAsync(string ip)
         {
             if (await _allowedIPRepository.ExistsAsync(ip))
-                throw new ArgumentException("IP đã tồn tại trong danh sách.");
+                throw new ArgumentException("IP already existed");
+
+            // Kiểm tra IP cụ thể
+            bool isSpecificIP = IPAddress.TryParse(ip, out var _);
+
+            // Kiểm tra dải IP (CIDR), ví dụ: "192.168.1.0/24"
+            bool isCIDR = false;
+            if (ip.Contains("/"))
+            {
+                var parts = ip.Split('/');
+                if (parts.Length == 2 &&
+                    IPAddress.TryParse(parts[0], out _) &&
+                    int.TryParse(parts[1], out int prefixLength) &&
+                    prefixLength >= 0 && prefixLength <= 32)
+                {
+                    isCIDR = true;
+                }
+            }
+
+            if (!isSpecificIP && !isCIDR)
+                throw new ArgumentException("Định dạng IP không hợp lệ. Vui lòng nhập IP cụ thể (ví dụ: 192.168.1.1) hoặc dải IP CIDR (ví dụ: 192.168.1.0/24).");
 
             var allowedIP = new AllowedIP
             {
