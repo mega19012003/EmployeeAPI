@@ -51,7 +51,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
             catch
             {
                 await trasaction.RollbackAsync();
-                throw new ArgumentException("Invalid input data for schedule time update. Please check the provided values and try again.");
+                throw new ArgumentException("Invalid input data for schedule time update.");
             }
         }
     }

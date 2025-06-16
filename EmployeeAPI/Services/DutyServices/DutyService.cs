@@ -64,20 +64,12 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = d.StartDate,
                     AssignedById = d.AssignedById,
                     AssignedBy = d.AssignedBy.Fullname,
-                    /*CreatedAt = d.CreatedAt,
-                    CreatedBy = d.CreatedBy,
-                    UpdatedAt = d.UpdatedAt,
-                    UpdatedBy = d.UpdatedBy,*/
                     DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = dd.DutyDetailId,
                         userId = dd.UserId,
                         Description = dd.Description,
                         Name = dd.Users.Fullname,
-                        /*CreatedAt = dd.CreatedAt,
-                        CreatedBy = dd.CreatedBy,
-                        UpdatedAt = dd.UpdatedAt,
-                        UpdatedBy = dd.UpdatedBy,*/
                     }).ToList()
                 })
                 .AsNoTracking()
@@ -98,11 +90,7 @@ namespace EmployeeAPI.Services.DutyServices
             if (duty == null)
                 throw new ArgumentException("Cannot find duty");
 
-            /*if (currentUserRoles.Contains("Administrator"))
-            {
-                // Admin: full quyền, không cần kiểm tra
-            }
-            else */if (currentUserRoles.Contains("Manager"))
+            if (currentUserRoles.Contains("Manager"))
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
@@ -130,20 +118,12 @@ namespace EmployeeAPI.Services.DutyServices
                 StartDate = duty.StartDate,
                 AssignedById = duty.AssignedById,
                 AssignedBy = duty.AssignedBy?.Fullname,
-                /*CreatedAt = duty.CreatedAt,
-                CreatedBy = duty.CreatedBy,
-                UpdatedAt = duty.UpdatedAt,
-                UpdatedBy = duty.UpdatedBy,*/
                 DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                 {
                     DutyDetailId = d.DutyDetailId,
                     userId = d.UserId,
                     Description = d.Description,
                     Name = d.Users?.Fullname,
-                    /*CreatedAt = d.CreatedAt,
-                    CreatedBy = d.CreatedBy,
-                    UpdatedAt = d.UpdatedAt,
-                    UpdatedBy = d.UpdatedBy*/
                 }).ToList()
             };
         }
@@ -152,7 +132,6 @@ namespace EmployeeAPI.Services.DutyServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                ////var currentUserFullName = claim.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
@@ -198,19 +177,11 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = dto.Name,
                     StartDate = DateTime.Now,
                     AssignedById = currentUserId,
-                    /*CreatedAt = DateTime.Now,
-                    CreatedBy = currentUserFullName,
-                    UpdatedAt = DateTime.MinValue,
-                    UpdatedBy = string.Empty,*/
                     DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                     {
                         UserId = d.userId,
                         Description = d.Description,
                         IsDeleted = false,
-                        /*CreatedAt = DateTime.Now,
-                        CreatedBy = currentUserFullName,
-                        UpdatedAt = DateTime.MinValue,
-                        UpdatedBy = string.Empty,*/
                     }).ToList()
                 };
 
@@ -231,10 +202,6 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = result.StartDate,
                     AssignedById = result.AssignedById,
                     AssignedBy = result.AssignedBy?.Fullname,
-                    /*UpdatedAt = result.UpdatedAt,
-                    UpdatedBy = result.UpdatedBy,
-                    CreatedAt = result.CreatedAt,
-                    CreatedBy = result.CreatedBy,*/
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
@@ -242,10 +209,6 @@ namespace EmployeeAPI.Services.DutyServices
                         Description = d.Description,
                         Name = d.Users?.Fullname,
                         IsDeleted = d.IsDeleted,
-                        /*CreatedAt = d.CreatedAt,
-                        CreatedBy = d.CreatedBy,
-                        UpdatedAt = d.UpdatedAt,
-                        UpdatedBy = d.UpdatedBy*/
                     }).ToList()
                 };
             }
@@ -261,7 +224,6 @@ namespace EmployeeAPI.Services.DutyServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //var currentUserFullName = claims.FindFirstValue("Fullname") ?? null;
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null) throw new ArgumentException("Cannot find current user");
 
@@ -314,10 +276,6 @@ namespace EmployeeAPI.Services.DutyServices
                             UserId = detailDto.userId,
                             Description = detailDto.Description,
                             DutyId = duty.Id,
-                            /*CreatedAt = DateTime.Now,
-                            CreatedBy = currentUserFullName,
-                            UpdatedAt = DateTime.MinValue,
-                            UpdatedBy = string.Empty,*/
                         });
                     }
                 }
@@ -333,20 +291,12 @@ namespace EmployeeAPI.Services.DutyServices
                     Id = result.Id,
                     Name = result.Name ?? null,
                     AssignedBy = result.AssignedBy?.Fullname,
-                    /*UpdatedAt = result.UpdatedAt,
-                    UpdatedBy = result.UpdatedBy,
-                    CreatedAt = result.CreatedAt,
-                    CreatedBy = result.CreatedBy,*/
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         userId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
-                        /*CreatedAt = d.CreatedAt,
-                        CreatedBy = d.CreatedBy,
-                        UpdatedAt = d.UpdatedAt,
-                        UpdatedBy = d.UpdatedBy,*/
                     }).ToList()
                 };
             }

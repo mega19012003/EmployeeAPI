@@ -82,8 +82,6 @@ namespace EmployeeAPI.Services.CheckinServices
                         userId = c.UserId,
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
-                        /*updateBy = c.updateBy,
-                        UpdateAt = c.UpdateAt*/
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinDto>
@@ -120,8 +118,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     userId = c.UserId,
                     Name = c.Users.Fullname,
                     SalaryPerDay = c.SalaryPerDay,
-                    /*updateBy = c.updateBy,
-                    UpdateAt = c.UpdateAt*/
                 };
             }
             catch (Exception ex)
@@ -154,7 +150,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     var targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
                     if (currentUser.DepartmentId != targetUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Không được check-in hộ nhân viên khác phòng.");
+                        throw new ArgumentException("Manager can only checkin for user in the same department");
                 }
             }
             else if (isEmployee)
@@ -163,12 +159,12 @@ namespace EmployeeAPI.Services.CheckinServices
             }
             else
             {
-                throw new UnauthorizedAccessException("Vai trò không hợp lệ.");
+                throw new UnauthorizedAccessException("Access Denied");
             }
 
             var user = await _userRepository.GetByIdAsync(targetUserId);
             if (user == null)
-                throw new ArgumentException("Không tìm thấy người dùng.");
+                throw new ArgumentException("User not found");
 
             var nowUtc = DateTime.UtcNow;
             var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
@@ -240,10 +236,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     var targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
                     if (currentUser == null || targetUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng.");
+                        throw new ArgumentException("User not found");
 
                     if (currentUser.DepartmentId != targetUser.DepartmentId)
-                        throw new ArgumentException("Manager chỉ được checkout cho nhân viên cùng phòng ban.");
+                        throw new ArgumentException("Manager can only checkout for user in the same department");
                 }
                 else if (isEmployee)
                 {
@@ -256,7 +252,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var existUser = await _userRepository.GetByIdAsync(targetUserId);
                 if (existUser == null)
-                    throw new ArgumentException("Không tìm thấy người dùng.");
+                    throw new ArgumentException("User not found");
 
                 // Giờ hệ thống theo VN (ép ngầm)
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -281,11 +277,11 @@ namespace EmployeeAPI.Services.CheckinServices
                 });
 
                 if (todayCheckin == null)
-                    throw new ArgumentException("Bạn chưa check-in hôm nay hoặc đã checkout rồi.");
+                    throw new ArgumentException("You haven't checkin today or already checkout");
 
                 var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
                 if (schedule == null)
-                    throw new Exception("Chưa thiết lập giờ làm việc");
+                    throw new Exception("Work schedule time hasn't been set");
 
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
                 var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
@@ -332,7 +328,7 @@ namespace EmployeeAPI.Services.CheckinServices
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Lỗi khi checkout");
+                _logger.LogError(ex, "Error when checkout");
                 throw;
             }
         }
@@ -357,7 +353,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (currentUserRoles.Contains("Manager"))
                 {
-                    // Manager: chỉ được update checkin nhân viên trong cùng phòng ban
                     if (currentUser.DepartmentId != employee.DepartmentId)
                         throw new UnauthorizedAccessException("Manager cannot update checkin made by employeee from other department");
 
@@ -368,8 +363,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 existing.CheckinStatus = dto.CheckinStatus;
                 existing.CheckoutStatus = dto.CheckoutStatus;
                 existing.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, employee, existing.CheckinStatus, existing.CheckoutStatus);
-                /*existing.updateBy = currentUser.Fullname;
-                existing.UpdateAt = DateTime.UtcNow;*/
 
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
@@ -387,8 +380,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     userId = existing.UserId,
                     Name = employee.Fullname,
                     SalaryPerDay = existing.SalaryPerDay,
-                    /*updateBy = existing.updateBy,
-                    UpdateAt = existing.UpdateAt*/
                 };
             }
             catch
@@ -413,13 +404,13 @@ namespace EmployeeAPI.Services.CheckinServices
             bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
             if (isHoliday)
             {
-                _logger.LogInformation("Hôm nay là ngày nghỉ lễ, không đánh dấu Absent.");
+                _logger.LogInformation("today is a holiday, no marking absent");
                 return;
             }
 
             if (TimeOnly.FromDateTime(vnNow) < endTime)
             {
-                _logger.LogInformation("Chưa đến giờ kết thúc ca làm, chưa đánh dấu Absent.");
+                _logger.LogInformation("Not work end time, no marking absent");
                 return;
             }
 
@@ -466,7 +457,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Đã đánh dấu {absentUsers.Count} người dùng vắng mặt ngày {today:dd/MM/yyyy}.");
+            _logger.LogInformation($"Mark {absentUsers.Count} users absent on {today:dd/MM/yyyy}.");
         }
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
@@ -502,9 +493,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new UnauthorizedAccessException("Access Denied");
                 }
 
-                /*existing.UpdateAt = DateTime.UtcNow;
-                existing.updateBy = currentUser.Fullname;*/
-
                 await _checkinRepository.SoftDeleteAsync(id);
 
                 await _context.SaveChangesAsync();
@@ -525,7 +513,6 @@ namespace EmployeeAPI.Services.CheckinServices
         {
             try
             {
-                // Gán ngầm staffId nếu user là employee
                 if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
                 {
                     staffId = currentUserId;
@@ -542,7 +529,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     if (staffId == null || staffId == Guid.Empty)
                         throw new ArgumentException("Please input userid");
 
-                    // Kiểm tra user được lấy có tồn tại không
                     var findUser = await _userRepository.GetByIdAsync(staffId.Value);
                     if (findUser == null)
                         throw new ArgumentException("Cannot find user id");
@@ -553,7 +539,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 else if (currentUserRoles.Contains("Administrator"))
                 {
-                    // Admin: bắt buộc phải nhập staffId
                     if (staffId == null || staffId == Guid.Empty)
                         throw new ArgumentException("Please input user id");
                 }
@@ -585,8 +570,6 @@ namespace EmployeeAPI.Services.CheckinServices
                         userId = c.UserId,
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
-                        /*updateBy = c.updateBy,
-                        UpdateAt = c.UpdateAt*/
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinDto>

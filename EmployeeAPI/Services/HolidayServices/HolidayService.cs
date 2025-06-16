@@ -169,7 +169,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 await _holidayRepository.SoftDeleteAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return "Delete holiday success";
+                return "Delete holiday" + result.name + " success";
             }
             catch (Exception ex)
             {

@@ -119,7 +119,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return "Đã xóa payroll " + id;
+                return "Payroll " + id + " deleted";
             }
             catch (Exception ex)
             {
@@ -191,7 +191,7 @@ namespace EmployeeAPI.Services.PayrollServices
                         UserId = c.UserId,
                         Salary = c.Salary,
                         Note = c.Note,
-                        Name = c.Users.Fullname ?? "null",
+                        Name = c.Users.Fullname ?? null,
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.PayrollDto>
@@ -219,7 +219,6 @@ namespace EmployeeAPI.Services.PayrollServices
             if (staff == null)
                 throw new Exception("Cannot find User");
 
-            // Kiểm tra quyền Manager
             if (currentUserRoles.Contains("Manager"))
             {
                 var currentUser = await _context.Users

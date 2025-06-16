@@ -137,7 +137,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return "Đã xóa phòng ban: " + result.Name;
+                return "Department " + result.Name + " deleted";
             }
             catch (Exception ex)
             {

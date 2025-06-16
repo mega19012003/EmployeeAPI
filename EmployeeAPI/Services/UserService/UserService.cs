@@ -209,7 +209,7 @@ namespace EmployeeAPI.Services.UserService
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Lỗi khi cập nhật nhân viên. Message: {Message}", ex.Message);
+                _logger.LogError(ex, "Error when updating user Message: {Message}", ex.Message);
                 throw;
             }
         }
@@ -271,7 +271,7 @@ namespace EmployeeAPI.Services.UserService
                 {
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
                     if (currentUser == null || currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager không thuộc phòng ban nào");
+                        throw new ArgumentException("Manager doesn't belong to any department");
 
                     var managerDeptId = currentUser.DepartmentId.Value;
 
@@ -338,7 +338,7 @@ namespace EmployeeAPI.Services.UserService
                     throw new ArgumentException("Manager does not belong to any department");
 
                 if (results.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager can only access users in their department");
+                    throw new UnauthorizedAccessException("Manager can only access list users in their department");
             }
 
             return new ResponseModel.UserDto

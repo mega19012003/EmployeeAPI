@@ -239,7 +239,7 @@ namespace EmployeeAPI.Services.PositionServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return "Đã xóa position: " + result.Name;
+                return "Position " + result.Name + " deleted";
             }
             catch (Exception ex)
             {

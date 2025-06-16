@@ -103,7 +103,7 @@ namespace EmployeeAPI.Services.AllowedIpServices
             await _allowedIPRepository.DeleteAsync(id);
             await _context.SaveChangesAsync();
 
-            return "Đã xóa ip: " + result.IPAddress;
+            return "IP " + result.IPAddress + " deleted";
         }
 
         public async Task<bool> IsIPAllowedAsync(string ip)

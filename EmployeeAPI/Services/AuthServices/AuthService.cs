@@ -102,7 +102,7 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("Wrong Username or Password ");
                 if(user.IsDeleted)
-                    throw new ArgumentException("UserAccount has been deleted");
+                    throw new ArgumentException("User Account has been deleted");
 
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
