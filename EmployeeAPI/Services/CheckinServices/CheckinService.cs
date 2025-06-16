@@ -179,9 +179,15 @@ namespace EmployeeAPI.Services.CheckinServices
 
             var checkinStatus = isSunday || isHoliday
                 ? CheckinStatus.Overtime
-                : (TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes)
-                    ? CheckinStatus.OnTime
-                    : CheckinStatus.Late);
+                : (
+                    TimeOnly.FromDateTime(vnTime) > schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes)
+                        ? CheckinStatus.Overtime
+                        : (
+                            TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes)
+                                ? CheckinStatus.OnTime
+                                : CheckinStatus.Late
+                        )
+                  );
 
             if (isEmployee)
             {
@@ -281,14 +287,14 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (schedule == null)
                     throw new Exception("Chưa thiết lập giờ làm việc");
 
-                var endWorkTime = schedule.EndTime;
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
+                var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
 
                 CheckinStatus newStatus;
 
-                if (currentTimeOnly > endWorkTime)
+                if (currentTimeOnly > overtimeThreshold)
                     newStatus = CheckinStatus.Overtime;
-                else if (currentTimeOnly < endWorkTime)
+                else if (currentTimeOnly < schedule.EndTime)
                     newStatus = CheckinStatus.LeaveEarly;
                 else
                     newStatus = CheckinStatus.OnTime;
