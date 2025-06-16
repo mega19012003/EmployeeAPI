@@ -88,7 +88,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật checkout cho user, manager chỉ dc checkin hộ nhân viên trong cùng phòng ban
         /// </summary>
-        ///<remarks>
+        /// <remarks>
         /// - CheckIn Status enum values:
         /// - OnTime = 0 (đúng giờ)
         /// - Late = 1 (Đi trễ hơn 15 phút)
