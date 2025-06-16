@@ -37,6 +37,8 @@ namespace EmployeeAPI.Services.CheckinStatusConfigServices
                 existing.Name = updatedConfig.Name;
 
                 await _repository.UpdateAsync(existing);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
 
                 return new CheckinStatusConfig
                 {
