@@ -50,10 +50,23 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Tạo checkin cho user
+        /// Tạo checkin cho user, , manager chỉ dc checkin hộ nhân viên trong cùng phòng ban
         /// </summary>
-        ///<remarks>
-        /// Nhập dateTime theo dạng "yyyy-MM-ddTHH:mm:ss" (ví dụ: "2000-01-01T08:00:00" ) hoặc excute luôn cũng dc
+        /// <remarks>
+        /// - CheckIn Status enum values:
+        /// - OnTime = 0 (đúng giờ)
+        /// - Late = 1 (Đi trễ hơn 15 phút)
+        /// - Absent = 4 (Vắng)
+        /// - LeaveWithPermission = 5 (Vắng có phép)
+        /// - Others = 6 (lí do khác)
+        /// -
+        /// - CheckOut Status enum values:
+        /// - OnTime = 0 (đúng giờ)
+        /// - LeaveEarly = 2 (Về sớm so với quy định)
+        /// - Overtime = 3 (làm tăng ca)
+        /// - Absent = 4 (Vắng)
+        /// - LeaveWithPermission = 5 (Vắng có phép)
+        /// - Others = 6 (lí do khác)
         /// </remarks>
         [Authorize]
         [HttpPost("Checkin")]
@@ -86,7 +99,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật checkout cho user, manager chỉ dc checkin hộ nhân viên trong cùng phòng ban
+        /// Cập nhật checkout cho user
         /// </summary>
         /// <remarks>
         /// - CheckIn Status enum values:
