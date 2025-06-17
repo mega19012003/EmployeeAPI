@@ -11,11 +11,6 @@ namespace EmployeeAPI.Repositories.Holidays
         {
             _context = context;
         }
-        //public async Task<IEnumerable<Holiday>> GetAllAsync()
-        //{
-        //    var query = _context.Holidays.AsQueryable();
-        //    return await query.ToListAsync();
-        //}
         public IQueryable<Holiday> GetAll()
         {
             return _context.Holidays.Where(h => !h.IsDeleted).AsQueryable();

@@ -40,13 +40,13 @@ namespace EmployeeAPI.Repositories.Checkins
         public async Task CreateAsync(Checkin checkin)
         {
             _context.Checkins.Add(checkin);
-            //await _context.SaveChangesAsync();
+
         }
 
         public async Task UpdateAsync(Checkin checkin)
         {
             _context.Checkins.Update(checkin);
-            //await _context.SaveChangesAsync();
+
         }
 
         public async Task<Checkin> SoftDeleteAsync(Guid id)
@@ -54,7 +54,6 @@ namespace EmployeeAPI.Repositories.Checkins
             var checkin = await _context.Checkins.FindAsync(id);
             if (checkin == null) return null;
             checkin.IsDeleted = true;
-            //await _context.SaveChangesAsync();
             return checkin;
         }
 

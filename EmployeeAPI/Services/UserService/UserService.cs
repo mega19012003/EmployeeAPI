@@ -36,8 +36,6 @@ namespace EmployeeAPI.Services.UserService
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-               // var updatedBy = user.FindFirstValue("FullName") ?? null;
-
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null)
                     throw new ArgumentException("Cannot find user");
@@ -101,9 +99,6 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.PositionId = dto.PositionId;
                 }
 
-                /*existingUser.UpdatedAt = DateTime.UtcNow;
-                existingUser.UpdatedBy = updatedBy;*/
-
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
@@ -124,10 +119,6 @@ namespace EmployeeAPI.Services.UserService
                     DepartmentName = existingUser.Department?.Name,
                     PositionName = existingUser.Position?.Name,
                     ImageUrl = existingUser.ImageUrl,
-                    /*CreatedAt = existingUser.CreatedAt,
-                    CreatedBy = existingUser.CreatedBy,
-                    UpdatedAt = existingUser.UpdatedAt,
-                    UpdatedBy = existingUser.UpdatedBy,*/
                 };
             }
             catch (Exception ex)
@@ -143,7 +134,6 @@ namespace EmployeeAPI.Services.UserService
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-               // var updatedBy = user.FindFirstValue("FullName") ?? null;
                 var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
                 if (existingUser == null) throw new ArgumentException("Cannot find user");
 
@@ -177,8 +167,6 @@ namespace EmployeeAPI.Services.UserService
                 }
 
                 existingUser.DepartmentId = manager.DepartmentId;
-                /*existingUser.UpdatedAt = DateTime.UtcNow;
-                existingUser.UpdatedBy = updatedBy;*/
 
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
@@ -200,10 +188,6 @@ namespace EmployeeAPI.Services.UserService
                     DepartmentName = existingUser.Department?.Name,
                     PositionName = existingUser.Position?.Name,
                     ImageUrl = existingUser.ImageUrl,
-                    /*CreatedAt = existingUser.CreatedAt,
-                    CreatedBy = existingUser.CreatedBy,
-                    UpdatedAt = existingUser.UpdatedAt,
-                    UpdatedBy = existingUser.UpdatedBy,*/
                 };
             }
             catch (Exception ex)

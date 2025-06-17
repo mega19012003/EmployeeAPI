@@ -84,6 +84,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 throw;
             }
         }
+        
         public async Task<ResponseModel.HolidayDto> CreateAsync(ResponseModel.CreateHoliday dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -124,6 +125,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 throw;
             }
         }
+
         public async Task<ResponseModel.HolidayDto> UpdateAsync(ResponseModel.UpdateHoliday dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -157,6 +159,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 throw;
             }
         }
+        
         public async Task<string> DeleteAsync(Guid id)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -178,6 +181,5 @@ namespace EmployeeAPI.Services.HolidayServices
                 throw;
             }
         }
-
     }
 }

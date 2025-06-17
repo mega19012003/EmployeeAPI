@@ -25,7 +25,6 @@ namespace EmployeeAPI.Repositories.Users
 
             return user;
         }
-
         public IQueryable<User> GetAll()
         {
             var result = _context.Users

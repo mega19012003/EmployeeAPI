@@ -213,7 +213,6 @@ namespace EmployeeAPI.Services.PayrollServices
 
         public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
-            //var staff = await _context.Users.Include(u => u.Department).FirstOrDefaultAsync(u => u.UserId == staffId && (u.IsDeleted == false && u.IsActive == true)); //fix this
             var staff = await _userRepository.GetByIdAsync(staffId);
 
             if (staff == null)

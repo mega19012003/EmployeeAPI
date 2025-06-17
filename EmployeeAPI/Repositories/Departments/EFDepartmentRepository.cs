@@ -51,6 +51,7 @@ namespace EmployeeAPI.Repositories.Departments
             }
             return results;
         }
+
         public async Task<IEnumerable<Department>> GetStaffByDepartmentAsync()
         {
             return await _context.Departments.Include(p => p.Users.Where(u => !u.IsDeleted && u.IsActive)).Where(p => !p.isDeleted).ToListAsync();
