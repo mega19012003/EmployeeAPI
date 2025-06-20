@@ -66,15 +66,15 @@ namespace EmployeeAPI.Controllers
         /// Xóa người dùng, sẽ do admin/manager xử lý
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("{UserId}")]
-        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid UserId)
+        [HttpDelete("{userId}")]
+        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid userId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var result = await _userService.SoftDeleteAsync(UserId, currentUserId, currentUserRoles);
+            var result = await _userService.SoftDeleteAsync(userId, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
         }
@@ -104,8 +104,8 @@ namespace EmployeeAPI.Controllers
         /// Admin có thể lấy thông tin của người dùng, manager chỉ có thể lấy thông tin user theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("id")] 
-        public async Task<IActionResult> GetUserByIdAsync(Guid id)
+        [HttpGet("{userId}")] 
+        public async Task<IActionResult> GetUserByIdAsync(Guid userId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -113,7 +113,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _userService.GetByIdAsync(id, currentUserId, currentUserRoles);
+            var result = await _userService.GetByIdAsync(userId, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<UserResultDto>.ReturnResult("Get user success", result, 200));
         }

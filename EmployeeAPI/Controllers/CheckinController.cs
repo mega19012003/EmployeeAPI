@@ -176,8 +176,8 @@ namespace EmployeeAPI.Controllers
         /// Xóa checkin, nếu thông tin checkin ko có so với sự thật, manager chỉ dc xóa checkin của nhân viên trong cùng phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> SoftDeleteAsync(Guid id)
+        [HttpDelete("{checkinId}")]
+        public async Task<IActionResult> SoftDeleteAsync(Guid checkinId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -185,7 +185,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _checkinService.DeleteAsync(id, currentUserId, currentUserRoles);
+            var result = await _checkinService.DeleteAsync(checkinId, currentUserId, currentUserRoles);
             //var result = await _checkinService.DeleteAsync(id);
             if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find User", result, 200));
 

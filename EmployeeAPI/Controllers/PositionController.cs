@@ -96,15 +96,15 @@ namespace EmployeeAPI.Controllers
         /// Xóa mềm chức vụ trong phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid id)
+        [HttpDelete("{positionId}")]
+        public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid positionId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var result = await _positionService.SoftDeleteAsync(id, currentUserId, currentUserRoles);
+            var result = await _positionService.SoftDeleteAsync(positionId, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
         }
@@ -131,8 +131,8 @@ namespace EmployeeAPI.Controllers
         }
 
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("{PositionId}")]
-        public async Task<IActionResult> GetPositionById(Guid PositionId)
+        [HttpGet("{positionId}")]
+        public async Task<IActionResult> GetPositionById(Guid positionId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -140,7 +140,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _positionService.GetByIdAsync(PositionId, currentUserId, currentUserRoles);
+            var pagedResult = await _positionService.GetByIdAsync(positionId, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<PositionResultDto>.ReturnResult("Get position success", pagedResult, 200));
         }

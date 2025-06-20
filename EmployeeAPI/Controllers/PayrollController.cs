@@ -64,8 +64,8 @@ namespace EmployeeAPI.Controllers
         /// Xóa chấm công, do admin/manager xử lý
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> DeletePayroll(Guid id)
+        [HttpDelete("{payrollId}")]
+        public async Task<IActionResult> DeletePayroll(Guid payrollId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -73,7 +73,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _payrollService.SoftDeletePayroll(id, currentUserId, currentRoles);
+            var result = await _payrollService.SoftDeletePayroll(payrollId, currentUserId, currentRoles);
             return Ok(ApiResponse<string>.ReturnResult("Delete payroll success", result, 200));
         }
 

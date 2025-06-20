@@ -47,7 +47,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("dutyId")]
+        [HttpGet("{dutyId}")]
         public async Task<IActionResult> GetDutyByIdAsync(Guid dutyId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy chi tiết công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("detailId")]
+        [HttpGet("{detailId}")]
         public async Task<IActionResult> GetDetailByIdAsync(Guid detailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -155,30 +155,30 @@ namespace EmployeeAPI.Controllers
         /// Xóa công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> SoftDeleteDutyAsync([FromForm] Guid id)
+        [HttpDelete("{dutyId}")]
+        public async Task<IActionResult> SoftDeleteDutyAsync([FromForm] Guid dutyId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var result = await _dutyService.SoftDeleteDutyAsync(id, currentUserId, currentUserRoles);
+            var result = await _dutyService.SoftDeleteDutyAsync(dutyId, currentUserId, currentUserRoles);
             return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
         }
         /// <summary>
         /// Xóa chi tiết công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("DutyDetail")]
-        public async Task<IActionResult> SoftDeleteDutyDetailAsync([FromForm] Guid id)
+        [HttpDelete("{detailId}")]
+        public async Task<IActionResult> SoftDeleteDutyDetailAsync([FromForm] Guid detailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var result = await _dutyService.SoftDeleteDutyDetailAsync(id, currentUserId, currentUserRoles);
+            var result = await _dutyService.SoftDeleteDutyDetailAsync(detailId, currentUserId, currentUserRoles);
             return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
         }
     }

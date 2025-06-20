@@ -45,10 +45,10 @@ namespace EmployeeAPI.Controllers
         ///  Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> Delete(Guid id)
+        [HttpDelete("{ipId}")]
+        public async Task<IActionResult> Delete(Guid ipId)
         {
-            var result = await _allowedIPService.DeleteAsync(id);
+            var result = await _allowedIPService.DeleteAsync(ipId);
             return Ok(ApiResponse<string>.ReturnResult("Delete IP success", result, 200));
         }
 

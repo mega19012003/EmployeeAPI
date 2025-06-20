@@ -64,17 +64,17 @@ namespace EmployeeAPI.Controllers
         /// Xóa ngày nghỉ lễ, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Administrator")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> SoftDeleteHoliday(Guid id)
+        [HttpDelete("{holidayId}")]
+        public async Task<IActionResult> SoftDeleteHoliday(Guid holidayId)
         {
-                if (id == Guid.Empty)
-                    return BadRequest();
+            if (holidayId == Guid.Empty)
+                return BadRequest();
 
-                var result = await _holidayService.DeleteAsync(id);
-                if (result == null)
-                    return BadRequest();
+            var result = await _holidayService.DeleteAsync(holidayId);
+            if (result == null)
+                return BadRequest();
 
-                return Ok(ApiResponse<string>.ReturnResult("Soft delete holiday success", result, 200));
+            return Ok(ApiResponse<string>.ReturnResult("Soft delete holiday success", result, 200));
         }
     }
 }

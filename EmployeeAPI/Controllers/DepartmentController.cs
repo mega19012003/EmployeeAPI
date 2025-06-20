@@ -85,10 +85,10 @@ namespace EmployeeAPI.Controllers
         /// Xóa phòng ban, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Administrator")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> SoftDeleteDepartment(Guid id)
+        [HttpDelete("{departmentId}")]
+        public async Task<IActionResult> SoftDeleteDepartment(Guid departmentId)
         {
-            var result = await _departmentService.SoftDeleteAsync(id);
+            var result = await _departmentService.SoftDeleteAsync(departmentId);
             //if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("", result, 400));
             return Ok(ApiResponse<string>.ReturnResult("Delete department success", result, 200));
         }
