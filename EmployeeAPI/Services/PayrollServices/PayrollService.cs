@@ -83,6 +83,40 @@ namespace EmployeeAPI.Services.PayrollServices
             };
         }
 
+        public async Task<ResponseModel.PayrollResultDto> GetById(Guid id, Guid currentUserId, IList<string> currentUserRoles)
+        {
+            var payroll = await _payrollRepository.GetPayrollById(id);
+            if (payroll == null)
+                throw new ArgumentException("Cannot find payroll");
+            
+            var manager = currentUserRoles.Contains("Manager");
+            var employee = currentUserRoles.Contains("Employee");
+
+            if(manager)
+            {
+                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                if (currentUser.DepartmentId == null)
+                    throw new Exception("Manager does not belong to any department");
+                if (payroll.Users.DepartmentId != currentUser.DepartmentId)
+                    throw new UnauthorizedAccessException("Manager cannot access payroll of an User from other department");
+            }
+            else if (employee)
+            {
+                if (payroll.UserId != currentUserId)
+                    throw new UnauthorizedAccessException("Employee can only access their own payroll");
+            }
+
+            return new ResponseModel.PayrollResultDto
+            {
+                Id = payroll.Id,
+                Name = payroll.Users.Fullname,
+                Salary = payroll.Salary,
+                DaysWorked = payroll.DaysWorked,
+                CreatedDate = payroll.CreatedDate,
+                Note = payroll.Note
+            };
+        }
+
         public async Task<string> SoftDeletePayroll(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();

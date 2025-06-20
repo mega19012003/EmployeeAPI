@@ -46,6 +46,24 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// lấy chấm công
+        /// </summary>
+        [Authorize]
+        [HttpGet("{payrollId}")]
+        public async Task<IActionResult> GetPayrollById(Guid payrollId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _payrollService.GetById(payrollId, currentUserId, currentRoles);
+
+            return Ok(ApiResponse<ResponseModel.PayrollResultDto>.ReturnResult("Get list payroll success", pagedResult, 200));
+        }
+
+        /// <summary>
         /// Tình chấm công cho nhân viên, do admin/manager xử lý
         /// </summary>
         [HttpPost("calculate")]

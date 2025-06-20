@@ -92,12 +92,26 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id)
+        public async Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
                 var c = await _checkinRepository.GetByIdAsync(id);
                 if (c == null) return null;
+
+                var manager = currentUserRoles.Contains("Manager");
+                var employee = currentUserRoles.Contains("Employee");
+
+                if (manager)
+                {
+                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
+                    if (c.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkin from other department");
+                }
+                else if (employee)
+                {
+                    if (c.UserId != currentUserId) throw new UnauthorizedAccessException("Employee can only access their own checkin");
+                }
 
                 return new ResponseModel.CheckinResultDto
                 {

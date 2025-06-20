@@ -2,6 +2,7 @@
 using Azure.Core;
 using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Authorization;
@@ -47,6 +48,24 @@ namespace EmployeeAPI.Controllers
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("No result", pagedResult, 200));
 
             return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("Get list checkin success", pagedResult, 200));
+        }
+
+        /// <summary>
+        /// lấy checkin
+        /// </summary>
+        [Authorize]
+        [HttpGet("{checkinId}")]
+        public async Task<IActionResult> GetById(Guid checkinId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _checkinService.GetByIdAsync(checkinId, currentUserId, currentUserRoles);
+
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Get list checkin success", pagedResult, 200));
         }
 
         /// <summary>

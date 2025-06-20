@@ -8,11 +8,8 @@ namespace EmployeeAPI.Services.PayrollServices
 {
      public interface IPayrollService
     {
-        //Task<ResponseModel.PayrollResultDto> GetPayrollById(Guid id);
         Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize);
-        //Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(string? name, int? pageIndex, int? pageSize );
-        //Task<ResponseModel.PayrollResultDto> UpdatePayroll(ResponseModel.UpdatePayroll dto);
-        //Task<string> SoftDeletePayroll(Guid id);
+        Task<ResponseModel.PayrollResultDto> GetById(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeletePayroll(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         //Task<IEnumerable<ResponseModel.PayrollResultDto>> GetCheckinsByStaffAndMonthAsync(Guid staffId, int year, int month);
         ///////////////////////////////
