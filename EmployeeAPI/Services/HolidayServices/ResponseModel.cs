@@ -2,22 +2,21 @@
 {
     public class ResponseModel
     {
-        public class HolidayDto
+        public class HolidayResultDto
         {
             public Guid HolidayId { get; set; }
             public string Name { get; set; }
             public DateTime startDate { get; set; }
             public DateTime endDate { get; set; }
-            public bool IsDeleted { get; set; } = false;
         }
-        public class CreateHoliday
+        public class CreateHolidayDto
         {
             public string Name { get; set; }
             public DateTime startDate { get; set; }
             public DateTime endDate { get; set; }
         }
 
-        public class UpdateHoliday
+        public class UpdateHolidayDto
         {
             public Guid HolidayId { get; set; }
             public string Name { get; set; }

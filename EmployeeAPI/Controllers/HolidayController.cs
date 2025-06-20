@@ -27,22 +27,22 @@ namespace EmployeeAPI.Controllers
         {
             var pagedResult = await _holidayService.GetAllAsync(name, pageSize, pageIndex);
             if (pagedResult == null || !pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.HolidayDto>>.ReturnResult("No result", pagedResult, 200));
-            return Ok(ApiResponse<PagedResult<ResponseModel.HolidayDto>>.ReturnResult("Get list holiday success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("No result", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("Get list holiday success", pagedResult, 200));
         }
         /// <summary>
         /// Thêm ngày nghỉ lễ, dùng checkin để kiểm tra xem người dùng có đi làm vào ngày nghỉ ko, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
-        public async Task<IActionResult> CreateHoliday(ResponseModel.CreateHoliday dto)
+        public async Task<IActionResult> CreateHoliday(ResponseModel.CreateHolidayDto dto)
         {
             var result = await _holidayService.CreateAsync(dto);
             if (result == null)
             {
                 return BadRequest();
             }
-            return Ok(ApiResponse<ResponseModel.HolidayDto>.ReturnResult("Holiday added success", result, 200));
+            return Ok(ApiResponse<ResponseModel.HolidayResultDto>.ReturnResult("Holiday added success", result, 200));
         }
         
         /// <summary>
@@ -50,13 +50,13 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPut]
-        public async Task<IActionResult> UpdateHoliday(ResponseModel.UpdateHoliday dto)
+        public async Task<IActionResult> UpdateHoliday(ResponseModel.UpdateHolidayDto dto)
         {
             var updatedHoliday = await _holidayService.UpdateAsync(dto);
             if (updatedHoliday == null)
                 return BadRequest();
 
-            return Ok(ApiResponse<ResponseModel.HolidayDto>.ReturnResult("Update holiday success", updatedHoliday, 200));
+            return Ok(ApiResponse<ResponseModel.HolidayResultDto>.ReturnResult("Update holiday success", updatedHoliday, 200));
         }
 
 

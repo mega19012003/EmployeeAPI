@@ -8,20 +8,12 @@ namespace EmployeeAPI.Services.AuthServices
 {
     public class ResponseModel
     {
-        public class AuthDto //: BaseDto
+        public class AuthDto 
         {
             public Guid userId { get; set; }
             public String Username { get; set; }
             public string Fullname { get; set; }
-            //public RoleType Role { get; set; } //= RoleType.Employee;
             public string RoleName { get; set; }
-            //public DateOnly DateOfBirth { get; set; }
-            //public string PhoneNumber { get; set; }
-            //public string Address { get; set; }
-            //public string DepartmentName { get; set; }
-            //public string PositionName { get; set; }
-            //public double BasicSalary { get; set; }
-            //public string ImageUrl { get; set; }
         }
         public class LoginDto
         {
@@ -56,7 +48,7 @@ namespace EmployeeAPI.Services.AuthServices
             public RoleType Role { get; set; }
         }
 
-        public class GetUserLogin //: BaseDto
+        public class GetUserLogin 
         {
             public string UserName { get; set; }
         }

@@ -38,17 +38,17 @@ namespace EmployeeAPI.Controllers
 
             var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, name, pageIndex, pageSize);
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.DutyResultDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.DutyDto>>.ReturnResult("Get list duty success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.DutyResultDto>>.ReturnResult("Get list duty success", pagedResult, 200));
         }
 
         /// <summary>
         /// Lấy công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("Id")]
-        public async Task<IActionResult> GetByIdAsync(Guid id)
+        [HttpGet("dutyId")]
+        public async Task<IActionResult> GetDutyByIdAsync(Guid dutyId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -56,9 +56,27 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var duty = await _dutyService.GetByIdAsync(id, currentUserId, currentUserRoles);
+            var duty = await _dutyService.GetDutyByIdAsync(dutyId, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Get duty success", duty, 200));
+            return Ok(ApiResponse<ResponseModel.DutyResultDto>.ReturnResult("Get duty success", duty, 200));
+        }
+
+        /// <summary>
+        /// Lấy chi tiết công việc theo id
+        /// </summary>
+        [Authorize]
+        [HttpGet("detailId")]
+        public async Task<IActionResult> GetDetailByIdAsync(Guid detailId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var duty = await _dutyService.GetDutyDetailByIdAsync(detailId, currentUserId, currentUserRoles);
+
+            return Ok(ApiResponse<ResponseModel.DutyDetailResultDto>.ReturnResult("Get duty success", duty, 200));
         }
 
         /// <summary>
@@ -66,7 +84,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
-        public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDuty dto)
+        public async Task<IActionResult> AddDutyAsync(ResponseModel.CreateDutyDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -76,7 +94,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _dutyService.AddDutyAsync(dto, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DutyResultDto>.ReturnResult("Create duty success", result, 200));
         }
 
         /// <summary>
@@ -94,7 +112,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _dutyService.AddDutyDetailAsync(dto, dto.Id, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Create duty detail success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DutyResultDto>.ReturnResult("Create duty detail success", result, 200));
         }
 
         /// <summary>
@@ -102,7 +120,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
-        public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDuty dto)
+        public async Task<IActionResult> UpdateDutyAsync(ResponseModel.UpdateDutyDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -112,7 +130,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _dutyService.UpdateDutyAsync(dto, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<ResponseModel.DutyDto>.ReturnResult("Update duty success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DutyResultDto>.ReturnResult("Update duty success", result, 200));
         }
 
         /// <summary>
@@ -120,7 +138,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut("DutyDetail")]
-        public async Task<IActionResult> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto)
+        public async Task<IActionResult> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetailDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -130,7 +148,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _dutyService.UpdateDutyDetailAsync(dto, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<ResponseModel.DutyDetailDto>.ReturnResult("Update duty success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DutyDetailResultDto>.ReturnResult("Update duty success", result, 200));
         }
 
         /// <summary>

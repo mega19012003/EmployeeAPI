@@ -5,31 +5,29 @@ namespace EmployeeAPI.Services.PositionServices
 {
     public class ResponseModel
     {
-        public class PositionDTO //: BaseDto
+        public class PositionResultDto
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
-            public string Department { get; set; }
-            public bool IsDeleted { get; set; } = false;
+            public string DepartmentName { get; set; }
         }
-        public class CreatePosition
+        public class CreatePositionDto
         {
-            //public Guid PositionId { get; set; }
             public Guid? DepartmentId { get; set; }
             public string Name { get; set; }
         }
-        public class UpdatePosition //: BaseDto
+        public class UpdatePositionDto
         {
             public Guid PositionId { get; set; }
             public string Name { get; set; }
         }
-        public class DeletePosition
+        public class DeletePositionDto
         {
             public Guid Id { get; set; }
             public bool IsDeleted { get; set; }
         }
 
-        public class UserFilter //: BaseDto
+        public class UserFilterDto
         {
             public Guid UserId { get; set; }
             public string Name { get; set; }

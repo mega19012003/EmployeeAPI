@@ -36,7 +36,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _logger = logger;
         }
         
-        public async Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -66,21 +66,18 @@ namespace EmployeeAPI.Services.CheckinServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(c => new ResponseModel.CheckinDto
+                    .Select(c => new ResponseModel.CheckinResultDto
                     {
                         CheckinId = c.Id,
                         CheckinDate = c.CheckinDate,
-                        CheckinStatus = c.CheckinStatus,
                         Checkin = c.CheckinStatus.ToString(),
                         CheckoutDate = c.CheckoutDate,
-                        CheckoutStatus = c.CheckoutStatus,
                         Checkout = c.CheckoutStatus.ToString(),
-                        userId = c.UserId,
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
                     }).ToListAsync();
 
-                return new PagedResult<ResponseModel.CheckinDto>
+                return new PagedResult<ResponseModel.CheckinResultDto>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
@@ -95,23 +92,20 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id)
+        public async Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id)
         {
             try
             {
                 var c = await _checkinRepository.GetByIdAsync(id);
                 if (c == null) return null;
 
-                return new ResponseModel.CheckinDto
+                return new ResponseModel.CheckinResultDto
                 {
                     CheckinId = c.Id,
                     CheckinDate = c.CheckinDate,
-                    CheckinStatus = c.CheckinStatus,
                     Checkin = c.CheckinStatus.ToString(),
                     CheckoutDate = c.CheckoutDate,
-                    CheckoutStatus = c.CheckoutStatus,
                     Checkout = c.CheckoutStatus.ToString(),
-                    userId = c.UserId,
                     Name = c.Users.Fullname,
                     SalaryPerDay = c.SalaryPerDay,
                 };
@@ -123,7 +117,7 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<CheckinDto> CreateAsync(CreateCheckin dto, Guid currentUserId, IList<string> roles)
+        public async Task<CheckinResultDto> CreateAsync(CreateCheckinDto dto, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -209,13 +203,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new CheckinDto
+                return new CheckinResultDto
                 {
                     CheckinId = checkin.Id,
                     CheckinDate = checkin.CheckinDate,
-                    CheckinStatus = checkin.CheckinStatus,
-                    CheckoutStatus = checkin.CheckoutStatus,
-                    userId = targetUserId,
                     Name = user.Fullname
                 };
             }
@@ -228,7 +219,7 @@ namespace EmployeeAPI.Services.CheckinServices
         }
 
 
-        public async Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.CheckinResultDto> CheckoutAsync(ResponseModel. CreateCheckoutDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -310,16 +301,13 @@ namespace EmployeeAPI.Services.CheckinServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.CheckinDto
+                return new ResponseModel.CheckinResultDto
                 {
                     CheckinId = todayCheckin.Id,
                     CheckinDate = todayCheckin.CheckinDate,
-                    CheckinStatus = todayCheckin.CheckinStatus,
                     Checkin = todayCheckin.CheckinStatus.ToString(),
                     CheckoutDate = todayCheckin.CheckoutDate,
-                    CheckoutStatus = todayCheckin.CheckoutStatus,
                     Checkout = todayCheckin.CheckoutStatus.ToString(),
-                    userId = todayCheckin.UserId,
                     Name = existUser.Fullname,
                     SalaryPerDay = todayCheckin.SalaryPerDay
                 };
@@ -332,7 +320,7 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
  
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -361,16 +349,13 @@ namespace EmployeeAPI.Services.CheckinServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.CheckinDto
+                return new ResponseModel.CheckinResultDto
                 {
                     CheckinId = existing.Id,
                     CheckinDate = existing.CheckinDate,
-                    CheckinStatus = existing.CheckinStatus,
                     Checkin = existing.CheckinStatus.ToString(),
                     CheckoutDate = existing.CheckoutDate,
-                    CheckoutStatus = existing.CheckoutStatus,
                     Checkout = existing.CheckoutStatus.ToString(),
-                    userId = existing.UserId,
                     Name = employee.Fullname,
                     SalaryPerDay = existing.SalaryPerDay,
                 };
@@ -491,7 +476,7 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<PagedResult<ResponseModel.CheckinDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -532,21 +517,21 @@ namespace EmployeeAPI.Services.CheckinServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(c => new ResponseModel.CheckinDto
+                    .Select(c => new ResponseModel.CheckinResultDto
                     {
                         CheckinId = c.Id,
                         CheckinDate = c.CheckinDate,
-                        CheckinStatus = c.CheckinStatus,
+
                         Checkin = c.CheckinStatus.ToString(),
                         CheckoutDate = c.CheckoutDate,
-                        CheckoutStatus = c.CheckoutStatus,
+
                         Checkout = c.CheckoutStatus.ToString(),
-                        userId = c.UserId,
+
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
                     }).ToListAsync();
 
-                return new PagedResult<ResponseModel.CheckinDto>
+                return new PagedResult<ResponseModel.CheckinResultDto>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,

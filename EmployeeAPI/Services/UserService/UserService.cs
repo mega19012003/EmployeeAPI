@@ -31,7 +31,7 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
+        public async Task<ResponseModel.UserResultDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -108,9 +108,9 @@ namespace EmployeeAPI.Services.UserService
 
                 await transaction.CommitAsync();
 
-                return new ResponseModel.UserDto
+                return new ResponseModel.UserResultDto
                 {
-                    userId = existingUser.UserId,
+                    UserId = existingUser.UserId,
                     Fullname = existingUser.Fullname,
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
@@ -129,7 +129,7 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<UserDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
+        public async Task<UserResultDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -177,9 +177,9 @@ namespace EmployeeAPI.Services.UserService
 
                 await transaction.CommitAsync();
 
-                return new UserDto
+                return new UserResultDto
                 {
-                    userId = existingUser.UserId,
+                    UserId = existingUser.UserId,
                     Fullname = existingUser.Fullname,
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
@@ -239,7 +239,7 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.UserDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -277,9 +277,9 @@ namespace EmployeeAPI.Services.UserService
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(f => new ResponseModel.UserDto
+                    .Select(f => new ResponseModel.UserResultDto
                     {
-                        userId = f.UserId,
+                        UserId = f.UserId,
                         Fullname = f.Fullname,
                         RoleName = f.Role.ToString(),
                         Address = f.Address,
@@ -291,7 +291,7 @@ namespace EmployeeAPI.Services.UserService
                     })
                     .ToListAsync();
 
-                return new PagedResult<ResponseModel.UserDto>
+                return new PagedResult<ResponseModel.UserResultDto>
                 {
                     TotalCount = totalCount,
                     PageIndex = pageIndex.Value,
@@ -306,7 +306,7 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<ResponseModel.UserDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.UserResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var isAdmin = currentUserRoles.Contains("Administrator");
             var isManager = currentUserRoles.Contains("Manager");
@@ -325,16 +325,15 @@ namespace EmployeeAPI.Services.UserService
                     throw new UnauthorizedAccessException("Manager can only access list users in their department");
             }
 
-            return new ResponseModel.UserDto
+            return new ResponseModel.UserResultDto
             {
-                userId = results.UserId,
+                UserId = results.UserId,
                 Fullname = results.Fullname,
                 RoleName = results.Role.ToString(),
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
-                DepartmentId = results.DepartmentId,
-                DepartmentName = results.Department?.Name ?? "No Department",
-                PositionName = results.Position?.Name ?? "No Position",
+                DepartmentName = results.Department?.Name ?? null,
+                PositionName = results.Position?.Name ?? null,
                 BasicSalary = results.BasicSalary,
                 ImageUrl = results.ImageUrl,
             };

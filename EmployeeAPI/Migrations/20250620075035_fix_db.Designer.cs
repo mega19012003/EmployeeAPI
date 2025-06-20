@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250526153141_update-duty")]
-    partial class updateduty
+    [Migration("20250620075035_fix_db")]
+    partial class fix_db
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -25,6 +25,21 @@ namespace EmployeeAPI.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("EmployeeAPI.Models.AllowedIP", b =>
+                {
+                    b.Property<Guid>("AllowedIPId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("IPAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("AllowedIPId");
+
+                    b.ToTable("AllowedIPs");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
                 {
                     b.Property<Guid>("Id")
@@ -34,11 +49,20 @@ namespace EmployeeAPI.Migrations
                     b.Property<DateTime>("CheckinDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<int>("CheckinStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CheckoutDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("CheckoutStatus")
+                        .HasColumnType("int");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
+                    b.Property<double>("SalaryPerDay")
+                        .HasColumnType("float");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -145,6 +169,9 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("AssignedById")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
@@ -158,7 +185,14 @@ namespace EmployeeAPI.Migrations
                     b.Property<DateTime>("StartDate")
                         .HasColumnType("datetime2");
 
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("AssignedById");
+
+                    b.HasIndex("UserId");
 
                     b.ToTable("Duties");
                 });
@@ -176,6 +210,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("DutyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
@@ -185,7 +222,31 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetail");
+                    b.ToTable("DutyDetails");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<DateTime>("endDate")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("startDate")
+                        .HasColumnType("datetime2");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Holidays");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -193,9 +254,6 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<int>("CheckinStatus")
-                        .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
                         .HasColumnType("datetime2");
@@ -213,15 +271,10 @@ namespace EmployeeAPI.Migrations
                     b.Property<double>("Salary")
                         .HasColumnType("float");
 
-                    b.Property<int>("SalaryRuleId")
-                        .HasColumnType("int");
-
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
                     b.HasKey("Id");
-
-                    b.HasIndex("SalaryRuleId");
 
                     b.HasIndex("UserId");
 
@@ -318,15 +371,21 @@ namespace EmployeeAPI.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
+                    b.Property<int>("TokenVersion")
+                        .HasColumnType("int");
+
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasColumnType("nvarchar(450)");
 
                     b.HasKey("UserId");
 
                     b.HasIndex("DepartmentId");
 
                     b.HasIndex("PositionId");
+
+                    b.HasIndex("Username")
+                        .IsUnique();
 
                     b.ToTable("Users");
                 });
@@ -342,18 +401,33 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("EmployeeAPI.Models.Duty", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.User", "AssignedBy")
+                        .WithMany()
+                        .HasForeignKey("AssignedById")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("EmployeeAPI.Models.User", null)
+                        .WithMany("AssignedDuties")
+                        .HasForeignKey("UserId");
+
+                    b.Navigation("AssignedBy");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.Duty", "Duty")
                         .WithMany("DutyDetails")
                         .HasForeignKey("DutyId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("EmployeeAPI.Models.User", "Users")
                         .WithMany("DutyDetails")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.Navigation("Duty");
@@ -363,19 +437,11 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
-                    b.HasOne("EmployeeAPI.Models.CheckinStatusConfig", "SalaryRule")
-                        .WithMany()
-                        .HasForeignKey("SalaryRuleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
                     b.HasOne("EmployeeAPI.Models.User", "Users")
                         .WithMany("Payrolls")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
-
-                    b.Navigation("SalaryRule");
 
                     b.Navigation("Users");
                 });
@@ -426,6 +492,8 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>
                 {
+                    b.Navigation("AssignedDuties");
+
                     b.Navigation("Checkins");
 
                     b.Navigation("DutyDetails");

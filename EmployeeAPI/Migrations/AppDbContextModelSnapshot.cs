@@ -219,7 +219,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetail");
+                    b.ToTable("DutyDetails");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>

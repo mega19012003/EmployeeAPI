@@ -29,7 +29,7 @@ namespace EmployeeAPI.Services.PayrollServices
             _context = context;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
@@ -64,19 +64,17 @@ namespace EmployeeAPI.Services.PayrollServices
                 .OrderByDescending(p => p.CreatedDate)
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
-                .Select(c => new ResponseModel.PayrollDto
+                .Select(c => new ResponseModel.PayrollResultDto
                 {
                     Id = c.Id,
-                    UserId = c.UserId,
                     Name = c.Users.Fullname,
                     Salary = c.Salary,
                     DaysWorked = c.DaysWorked,
                     CreatedDate = c.CreatedDate,
                     Note = c.Note,
-                    IsDeleted = c.IsDeleted,
                 }).ToListAsync();
 
-            return new PagedResult<ResponseModel.PayrollDto>
+            return new PagedResult<ResponseModel.PayrollResultDto>
             {
                 Items = items,
                 PageIndex = pageIndex.Value,
@@ -129,7 +127,7 @@ namespace EmployeeAPI.Services.PayrollServices
             }
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -184,17 +182,16 @@ namespace EmployeeAPI.Services.PayrollServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(c => new ResponseModel.PayrollDto
+                    .Select(c => new ResponseModel.PayrollResultDto
                     {
                         Id = c.Id,
                         CreatedDate = c.CreatedDate,
-                        UserId = c.UserId,
                         Salary = c.Salary,
                         Note = c.Note,
                         Name = c.Users.Fullname ?? null,
                     }).ToListAsync();
 
-                return new PagedResult<ResponseModel.PayrollDto>
+                return new PagedResult<ResponseModel.PayrollResultDto>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
@@ -211,7 +208,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
         ////////////////////////////////////////////////////////
 
-        public async Task<PaidPayroll> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<PaidPayrollDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
             var staff = await _userRepository.GetByIdAsync(staffId);
 
@@ -268,7 +265,7 @@ namespace EmployeeAPI.Services.PayrollServices
             await _payrollRepository.CreatePayrollAsync(payroll);
             await _context.SaveChangesAsync();
 
-            return new PaidPayroll
+            return new PaidPayrollDto
             {
                 Id = payroll.Id,
                 UserId = staffId,

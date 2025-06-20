@@ -7,11 +7,12 @@ namespace EmployeeAPI.Services.DepartmentServices
 {
     public interface IDepartmentService
     {
-        public Task<PagedResult<ResponseModel.DepartmentDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize);
-        public Task<ResponseModel.CreateDepartment> AddAsync(string Name);
-        public Task<ResponseModel.UpdateDepartment> UpdateAsync(Guid id, string Name);
+        public Task<PagedResult<ResponseModel.DepartmentResultDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize);
+        public Task<ResponseModel.DepartmentResultDto> GetByIdAsync(Guid id);
+        public Task<ResponseModel.DepartmentResultDto> AddAsync(string Name);
+        public Task<ResponseModel.DepartmentResultDto> UpdateAsync(Guid id, string Name);
         public Task<string> SoftDeleteAsync(Guid id);
-        public Task<PagedResult<UserFilter>> GetStaffByDepartmentAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
-        public Task<PagedResult<PositionByDepartment>> GetListPositionAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
+        public Task<PagedResult<UserFilterDto>> GetStaffByDepartmentAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
+        public Task<PagedResult<ResponseModel.PositionByDepartmentDto>> GetListPositionAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
     }
 }

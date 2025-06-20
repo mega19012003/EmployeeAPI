@@ -42,7 +42,7 @@ namespace EmployeeAPI.Repositories.Duties
 
         public async Task<DutyDetail> GetDutyDetailByIdAsync(Guid id)
         {
-            return await _context.DutyDetail
+            return await _context.DutyDetails
                 .Include(p => p.Users)
                 .Include(p => p.Duty)
                 .FirstOrDefaultAsync(p => p.DutyDetailId == id && !p.IsDeleted);
@@ -62,7 +62,7 @@ namespace EmployeeAPI.Repositories.Duties
 
         public async Task UpdateDutyDetailAsync(DutyDetail detail)
         {
-            _context.DutyDetail.Update(detail);
+            _context.DutyDetails.Update(detail);
         }
 
         //public async Task<Duty> SoftDeleteDutyAsync(Guid id)

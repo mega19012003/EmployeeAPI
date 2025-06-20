@@ -40,9 +40,9 @@ namespace EmployeeAPI.Controllers
             var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, name, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("Get list payroll success", pagedResult, 200));
         }
 
         /// <summary>
@@ -57,7 +57,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
             var pagedResult = await _payrollService.CalculatePayrollAsync(userId, currentUserId, currentRoles);
-            return Ok(ApiResponse<ResponseModel.PaidPayroll>.ReturnResult("Calculate payroll success", pagedResult, 200));
+            return Ok(ApiResponse<ResponseModel.PaidPayrollDto>.ReturnResult("Calculate payroll success", pagedResult, 200));
         }
 
         /// <summary>
@@ -92,8 +92,8 @@ namespace EmployeeAPI.Controllers
 
             var pagedResult = await _payrollService.GetPayrollByUser(userId, currentUserId, currentRoles, pageIndex, pageSize);
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("No result", pagedResult, 200));
-            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
         }
     }
 }

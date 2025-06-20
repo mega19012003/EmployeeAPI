@@ -50,9 +50,9 @@ namespace EmployeeAPI.Controllers
             var result = await _positionService.GetAllAsync(name, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!result.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.PositionResultDto>>.ReturnResult("No result", result, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.PositionResultDto>>.ReturnResult("Get list position success", result, 200));
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
-        public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePosition dto)
+        public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePositionDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -69,7 +69,7 @@ namespace EmployeeAPI.Controllers
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
             //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
             var result = await _positionService.AddAsync(dto, currentUserId, currentUserRoles);
-            return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
+            return Ok(ApiResponse<ResponseModel.PositionResultDto>.ReturnResult("Create position success", result, 200));
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace EmployeeAPI.Controllers
             if (result == null)
                 return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
 
-            return Ok(ApiResponse<ResponseModel.UpdatePosition>.ReturnResult("Update position success", result, 200));
+            return Ok(ApiResponse<ResponseModel.PositionResultDto>.ReturnResult("Update position success", result, 200));
         }
 
         /// <summary>
@@ -125,9 +125,24 @@ namespace EmployeeAPI.Controllers
             var pagedResult = await _positionService.GetStaffByPositionAsync(PositionId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("Get list employee by position success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("Get list employee by position success", pagedResult, 200));
+        }
+
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpGet("{PositionId}")]
+        public async Task<IActionResult> GetPositionById(Guid PositionId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _positionService.GetByIdAsync(PositionId, currentUserId, currentUserRoles);
+
+            return Ok(ApiResponse<PositionResultDto>.ReturnResult("Get position success", pagedResult, 200));
         }
     }
 }

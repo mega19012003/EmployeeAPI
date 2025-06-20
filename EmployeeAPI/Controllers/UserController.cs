@@ -43,7 +43,7 @@ namespace EmployeeAPI.Controllers
              var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
             var result = await _userService.AdminUpdateStaffAsync(dto);
 
-            return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update user success", result, 200));
+            return Ok(ApiResponse<ResponseModel.UserResultDto>.ReturnResult("Update user success", result, 200));
         }
 
         /// <summary>
@@ -59,22 +59,22 @@ namespace EmployeeAPI.Controllers
             var managerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
             var result = await _userService.ManagerUpdateStaffAsync(dto, managerId);
 
-            return Ok(ApiResponse<ResponseModel.UserDto>.ReturnResult("Update staff success", result, 200));
+            return Ok(ApiResponse<ResponseModel.UserResultDto>.ReturnResult("Update staff success", result, 200));
         }
 
         /// <summary>
         /// Xóa người dùng, sẽ do admin/manager xử lý
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("id")]
-        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid Id)
+        [HttpDelete("{UserId}")]
+        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid UserId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var result = await _userService.SoftDeleteAsync(Id, currentUserId, currentUserRoles);
+            var result = await _userService.SoftDeleteAsync(UserId, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
         }
@@ -95,9 +95,9 @@ namespace EmployeeAPI.Controllers
             var pagedResult = await _userService.GetAllAsync(Name, departmentId, currentUserId, currentUserRoles, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<UserDto>>.ReturnResult("Get list user success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("Get list user success", pagedResult, 200));
         }
 
         /// <summary>
@@ -115,7 +115,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _userService.GetByIdAsync(id, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<UserDto>.ReturnResult("Get user success", result, 200));
+            return Ok(ApiResponse<UserResultDto>.ReturnResult("Get user success", result, 200));
         }
     }
 }

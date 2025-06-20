@@ -26,7 +26,7 @@ namespace EmployeeAPI.Services.PositionServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<PagedResult<PositionResultDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
@@ -61,20 +61,15 @@ namespace EmployeeAPI.Services.PositionServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(f => new PositionDTO
+                    .Select(f => new PositionResultDto
                     {
                         Id = f.Id,
                         Name = f.Name,
-                        IsDeleted = f.IsDeleted,
-                        Department = f.Department.Name,
-                        /*CreatedAt = f.CreatedAt,
-                        CreatedBy = f.CreatedBy,
-                        UpdatedAt = f.UpdatedAt,
-                        UpdatedBy = f.UpdatedBy*/
+                        DepartmentName = f.Department.Name,
                     })
                     .ToListAsync();
 
-                return new PagedResult<PositionDTO>
+                return new PagedResult<PositionResultDto>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
@@ -89,18 +84,34 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id)
+        public async Task<ResponseModel.PositionResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
-                var position = await _positionRepository.GetByIdAsync(id);
-                if (position == null) return null;
+                var isManager = currentUserRole.Contains("Manager");
+                var isAdmin = currentUserRole.Contains("Administrator");
+                Guid? departmentId = null;
 
-                return new ResponseModel.PositionDTO
+                var position = await _positionRepository.GetByIdAsync(id);
+                if (position == null) throw new Exception("Position not found");
+
+                if (isManager)
+                {
+                    var user = await _userRepository.GetByIdAsync(currentUserId);
+                    if (user == null || user.DepartmentId == null)
+                        throw new Exception("Manager does not have department, Please contact admin to add Department");
+
+                    departmentId = user.DepartmentId;
+
+                    if (position.DepartmentId != departmentId)
+                        throw new UnauthorizedAccessException("Manager can only view positions in their department.");
+                }
+
+                return new ResponseModel.PositionResultDto
                 {
                     Id = position.Id,
                     Name = position.Name,
-                    IsDeleted = position.IsDeleted
+                    DepartmentName = position.Department.Name,
                 };
             }
             catch (Exception ex)
@@ -110,7 +121,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePosition dto, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<ResponseModel.PositionResultDto> AddAsync(ResponseModel.CreatePositionDto dto, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -156,11 +167,11 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var result = await _positionRepository.GetByIdAsync(model.Id);
 
-                return new ResponseModel.PositionDTO
+                return new ResponseModel.PositionResultDto
                 {
                     Id = model.Id,
                     Name = model.Name,
-                    Department = model.Department.Name,
+                    DepartmentName = model.Department.Name,
                 };
             }
             catch (Exception ex)
@@ -171,7 +182,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.UpdatePosition?> UpdateAsync(Guid id, string newName, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<ResponseModel.PositionResultDto?> UpdateAsync(Guid id, string newName, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -199,10 +210,11 @@ namespace EmployeeAPI.Services.PositionServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.UpdatePosition
+                return new ResponseModel.PositionResultDto
                 {
-                    PositionId = result.Id,
+                    Id = result.Id,
                     Name = result.Name,
+                    DepartmentName = result.Department.Name,
                 };
             }
             catch (Exception ex)
@@ -249,7 +261,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<PagedResult<UserFilter>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<PagedResult<UserFilterDto>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
@@ -280,7 +292,7 @@ namespace EmployeeAPI.Services.PositionServices
                 var items = allUsers
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(st => new UserFilter
+                    .Select(st => new UserFilterDto
                     {
                         UserId = st.UserId,
                         Name = st.Fullname,
@@ -290,7 +302,7 @@ namespace EmployeeAPI.Services.PositionServices
                     })
                     .ToList();
 
-                return new PagedResult<UserFilter>
+                return new PagedResult<UserFilterDto>
                 {
                     TotalCount = totalCount,
                     PageIndex = pageIndex.Value,

@@ -8,17 +8,17 @@ namespace EmployeeAPI.Services.CheckinServices
 {
     public interface ICheckinService
     {
-        Task<PagedResult<ResponseModel.CheckinDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
-        Task<ResponseModel.CheckinDto> GetByIdAsync(Guid id);
-        Task<ResponseModel.CheckinDto> CreateAsync(ResponseModel.CreateCheckin dto, Guid currentUserId, IList<string> currentUserRoles);
-        Task<ResponseModel.CheckinDto> CheckoutAsync(ResponseModel.CreateCheckout dto, Guid currentUserId, IList<string> currentUserRoles);
+        Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? StaffName, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
+        Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id);
+        Task<ResponseModel.CheckinResultDto> CreateAsync(ResponseModel.CreateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles);
+        Task<ResponseModel.CheckinResultDto> CheckoutAsync(ResponseModel. CreateCheckoutDto dto, Guid currentUserId, IList<string> currentUserRoles);
         Task AutoMarkAbsentAsync(TimeOnly endTime);
-        Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto, Guid currentUserId, IList<string> currentUserRoles);
-        //Task<ResponseModel.CheckinDto> UpdateAsync(ResponseModel.UpdateCheckin dto);
+        Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles);
+        //Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto);
         Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         //Task<string> DeleteAsync(Guid id);
         //Task<bool> ExistsAsync(Expression<Func<Checkin, bool>> predicate);
-        //Task<PagedResult<CheckinDto>> GetCheckinByUserAsync(Guid staffId, int? pageIndex, int? pageSize);
-        Task<PagedResult<ResponseModel.CheckinDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize);
+        //Task<PagedResult<CheckinResultDto>> GetCheckinByUserAsync(Guid staffId, int? pageIndex, int? pageSize);
+        Task<PagedResult<ResponseModel.CheckinResultDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize);
     }
 }

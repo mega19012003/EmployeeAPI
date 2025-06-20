@@ -19,7 +19,7 @@ namespace EmployeeAPI.Services.HolidayServices
             _logger = logger;
             _context = context;
         }
-        public async Task<PagedResult<ResponseModel.HolidayDto>> GetAllAsync(string? name, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<ResponseModel.HolidayResultDto>> GetAllAsync(string? name, int? pageSize, int? pageIndex)
         {
             try
             {
@@ -39,17 +39,16 @@ namespace EmployeeAPI.Services.HolidayServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(f => new ResponseModel.HolidayDto
+                    .Select(f => new ResponseModel.HolidayResultDto
                     {
                         HolidayId = f.Id,
                         Name = f.name,
-                        IsDeleted = f.IsDeleted,
                         startDate = f.startDate,
                         endDate = f.endDate
                     })
                     .ToListAsync();
 
-                return new PagedResult<ResponseModel.HolidayDto>
+                return new PagedResult<ResponseModel.HolidayResultDto>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
@@ -63,19 +62,18 @@ namespace EmployeeAPI.Services.HolidayServices
                 throw;
             }
         }
-        public async Task<ResponseModel.HolidayDto> GetByIdAsync(Guid id)
+        public async Task<ResponseModel.HolidayResultDto> GetByIdAsync(Guid id)
         {
             try
             {
                 var holiday = await _holidayRepository.GetByIdAsync(id);
 
-                return new ResponseModel.HolidayDto
+                return new ResponseModel.HolidayResultDto
                 {
                     HolidayId = holiday.Id,
                     Name = holiday.name,
                     startDate = holiday.startDate,
                     endDate = holiday.endDate,
-                    IsDeleted = holiday.IsDeleted
                 };
             }
             catch (Exception ex)
@@ -85,7 +83,7 @@ namespace EmployeeAPI.Services.HolidayServices
             }
         }
         
-        public async Task<ResponseModel.HolidayDto> CreateAsync(ResponseModel.CreateHoliday dto)
+        public async Task<ResponseModel.HolidayResultDto> CreateAsync(ResponseModel.CreateHolidayDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -109,13 +107,12 @@ namespace EmployeeAPI.Services.HolidayServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.HolidayDto
+                return new ResponseModel.HolidayResultDto
                 {
                     HolidayId = model.Id,
                     Name = model.name,
                     startDate = model.startDate,
                     endDate = model.endDate,
-                    IsDeleted = model.IsDeleted
                 };
             }
             catch (Exception ex)
@@ -126,7 +123,7 @@ namespace EmployeeAPI.Services.HolidayServices
             }
         }
 
-        public async Task<ResponseModel.HolidayDto> UpdateAsync(ResponseModel.UpdateHoliday dto)
+        public async Task<ResponseModel.HolidayResultDto> UpdateAsync(ResponseModel.UpdateHolidayDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -143,13 +140,12 @@ namespace EmployeeAPI.Services.HolidayServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.HolidayDto
+                return new ResponseModel.HolidayResultDto
                 {
                     HolidayId = result.Id,
                     Name = result.name,
                     startDate = result.startDate,
                     endDate = result.endDate,
-                    IsDeleted = result.IsDeleted
                 };
             }
             catch (Exception ex)

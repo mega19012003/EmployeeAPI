@@ -5,10 +5,10 @@ namespace EmployeeAPI.Services.HolidayServices
 {
     public interface IHolidayService
     {
-        Task<PagedResult<ResponseModel.HolidayDto>> GetAllAsync(string? name, int? pageSize, int? pageIndex);
-        Task<ResponseModel.HolidayDto> GetByIdAsync(Guid id);
-        Task<ResponseModel.HolidayDto> CreateAsync(ResponseModel.CreateHoliday dto);
-        Task<ResponseModel.HolidayDto> UpdateAsync(ResponseModel.UpdateHoliday dto);
+        Task<PagedResult<ResponseModel.HolidayResultDto>> GetAllAsync(string? name, int? pageSize, int? pageIndex);
+        Task<ResponseModel.HolidayResultDto> GetByIdAsync(Guid id);
+        Task<ResponseModel.HolidayResultDto> CreateAsync(ResponseModel.CreateHolidayDto dto);
+        Task<ResponseModel.HolidayResultDto> UpdateAsync(ResponseModel.UpdateHolidayDto dto);
         Task<string> DeleteAsync(Guid id);
     }
 }

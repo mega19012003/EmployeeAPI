@@ -42,9 +42,21 @@ namespace EmployeeAPI.Controllers
             var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentResultDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentDto>>.ReturnResult("Get list department success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentResultDto>>.ReturnResult("Get list department success", pagedResult, 200));
+        }
+
+        /// <summary>
+        /// Lấy phòng ban theo Id
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("{departmentId}")]
+        public async Task<IActionResult> GetById(Guid departmentId)
+        {
+            var result = await _departmentService.GetByIdAsync(departmentId);
+            if (result == null) return NotFound(ApiResponse<string>.ReturnResult("Department not found", null, 404));
+            return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Get department by Id success", result, 200));
         }
 
         /// <summary>
@@ -55,7 +67,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> AddDepartment([FromQuery] String Name)
         {
             var result = await _departmentService.AddAsync(Name);
-            return Ok(ApiResponse<ResponseModel.CreateDepartment>.ReturnResult("Department added success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Department added success", result, 200));
         }
 
         /// <summary>
@@ -66,7 +78,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
             var result = await _departmentService.UpdateAsync(id, newName);
-            return Ok(ApiResponse<ResponseModel.UpdateDepartment>.ReturnResult("Updated Department Success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Updated Department Success", result, 200));
         }
 
         /// <summary>
@@ -97,9 +109,9 @@ namespace EmployeeAPI.Controllers
             var pagedResult = await _departmentService.GetStaffByDepartmentAsync(departmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<UserFilter>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.UserFilter>>.ReturnResult("Get list User by department success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.UserFilterDto>>.ReturnResult("Get list User by department success", pagedResult, 200));
         }
 
         /// <summary>
@@ -117,7 +129,7 @@ namespace EmployeeAPI.Controllers
 
             var pagedResult = await _departmentService.GetListPositionAsync(DepartmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<PagedResult<PositionByDepartment>>.ReturnResult("Get list posistion by department success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<PositionByDepartmentDto >>.ReturnResult("Get list posistion by department success", pagedResult, 200));
         }
     }
 }

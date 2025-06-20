@@ -23,7 +23,7 @@ namespace EmployeeAPI.Services.DutyServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<ResponseModel.DutyDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
@@ -58,19 +58,17 @@ namespace EmployeeAPI.Services.DutyServices
                 .OrderByDescending(d => d.StartDate)
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
-                .Select(d => new ResponseModel.DutyDto
+                .Select(d => new ResponseModel.DutyResultDto
                 {
                     Id = d.Id,
                     Name = d.Name,
                     IsCompleted = d.IsCompleted,
-                    IsDeleted = d.IsDeleted,
                     StartDate = d.StartDate,
-                    AssignedById = d.AssignedById,
                     AssignedBy = d.AssignedBy.Fullname,
-                    DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailDto
+                    DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = dd.DutyDetailId,
-                        userId = dd.UserId,
+                        UserId = dd.UserId,
                         Description = dd.Description,
                         Name = dd.Users.Fullname,
                     }).ToList()
@@ -78,7 +76,7 @@ namespace EmployeeAPI.Services.DutyServices
                 .AsNoTracking()
                 .ToListAsync();
 
-            return new PagedResult<ResponseModel.DutyDto>
+            return new PagedResult<ResponseModel.DutyResultDto>
             {
                 Items = items,
                 PageIndex = pageIndex.Value,
@@ -86,7 +84,7 @@ namespace EmployeeAPI.Services.DutyServices
                 TotalCount = totalCount
             };
         }
-        public async Task<ResponseModel.DutyDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyResultDto> GetDutyByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var duty = await _dutyRepository.GetDutyByIdAsync(id);
 
@@ -112,25 +110,67 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new UnauthorizedAccessException("employee cannot access duties from other department");
             }
 
-            return new ResponseModel.DutyDto
+            return new ResponseModel.DutyResultDto
             {
                 Id = duty.Id,
                 Name = duty.Name,
                 IsCompleted = duty.IsCompleted,
                 StartDate = duty.StartDate,
-                AssignedById = duty.AssignedById,
                 AssignedBy = duty.AssignedBy?.Fullname,
-                DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                 {
                     DutyDetailId = d.DutyDetailId,
-                    userId = d.UserId,
+                    UserId = d.UserId,
                     Description = d.Description,
                     Name = d.Users?.Fullname,
                 }).ToList()
             };
         }
 
-        public async Task<ResponseModel.DutyDto> AddDutyAsync(ResponseModel.CreateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDetailResultDto> GetDutyDetailByIdAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
+        {
+            // Include luôn các navigation cần dùng để tránh lazy loading
+            var dutyDetail = await _context.DutyDetails
+                .Include(dd => dd.Duty)
+                .Include(dd => dd.Users)
+                .FirstOrDefaultAsync(dd => dd.DutyDetailId == dutyDetailId);
+
+            if (dutyDetail == null)
+                throw new ArgumentException("Cannot find duty detail");
+
+            var isAdmin = currentUserRoles.Contains("Admin");
+            var isManager = currentUserRoles.Contains("Manager");
+            var isEmployee = currentUserRoles.Contains("Employee");
+
+            if (isAdmin)
+            {
+                // Admin có quyền truy cập tất cả
+            }
+            else if (isManager)
+            {
+                // Nếu không phải chính mình hoặc không phải duty do mình giao thì không cho
+                bool isAssignedByMe = dutyDetail.Duty?.AssignedById == currentUserId;
+                bool isSelf = dutyDetail.UserId == currentUserId;
+
+                if (!isAssignedByMe && !isSelf)
+                    throw new UnauthorizedAccessException("Manager can only access duty details they assigned or are assigned to");
+            }
+            else if (isEmployee)
+            {
+                if (dutyDetail.UserId != currentUserId)
+                    throw new UnauthorizedAccessException("Employee can only access their own duty details");
+            }
+
+            return new ResponseModel.DutyDetailResultDto
+            {
+                DutyDetailId = dutyDetail.DutyDetailId,
+                UserId = dutyDetail.UserId,
+                Description = dutyDetail.Description,
+                Name = dutyDetail.Users?.Fullname,
+            };
+        }
+
+        public async Task<ResponseModel.DutyResultDto> AddDutyAsync(ResponseModel.CreateDutyDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -174,21 +214,19 @@ namespace EmployeeAPI.Services.DutyServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.DutyDto
+                return new ResponseModel.DutyResultDto
                 {
                     Id = duty.Id,
                     Name = duty.Name,
                     IsCompleted = duty.IsCompleted,
                     StartDate = duty.StartDate,
-                    AssignedById = duty.AssignedById,
                     AssignedBy = duty.AssignedBy?.Fullname,
-                    DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = d.DutyDetailId,
-                        userId = d.UserId,
+                        UserId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
-                        IsDeleted = d.IsDeleted,
                     }).ToList()
                 };
             }
@@ -199,7 +237,7 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        public async Task<ResponseModel.DutyDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyResultDto> AddDutyDetailAsync(ResponseModel.GetDutyDto dto, Guid DutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -226,9 +264,6 @@ namespace EmployeeAPI.Services.DutyServices
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager can only modify duties they assigned");
 
-                    //if (currentUser.DepartmentId == null)
-                    //    throw new Exception("Manager does not belong to any department");
-
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new Exception("Manager can only assign users from the same department");
                 }
@@ -239,7 +274,7 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (!existingUserIds.Contains(detailDto.userId))
                     {
-                        _context.DutyDetail.Add(new DutyDetail
+                        _context.DutyDetails.Add(new DutyDetail
                         {
                             UserId = detailDto.userId,
                             Description = detailDto.Description,
@@ -254,17 +289,16 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (result == null) throw new Exception("Cannot load result info after creation");
 
-                return new ResponseModel.DutyDto
+                return new ResponseModel.DutyResultDto
                 {
                     Id = result.Id,
                     Name = result.Name ?? null,
                     StartDate = result.StartDate,
-                    AssignedById = result.AssignedById,
                     AssignedBy = result.AssignedBy?.Fullname,
-                    DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = d.DutyDetailId,
-                        userId = d.UserId,
+                        UserId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
                     }).ToList()
@@ -278,7 +312,7 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
-        public async Task<ResponseModel.DutyDto> UpdateDutyAsync(ResponseModel.UpdateDuty dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyResultDto> UpdateDutyAsync(ResponseModel.UpdateDutyDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -307,18 +341,17 @@ namespace EmployeeAPI.Services.DutyServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.DutyDto
+                return new ResponseModel.DutyResultDto
                 {
                     Id = existingDuty.Id,
-                    AssignedById = existingDuty.AssignedById,
                     Name = existingDuty.Name,
                     IsCompleted = existingDuty.IsCompleted,
                     StartDate = existingDuty.StartDate,
                     AssignedBy = existingDuty.AssignedBy?.Fullname,
-                    DutyDetails = existingDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailDto
+                    DutyDetails = existingDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = d.DutyDetailId,
-                        userId = d.UserId,
+                        UserId = d.UserId,
                         Name = d.Users?.Fullname,
                         Description = d.Description
                     }).ToList(),
@@ -332,7 +365,7 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
-        public async Task<ResponseModel.DutyDetailDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetail dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.DutyDetailResultDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetailDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -369,10 +402,9 @@ namespace EmployeeAPI.Services.DutyServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.DutyDetailDto
+                return new ResponseModel.DutyDetailResultDto
                 {
                     DutyDetailId = existingDutyDetail.DutyDetailId,
-                    userId = existingDutyDetail.UserId,
                     Name = existingDutyDetail.Users.Fullname,
                     Description = existingDutyDetail.Description
                 };

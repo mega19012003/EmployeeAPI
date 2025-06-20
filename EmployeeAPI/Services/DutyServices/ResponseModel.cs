@@ -7,59 +7,48 @@ namespace EmployeeAPI.Services.DutyServices
 {
     public static class ResponseModel
     {
-        public class DutyDto //: BaseDto
+        public class DutyResultDto 
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
-            public Guid AssignedById { get; set; }
-            public string AssignedBy{ get; set; }
+            public string AssignedBy { get; set; }
             public bool IsCompleted { get; set; }
-            public bool IsDeleted { get; set; }
-            public List<DutyDetailDto> DutyDetails { get; set; } = new List<DutyDetailDto>();
+            public List<DutyDetailResultDto> DutyDetails { get; set; } = new List<DutyDetailResultDto>();
         }
-        public class CreateDuty
+        public class DutyDetailResultDto
+        {
+            public Guid DutyDetailId { get; set; }
+            public Guid UserId { get; set; }
+            public string Name { get; set; }
+            public string Description { get; set; }
+        }
+        public class CreateDutyDto
         {
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
-            public List<CreateDutyDetail> DutyDetails { get; set; } = new List<CreateDutyDetail>();
+            public List<CreateDutyDetailDto> DutyDetails { get; set; } = new List<CreateDutyDetailDto>();
         }
 
         public class GetDutyDto
         {
             public Guid Id { get; set; }
-            public List<CreateDutyDetail> DutyDetails { get; set; } = new List<CreateDutyDetail>();
+            public List<CreateDutyDetailDto> DutyDetails { get; set; } = new List<CreateDutyDetailDto>();
         }
-        public class UpdateDuty
+        public class UpdateDutyDto
         {
             public Guid Id { get; set; }
 
             public string Name { get; set; }
             public bool IsCompleted { get; set; }
-            //public List<UpdateDutyDetail> DutyDetails { get; set; } = new List<UpdateDutyDetail>();
         }
 
-        /*public class DeleteDuty
-        {
-            public Guid Id { get; set; }
-            public string Name { get; set; }
-            public bool IsDeleted { get; set; }
-        }*/
-        public class DutyDetailDto //: BaseDto
-        {
-            [Key]
-            public Guid DutyDetailId { get; set; }
-            public Guid userId { get; set; }
-            public string Name { get; set; }
-            public string Description { get; set; }
-            public bool IsDeleted { get; set; } = false;
-        }
-        public class CreateDutyDetail //: BaseDto
+        public class CreateDutyDetailDto
         {
             public Guid userId { get; set; }
             public string Description { get; set; }
         }
-        public class UpdateDutyDetail
+        public class UpdateDutyDetailDto
         {
             public Guid DutyDetailId { get; set; }
             public Guid userId { get; set; }

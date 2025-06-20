@@ -7,25 +7,18 @@ namespace EmployeeAPI.Services.UserService
 {
     public class ResponseModel
     {
-        public class UserDto //: BaseDto
+        public class UserResultDto 
         {
-            public Guid userId { get; set; }
+            public Guid UserId { get; set; }
             public string? Fullname { get; set; }
-            [JsonIgnore]
-            public RoleType? Role { get; set; } //= RoleType.Employee;
             public string RoleName { get; set; }
             public string? PhoneNumber { get; set; }
             public string? Address { get; set; }
-            [JsonIgnore]
-            public Guid? DepartmentId { get; set; }
             public string DepartmentName { get; set; }
-            [JsonIgnore]
-            public Guid? PositionId { get; set; }
             public string PositionName { get; set; }
             public double? BasicSalary { get; set; }
             public string ImageUrl { get; set; }
         }
-
         public class AdminUpdateDto 
         {
             [Required]
@@ -57,14 +50,5 @@ namespace EmployeeAPI.Services.UserService
             [Required]
             public bool IsActive { get; set; } = true;
         }
-
-        /*public class UserFilter
-        {
-            public Guid UserId { get; set; }
-            public string Name { get; set; }
-            public double BasicSalary { get; set; }
-            public string ImageUrl { get; set; }
-        }*/
-
     }
 }

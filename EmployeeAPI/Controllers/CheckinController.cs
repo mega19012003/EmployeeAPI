@@ -44,9 +44,9 @@ namespace EmployeeAPI.Controllers
             var pagedResult = await _checkinService.GetAllAsync(StaffName, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("No result", pagedResult, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin success", pagedResult, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("Get list checkin success", pagedResult, 200));
         }
 
         /// <summary>
@@ -70,7 +70,7 @@ namespace EmployeeAPI.Controllers
         /// </remarks>
         [Authorize]
         [HttpPost("Checkin")]
-        public async Task<IActionResult> Create([FromForm] ResponseModel.CreateCheckin dto)
+        public async Task<IActionResult> Create([FromForm] ResponseModel.CreateCheckinDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -95,7 +95,7 @@ namespace EmployeeAPI.Controllers
             if (result == null)
                 return BadRequest();
 
-            return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkin create success", result, 200));
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkin create success", result, 200));
         }
 
         /// <summary>
@@ -119,7 +119,7 @@ namespace EmployeeAPI.Controllers
         /// </remarks>
         [Authorize]
         [HttpPost("Chekout")]
-        public async Task<IActionResult> Checkout([FromForm] ResponseModel.CreateCheckout dto)
+        public async Task<IActionResult> Checkout([FromForm] ResponseModel. CreateCheckoutDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -135,7 +135,7 @@ namespace EmployeeAPI.Controllers
             }
 
             var result = await _checkinService.CheckoutAsync(dto, currentUserId, currentUserRoles);
-            return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("Checkout success", result, 200));
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkout success", result, 200));
         }
 
 
@@ -160,7 +160,7 @@ namespace EmployeeAPI.Controllers
         /// </remarks>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckin dto)
+        public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckinDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -169,7 +169,7 @@ namespace EmployeeAPI.Controllers
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
             var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
-            return Ok(ApiResponse<ResponseModel.CheckinDto>.ReturnResult("", updated, 200));
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("", updated, 200));
         }
 
         /// <summary>
@@ -208,9 +208,9 @@ namespace EmployeeAPI.Controllers
             var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, userId, pageIndex, pageSize);
 
             if (!result.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("No result", result, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("No result", result, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDto>>.ReturnResult("Get list checkin by user success", result, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("Get list checkin by user success", result, 200));
 
         }
     }
