@@ -53,8 +53,8 @@ namespace EmployeeAPI.Services.AuthServices
                 if (existed != null)
                     throw new ArgumentException("User already exists");
 
-                //if(!IsStrongPassword(dto.Password))
-                //    throw new ArgumentException("Password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
+                if(!IsStrongPassword(dto.Password))
+                    throw new ArgumentException("Password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
 
                 var generatedPassword = PasswordGenerator.Generate(16);
 
@@ -63,7 +63,7 @@ namespace EmployeeAPI.Services.AuthServices
                     UserId = Guid.NewGuid(),
                     Username = dto.Username,
                     //Password = HashPassword.Hash(generatedPassword),
-                    Password = HashPassword.ComputeHash(dto.Password),
+                    Password = HashPassword.Hash(dto.Password),
                     Fullname = dto.Fullname,
                     Role = dto.Role,
                     PhoneNumber = "",
@@ -83,7 +83,7 @@ namespace EmployeeAPI.Services.AuthServices
                     userId = entity.UserId,
                     Username = entity.Username,
                     Fullname = entity.Fullname,
-                    Password = generatedPassword, 
+                    //Password = entity.Password, 
                     RoleName = entity.Role.ToString(),
                 };
             }

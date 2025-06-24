@@ -13,7 +13,7 @@ namespace EmployeeAPI.Services.AuthServices
             public Guid userId { get; set; }
             public String Username { get; set; }
             public string Fullname { get; set; }
-            public string Password { get; set; }
+            //public string Password { get; set; }
             public string RoleName { get; set; }
         }
         public class LoginDto
