@@ -54,8 +54,8 @@ namespace EmployeeAPI.Controllers
         /// - <b>Manager - IT</b>:       {"username": "Manager456", "password": "zQYoEVA7*c#hP$YH"}
         /// - <b>Manager - Sửa chữa</b>: {"username": "Manager789", "password": "&gt;8)FkyutD$-c?Jw&gt;"}
         ///
-        /// - <b>Employee - Thu ngân 1</b>: {"username": "user101", "password": "I@&amp;rMdCnU1hGlp5$"}
-        /// - <b>Employee - Thu ngân 2</b>: {"username": "user01",  "password": "Z&lt;I0xLdS*FGgHOD-"}
+        /// - <b>Employee - Thu ngân 1 (Le Hanh C)</b>: {"username": "user101", "password": "I@&amp;rMdCnU1hGlp5$"}
+        /// - <b>Employee - Thu ngân 2 (Nguyen Van A)</b>: {"username": "user01",  "password": "Z&lt;I0xLdS*FGgHOD-"}
         /// - <b>Employee - IT</b>:         {"username": "user02",  "password": "(*3(PwmT3zuLF)9^"}
         /// - <b>Employee - Sửa chữa</b>:   {"username": "user100", "password": "Gpw=$$TSh^MrS?f2"}
         /// </remarks>
