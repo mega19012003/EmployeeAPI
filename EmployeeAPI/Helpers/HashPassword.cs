@@ -28,7 +28,6 @@ namespace EmployeeAPI.Helpers
 
             return Convert.ToBase64String(hashBytes);
         }
-
         public static bool Verify(string savedHash, string inputPassword)
         {
             byte[] hashBytes = Convert.FromBase64String(savedHash);
