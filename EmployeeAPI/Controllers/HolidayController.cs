@@ -23,9 +23,9 @@ namespace EmployeeAPI.Controllers
         ///</summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
-        public async Task<IActionResult> GetAllHolidays(string? name, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllHolidays(string? Search, int? pageIndex, int? pageSize)
         {
-            var pagedResult = await _holidayService.GetAllAsync(name, pageSize, pageIndex);
+            var pagedResult = await _holidayService.GetAllAsync(Search, pageSize, pageIndex);
             if (pagedResult == null || !pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("No result", pagedResult, 200));
             return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("Get list holiday success", pagedResult, 200));

@@ -12,6 +12,7 @@ namespace EmployeeAPI.Models
         public Duty Duty { get; set; }
         public Guid UserId { get; set; }
         public User Users { get; set; }
+        public bool IsCompleted { get; set; } = false;
         //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public bool IsDeleted { get; set; } = false;
         public string Description { get; set; }

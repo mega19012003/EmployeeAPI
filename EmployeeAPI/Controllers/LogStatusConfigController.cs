@@ -8,11 +8,11 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class CheckinStatusConfigController : ControllerBase
+    public class LogStatusConfigController : ControllerBase
     {
-        private readonly ICheckinStatusConfigService _service;
+        private readonly ILogStatusConfigService _service;
 
-        public CheckinStatusConfigController(ICheckinStatusConfigService service)
+        public LogStatusConfigController(ILogStatusConfigService service)
         {
             _service = service;
         }
@@ -26,7 +26,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> GetAll()
         {
             var configs = await _service.GetAllConfigsAsync();
-            return Ok(ApiResponse<IEnumerable<CheckinStatusConfig>>.ReturnResult("Get all configs success", configs, 200));
+            return Ok(ApiResponse<IEnumerable<LogStatusConfig>>.ReturnResult("Get all configs success", configs, 200));
         }
 
         /// <summary>
@@ -35,10 +35,10 @@ namespace EmployeeAPI.Controllers
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] CheckinStatusConfig updated)
+        public async Task<IActionResult> Update([FromBody] LogStatusConfig updated)
         {
             var result = await _service.UpdateConfigAsync(updated);
-            return Ok(ApiResponse<CheckinStatusConfig>.ReturnResult("Update config success", result, 200));
+            return Ok(ApiResponse<LogStatusConfig>.ReturnResult("Update config success", result, 200));
         }
     }
 }

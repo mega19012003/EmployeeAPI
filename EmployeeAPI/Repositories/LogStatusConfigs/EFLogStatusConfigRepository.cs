@@ -3,26 +3,26 @@ using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Repositories.CheckinStatusConfigs
 {
-    public class EFCheckinStatusConfigRepository : ICheckinStatusConfigRepository
+    public class EFLogStatusConfigRepository : ILogStatusConfigRepository
     {
         private readonly AppDbContext _context;
 
-        public EFCheckinStatusConfigRepository(AppDbContext context)
+        public EFLogStatusConfigRepository(AppDbContext context)
         {
             _context = context;
         }
 
-        public async Task<List<CheckinStatusConfig>> GetAllAsync()
+        public async Task<List<LogStatusConfig>> GetAllAsync()
         {
             return await _context.CheckinStatusConfigs.ToListAsync();
         }
 
-        public async Task<CheckinStatusConfig?> GetByIdAsync(int id)
+        public async Task<LogStatusConfig?> GetByIdAsync(int id)
         {
             return await _context.CheckinStatusConfigs.FindAsync(id);
         }
 
-        public async Task UpdateAsync(CheckinStatusConfig config)
+        public async Task UpdateAsync(LogStatusConfig config)
         {
             _context.CheckinStatusConfigs.Update(config);
             await _context.SaveChangesAsync();

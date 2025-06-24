@@ -9,6 +9,7 @@ using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
+using EmployeeAPI.Repositories.CheckinStatusConfigs;
 using EmployeeAPI.Repositories.Holidays;
 using EmployeeAPI.Repositories.Users;
 using Microsoft.AspNetCore.Http.HttpResults;
@@ -25,8 +26,8 @@ namespace EmployeeAPI.Services.CheckinServices
         private readonly IAllowedIPRepository _allowedIPRepository;
         private readonly AppDbContext _context;
         private readonly ILogger<CheckinService> _logger;
-
-        public CheckinService(ICheckinRepository checkinRepository, IUserRepository userRepository, IHolidayRepository holidayRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger)
+        private readonly ILogStatusConfigRepository _logStatusConfigRepository;
+        public CheckinService(ICheckinRepository checkinRepository, ILogStatusConfigRepository logStatusConfigRepository, IUserRepository userRepository, IHolidayRepository holidayRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger)
         {
             _checkinRepository = checkinRepository;
             _userRepository = userRepository;
@@ -34,6 +35,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _allowedIPRepository = allowedIPRepository;
             _context = context;
             _logger = logger;
+            _logStatusConfigRepository = logStatusConfigRepository;
         }
         
         public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
@@ -91,7 +93,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         public async Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
@@ -130,24 +131,20 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
+        
         public async Task<CheckinResultDto> CreateAsync(CreateCheckinDto dto, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var isAdmin = roles.Contains("Admin");
+                var isAdmin = roles.Contains("Administrator");
                 var isManager = roles.Contains("Manager");
                 var isEmployee = roles.Contains("Employee");
 
                 Guid targetUserId;
                 targetUserId = currentUserId;
 
-                if (isAdmin)
-                {
-                    targetUserId = dto.userId == null || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
-                }
-                else if (isManager)
+                if (isManager)
                 {
                     targetUserId = dto.userId == null || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
 
@@ -157,10 +154,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     if (currentUser == null || targetUser == null) throw new ArgumentException("User not found");
 
                     if (currentUser.DepartmentId != targetUser.DepartmentId) throw new ArgumentException("Manager can only checkin for users in the same department");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("Access Denied");
                 }
 
                 var user = await _userRepository.GetByIdAsync(targetUserId);
@@ -192,25 +185,20 @@ namespace EmployeeAPI.Services.CheckinServices
                 var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
 
                 var checkinStatus = isSunday || isHoliday
-                    ? CheckinStatus.Overtime : (
+                    ? Enums.LogStatus.Overtime : (
                         TimeOnly.FromDateTime(vnTime) > schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes)
-                            ? CheckinStatus.Overtime : (
-                                TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes) ? CheckinStatus.OnTime : CheckinStatus.Late
+                            ? Enums.LogStatus.Overtime : (
+                                TimeOnly.FromDateTime(vnTime) <= schedule.StartTime.AddMinutes(schedule.LateThresholdMinutes) ? Enums.LogStatus.OnTime : Enums.LogStatus.Late
                             )
                       );
-
-                if (isEmployee)
-                {
-                    dto.CheckinStatus = checkinStatus;
-                }
 
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     UserId = targetUserId,
                     CheckinDate = nowUtc,
-                    CheckinStatus = dto.CheckinStatus ?? checkinStatus,
-                    CheckoutStatus = dto.CheckinStatus ?? CheckinStatus.Absent
+                    CheckinStatus = dto.LogStatus ?? checkinStatus,
+                    CheckoutStatus = dto.LogStatus ?? Enums.LogStatus.Absent
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -221,7 +209,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = checkin.Id,
                     CheckinDate = checkin.CheckinDate,
-                    Name = user.Fullname
+                    CheckoutDate = checkin.CheckoutDate,
+                    Name = user.Fullname,
+                    Checkin = checkin.CheckinStatus.ToString(),
+                    Checkout = checkin.CheckoutStatus.ToString(),
                 };
             }
             catch (Exception ex)
@@ -231,8 +222,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
-
         public async Task<ResponseModel.CheckinResultDto> CheckoutAsync(ResponseModel. CreateCheckoutDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -295,21 +284,23 @@ namespace EmployeeAPI.Services.CheckinServices
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
                 var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
 
-                CheckinStatus newStatus;
+                Enums.LogStatus newStatus;
 
                 if (currentTimeOnly > overtimeThreshold)
-                    newStatus = CheckinStatus.Overtime;
+                    newStatus = Enums.LogStatus.Overtime;
                 else if (currentTimeOnly < schedule.EndTime)
-                    newStatus = CheckinStatus.LeaveEarly;
+                    newStatus = Enums.LogStatus.LeaveEarly;
                 else
-                    newStatus = CheckinStatus.OnTime;
+                    newStatus = Enums.LogStatus.OnTime;
 
                 var checkoutUtc = TimeZoneInfo.ConvertTimeToUtc(nowVn, vnTimeZone);
 
                 todayCheckin.CheckoutDate = checkoutUtc;
                 todayCheckin.CheckoutStatus = newStatus;
 
-                todayCheckin.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
+                //todayCheckin.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
+
+                todayCheckin.SalaryPerDay = await CalculateSalaryPerDayAsync(existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
 
                 _context.Checkins.Update(todayCheckin);
                 await _context.SaveChangesAsync();
@@ -333,7 +324,23 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
+        public async Task<double> CalculateSalaryPerDayAsync(User user, Enums.LogStatus checkinStatus, Enums.LogStatus checkoutStatus)
+        {
+            var checkinConfig = await _logStatusConfigRepository.GetByIdAsync((int)checkinStatus);
+            var checkoutConfig = await _logStatusConfigRepository.GetByIdAsync((int)checkoutStatus);
 
+            if (checkinConfig == null || checkoutConfig == null)
+                throw new Exception("Không tìm thấy hệ số lương cho trạng thái Checkin hoặc Checkout.");
+
+            var baseSalary = user.BasicSalary;
+
+            var halfSalary = baseSalary / 2.0;
+
+            var salaryToday = (halfSalary * checkinConfig.SalaryMultiplier) + (halfSalary * checkoutConfig.SalaryMultiplier);
+
+            return salaryToday;
+        }
+        
         public async Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
  
@@ -357,8 +364,9 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 existing.CheckinStatus = dto.CheckinStatus;
                 existing.CheckoutStatus = dto.CheckoutStatus;
-                existing.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, employee, existing.CheckinStatus, existing.CheckoutStatus);
-
+                //existing.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, employee, existing.CheckinStatus, existing.CheckoutStatus);
+                existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinStatus, existing.CheckoutStatus);
+                
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -380,7 +388,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         public async Task AutoMarkAbsentAsync(TimeOnly endTime)
         {
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -427,14 +434,16 @@ namespace EmployeeAPI.Services.CheckinServices
 
             foreach (var user in absentUsers)
             {
-                double salary = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, user, CheckinStatus.Absent, CheckinStatus.Absent);
+                //double salary = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, user, Enums.LogStatus.Absent, Enums.LogStatus.Absent);
+                double salary = await CalculateSalaryPerDayAsync(user, Enums.LogStatus.Absent, Enums.LogStatus.Absent);
+
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     UserId = user.UserId,
-                    CheckinStatus = CheckinStatus.Absent,
+                    CheckinStatus = Enums.LogStatus.Absent,
                     CheckinDate = DateTime.UtcNow,
-                    CheckoutStatus = CheckinStatus.Absent,
+                    CheckoutStatus = Enums.LogStatus.Absent,
                     CheckoutDate = DateTime.UtcNow,
                     SalaryPerDay = salary
                 };
@@ -446,7 +455,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
             _logger.LogInformation($"Mark {absentUsers.Count} users absent on {today:dd/MM/yyyy}.");
         }
-
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -489,7 +497,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize)
         {
             try

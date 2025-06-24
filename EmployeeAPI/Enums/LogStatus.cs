@@ -1,6 +1,6 @@
 ﻿namespace EmployeeAPI.Enums
 {
-    public enum CheckinStatus
+    public enum LogStatus
     {
         OnTime = 0,
         Late = 1,

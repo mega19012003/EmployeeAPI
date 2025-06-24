@@ -34,7 +34,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? StaffName, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -42,7 +42,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _checkinService.GetAllAsync(StaffName, pageIndex, pageSize, currentUserId, currentUserRoles);
+            var pagedResult = await _checkinService.GetAllAsync(Search, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("No result", pagedResult, 200));

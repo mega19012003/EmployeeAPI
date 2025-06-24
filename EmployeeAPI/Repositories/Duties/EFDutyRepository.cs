@@ -24,7 +24,7 @@ namespace EmployeeAPI.Repositories.Duties
         {
             return _context.Duties
                 .AsNoTracking()
-                .Include(d => d.DutyDetails)
+                .Include(d => d.DutyDetails/*.Where(dd => !dd.IsDeleted)*/)
                 .ThenInclude(dd => dd.Users)
                 .Where(p => !p.IsDeleted)
                 .AsQueryable();
@@ -34,7 +34,7 @@ namespace EmployeeAPI.Repositories.Duties
         {
             return await _context.Duties
                 .Include(p => p.AssignedBy)
-                .Include(p => p.DutyDetails)
+                .Include(p => p.DutyDetails.Where(dd => !dd.IsDeleted))
                 .ThenInclude(p => p.Users)
                 .Where(p => !p.IsDeleted)
                 .FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
@@ -48,11 +48,17 @@ namespace EmployeeAPI.Repositories.Duties
                 .FirstOrDefaultAsync(p => p.DutyDetailId == id && !p.IsDeleted);
         }
 
+
         public async Task<Duty> AddAsync(Duty duty)
         {
                 await _context.Duties.AddAsync(duty);
-                await _context.SaveChangesAsync();
                 return duty;
+        }
+
+        public async Task<DutyDetail> AddDutyDetailAsync(DutyDetail detail)
+        {
+            await _context.DutyDetails.AddAsync(detail);
+            return detail;
         }
 
         public async Task UpdateDutyAsync(Duty duty)

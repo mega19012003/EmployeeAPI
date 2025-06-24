@@ -5,6 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
 using Azure;
 using EmployeeAPI.Services.AuthServices;
+using EmployeeAPI.Helpers;
 
 namespace EmployeeAPI.Repositories.Auth
 {
@@ -20,8 +21,8 @@ namespace EmployeeAPI.Repositories.Auth
         public async Task<User> LoginAsync(string username, string password)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
-            if (user == null || user.Password != HashPassword(password))
-                return null;
+            //if (user == null || !HashPassword.Verify(user.Password, password))
+            //    return null;
 
             return user;
         }
@@ -30,15 +31,7 @@ namespace EmployeeAPI.Repositories.Auth
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
         }
-        private string HashPassword(string password)
-        {
-            using (var sha256 = SHA256.Create())
-            {
-                var bytes = Encoding.UTF8.GetBytes(password);
-                var hash = sha256.ComputeHash(bytes);
-                return Convert.ToBase64String(hash);
-            }
-        }
+
         public IQueryable<User> GetAll()
         {
             return _context.Users
@@ -60,6 +53,7 @@ namespace EmployeeAPI.Repositories.Auth
             return result;*/
             return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
+
         public async Task<User> GetByIdAsync(Guid id)
         {
             var results = await _context.Users.Include(p => p.Department).Include(p => p.Position).FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);

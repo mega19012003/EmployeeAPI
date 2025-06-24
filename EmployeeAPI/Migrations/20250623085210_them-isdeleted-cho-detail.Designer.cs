@@ -4,6 +4,7 @@ using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250623085210_them-isdeleted-cho-detail")]
+    partial class themisdeletedchodetail
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,6 +72,77 @@ namespace EmployeeAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Checkins");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.CheckinStatusConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("SalaryMultiplier")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("CheckinStatusConfigs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 0,
+                            Name = "OnTime",
+                            Note = "Đi đúng giờ",
+                            SalaryMultiplier = 1.0
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Name = "Late",
+                            Note = "Đi trễ",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "LeaveEarly",
+                            Note = "Về sớm",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "Overtime",
+                            Note = "Làm thêm giờ",
+                            SalaryMultiplier = 1.3
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "Absent",
+                            Note = "Nghỉ không phép",
+                            SalaryMultiplier = 0.5
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "LeaveWithPermission",
+                            Note = "Nghỉ có phép",
+                            SalaryMultiplier = 0.90000000000000002
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Others",
+                            Note = "Khác",
+                            SalaryMultiplier = 1.0
+                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
@@ -176,77 +250,6 @@ namespace EmployeeAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Holidays");
-                });
-
-            modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("SalaryMultiplier")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("CheckinStatusConfigs");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 0,
-                            Name = "OnTime",
-                            Note = "Đi đúng giờ",
-                            SalaryMultiplier = 1.0
-                        },
-                        new
-                        {
-                            Id = 1,
-                            Name = "Late",
-                            Note = "Đi trễ",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "LeaveEarly",
-                            Note = "Về sớm",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Overtime",
-                            Note = "Làm thêm giờ",
-                            SalaryMultiplier = 1.3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Absent",
-                            Note = "Nghỉ không phép",
-                            SalaryMultiplier = 0.5
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "LeaveWithPermission",
-                            Note = "Nghỉ có phép",
-                            SalaryMultiplier = 0.90000000000000002
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Others",
-                            Note = "Khác",
-                            SalaryMultiplier = 1.0
-                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>

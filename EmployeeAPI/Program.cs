@@ -72,7 +72,7 @@ builder.Services.AddScoped<ICheckinRepository, EFCheckinRepository>();
 builder.Services.AddScoped<IPayrollRepository, EFPayrollRepository>();
 builder.Services.AddScoped<IUserRepository, EFUserRepository>();
 builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
-builder.Services.AddScoped<ICheckinStatusConfigRepository, EFCheckinStatusConfigRepository>();
+builder.Services.AddScoped<ILogStatusConfigRepository, EFLogStatusConfigRepository>();
 builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
 builder.Services.AddScoped<IHolidayRepository, EFHolidayRepository>();
 
@@ -84,7 +84,7 @@ builder.Services.AddScoped<IPayrollService, PayrollService>();
 builder.Services.AddScoped<IAuthService,  AuthService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IScheduleTimeService, ScheduleTimeService>();
-builder.Services.AddScoped<ICheckinStatusConfigService, CheckinStatusConfigService>();
+builder.Services.AddScoped<ILogStatusConfigService, LogStatusConfigService>();
 builder.Services.AddScoped<IAllowedIPService, AllowedIPService>();
 builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<ICloudImageService, CloudImageService>();

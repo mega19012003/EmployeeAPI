@@ -3,28 +3,28 @@ using EmployeeAPI.Repositories.CheckinStatusConfigs;
 
 namespace EmployeeAPI.Services.CheckinStatusConfigServices
 {
-    public class CheckinStatusConfigService : ICheckinStatusConfigService
+    public class LogStatusConfigService : ILogStatusConfigService
     {
-        private readonly ICheckinStatusConfigRepository _repository;
+        private readonly ILogStatusConfigRepository _repository;
         private readonly AppDbContext _context;
 
-        public CheckinStatusConfigService(ICheckinStatusConfigRepository repository, AppDbContext context)
+        public LogStatusConfigService(ILogStatusConfigRepository repository, AppDbContext context)
         {
             _repository = repository;
             _context = context;
         }
 
-        public async Task<IEnumerable<CheckinStatusConfig>> GetAllConfigsAsync()
+        public async Task<IEnumerable<LogStatusConfig>> GetAllConfigsAsync()
         {
             return await _repository.GetAllAsync();
         }
 
-        public async Task<CheckinStatusConfig?> GetConfigAsync(int id)
+        public async Task<LogStatusConfig?> GetConfigAsync(int id)
         {
             return await _repository.GetByIdAsync(id);
         }
 
-        public async Task<CheckinStatusConfig> UpdateConfigAsync(CheckinStatusConfig updatedConfig)
+        public async Task<LogStatusConfig> UpdateConfigAsync(LogStatusConfig updatedConfig)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.CheckinStatusConfigServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new CheckinStatusConfig
+                return new LogStatusConfig
                 {
                     Id = existing.Id,
                     Name = existing.Name,

@@ -13,6 +13,7 @@ namespace EmployeeAPI.Services.AuthServices
             public Guid userId { get; set; }
             public String Username { get; set; }
             public string Fullname { get; set; }
+            public string Password { get; set; }
             public string RoleName { get; set; }
         }
         public class LoginDto
@@ -41,9 +42,8 @@ namespace EmployeeAPI.Services.AuthServices
             [Required]
             public string Username { get; set; }
             [Required]
-            public string Password { get; set; }
-            [Required]
             public string Fullname { get; set; }
+            public string Password { get; set; }
             [Required]
             public RoleType Role { get; set; }
         }

@@ -10,8 +10,8 @@ namespace EmployeeAPI.Models
         public User Users { get; set; }
         public DateTime CheckinDate { get; set; } 
         public DateTime CheckoutDate { get; set; } 
-        public CheckinStatus CheckinStatus { get; set; } = CheckinStatus.OnTime;
-        public CheckinStatus CheckoutStatus { get; set; } = CheckinStatus.OnTime;
+        public Enums.LogStatus CheckinStatus { get; set; } = Enums.LogStatus.OnTime;
+        public Enums.LogStatus CheckoutStatus { get; set; } = Enums.LogStatus.OnTime;
         public double SalaryPerDay { get; set; } = 0.0;
         public bool IsDeleted { get; set; } = false;
         //public string updateBy { get; set; } 

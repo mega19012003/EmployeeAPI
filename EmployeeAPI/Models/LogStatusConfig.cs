@@ -4,7 +4,7 @@ using EmployeeAPI.Enums;
 
 namespace EmployeeAPI.Models
 {
-    public class CheckinStatusConfig
+    public class LogStatusConfig
     {
         [Key]
         [DatabaseGenerated(DatabaseGeneratedOption.None)] // 👈 Bắt buộc để EF không tự tăng Id

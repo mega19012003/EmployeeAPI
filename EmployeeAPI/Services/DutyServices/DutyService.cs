@@ -1,6 +1,7 @@
 ﻿using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Users;
@@ -71,6 +72,7 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = dd.UserId,
                         Description = dd.Description,
                         Name = dd.Users.Fullname,
+                        IsCompleted = dd.IsCompleted
                     }).ToList()
                 })
                 .AsNoTracking()
@@ -123,17 +125,13 @@ namespace EmployeeAPI.Services.DutyServices
                     UserId = d.UserId,
                     Description = d.Description,
                     Name = d.Users?.Fullname,
+                    IsCompleted = d.IsCompleted
                 }).ToList()
             };
         }
-
         public async Task<ResponseModel.DutyDetailResultDto> GetDutyDetailByIdAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
         {
-            // Include luôn các navigation cần dùng để tránh lazy loading
-            var dutyDetail = await _context.DutyDetails
-                .Include(dd => dd.Duty)
-                .Include(dd => dd.Users)
-                .FirstOrDefaultAsync(dd => dd.DutyDetailId == dutyDetailId);
+            var dutyDetail = await _dutyRepository.GetDutyDetailByIdAsync(dutyDetailId);
 
             if (dutyDetail == null)
                 throw new ArgumentException("Cannot find duty detail");
@@ -142,13 +140,8 @@ namespace EmployeeAPI.Services.DutyServices
             var isManager = currentUserRoles.Contains("Manager");
             var isEmployee = currentUserRoles.Contains("Employee");
 
-            if (isAdmin)
+            if (isManager)
             {
-                // Admin có quyền truy cập tất cả
-            }
-            else if (isManager)
-            {
-                // Nếu không phải chính mình hoặc không phải duty do mình giao thì không cho
                 bool isAssignedByMe = dutyDetail.Duty?.AssignedById == currentUserId;
                 bool isSelf = dutyDetail.UserId == currentUserId;
 
@@ -167,9 +160,11 @@ namespace EmployeeAPI.Services.DutyServices
                 UserId = dutyDetail.UserId,
                 Description = dutyDetail.Description,
                 Name = dutyDetail.Users?.Fullname,
+                IsCompleted = dutyDetail.IsCompleted
             };
         }
-
+        
+        
         public async Task<ResponseModel.DutyResultDto> AddDutyAsync(ResponseModel.CreateDutyDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -184,6 +179,11 @@ namespace EmployeeAPI.Services.DutyServices
                     .Where(u => userIdsToAssign.Contains(u.UserId))
                     .ToListAsync();
 
+                var conflict = await _context.DutyDetails
+                    .Where(dd => userIdsToAssign.Contains(dd.UserId) && !dd.IsDeleted && !dd.IsCompleted)
+                    .Select(dd => dd.UserId)
+                    .FirstOrDefaultAsync();
+
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new Exception("User not found");
 
@@ -192,15 +192,24 @@ namespace EmployeeAPI.Services.DutyServices
                     if (currentUser.DepartmentId == null)
                         throw new Exception("Manager does not belong to any department");
 
+                    if (assignedUsers.Any(u => u.Role != RoleType.Employee))
+                        throw new Exception("Only employees can be assigned to a duty");
+
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
-                        throw new Exception("Manager can only assign users from the same department");
+                        throw new Exception("Manager can only assign employee from the same department");
+
+                    if (conflict != Guid.Empty)
+                        throw new InvalidOperationException("One or more employees are already assigned to an uncompleted duty.");
                 }
+
+                if (dto.StartDate.Date < DateTime.UtcNow.Date)
+                    throw new Exception("Start date cannot be earlier than today");
 
                 var duty = new Duty
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
-                    StartDate = DateTime.Now,
+                    StartDate = dto.StartDate,
                     AssignedById = currentUserId,
                     DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                     {
@@ -227,6 +236,8 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
+                        IsCompleted = d.IsCompleted
+
                     }).ToList()
                 };
             }
@@ -248,13 +259,16 @@ namespace EmployeeAPI.Services.DutyServices
                 var duty = await _dutyRepository.GetDutyByIdAsync(DutyId);
                 if (duty == null) throw new Exception("Duty not found");
 
+                //var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
                 var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
                 var assignedUsers = await _context.Users
                     .Where(u => userIdsToAssign.Contains(u.UserId))
                     .ToListAsync();
 
-                if (assignedUsers.Count != userIdsToAssign.Count)
-                    throw new Exception("One or more users not found");
+                var conflict = await _context.DutyDetails
+                   .Where(dd => userIdsToAssign.Contains(dd.UserId) && !dd.IsDeleted && !dd.IsCompleted)
+                   .Select(dd => dd.UserId)
+                   .FirstOrDefaultAsync();
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new Exception("User not found");
@@ -264,30 +278,39 @@ namespace EmployeeAPI.Services.DutyServices
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager can only modify duties they assigned");
 
+                    if (assignedUsers.Any(u => u.Role != RoleType.Employee))
+                        throw new Exception("Only employees can be assigned to a duty");
+
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
-                        throw new Exception("Manager can only assign users from the same department");
+                        throw new Exception("Manager can only assign employee from the same department");
+
+                    if (conflict != Guid.Empty)
+                        throw new InvalidOperationException("One or more employees are already assigned to an uncompleted duty.");
                 }
 
-                // Thêm DutyDetail mới, tránh thêm trùng UserId
                 var existingUserIds = duty.DutyDetails.Select(dd => dd.UserId).ToHashSet();
                 foreach (var detailDto in dto.DutyDetails)
                 {
                     if (!existingUserIds.Contains(detailDto.userId))
                     {
-                        _context.DutyDetails.Add(new DutyDetail
+                        var newDetail = new DutyDetail
                         {
                             UserId = detailDto.userId,
                             Description = detailDto.Description,
                             DutyId = duty.Id,
-                        });
+                        };
+                        await _dutyRepository.AddDutyDetailAsync(newDetail);
                     }
-                }
+                    else {
+                        throw new Exception("This user is already assigned to this duty");
+                        }
+                    }
+
                 await _context.SaveChangesAsync();
+                await UpdateDutyCompletionStatusAsync(duty.Id);
                 await transaction.CommitAsync();
 
-                var result = await _context.Duties.Include(d => d.AssignedBy).Include(d => d.DutyDetails).ThenInclude(dd => dd.Users).FirstOrDefaultAsync(d => d.Id == duty.Id);
-
-                if (result == null) throw new Exception("Cannot load result info after creation");
+                var result = await _dutyRepository.GetDutyByIdAsync(duty.Id);
 
                 return new ResponseModel.DutyResultDto
                 {
@@ -301,6 +324,7 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = d.UserId,
                         Description = d.Description,
                         Name = d.Users?.Fullname,
+                        IsCompleted = d.IsCompleted
                     }).ToList()
                 };
             }
@@ -312,6 +336,7 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
+        
         public async Task<ResponseModel.DutyResultDto> UpdateDutyAsync(ResponseModel.UpdateDutyDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -329,13 +354,10 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (existingDuty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
-
-                    //if (currentUser.DepartmentId == null)
-                    //    throw new Exception("Manager does not belong to any department");
                 }
 
                 existingDuty.Name = dto.Name;
-                existingDuty.IsCompleted = dto.IsCompleted;
+                //existingDuty.IsCompleted = dto.IsCompleted;
 
                 await _dutyRepository.UpdateDutyAsync(existingDuty);
                 await _context.SaveChangesAsync();
@@ -353,7 +375,8 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Name = d.Users?.Fullname,
-                        Description = d.Description
+                        Description = d.Description,
+                        IsCompleted = d.IsCompleted
                     }).ToList(),
                 };
             }
@@ -364,7 +387,56 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
+        /*public async Task<ResponseModel.DutyResultDto> MarkDutyAsCompletedAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var duty = await _dutyRepository.GetDutyByIdAsync(dutyId);
+                if (duty == null)
+                    throw new ArgumentException("Duty not found");
 
+                var isManager = currentUserRoles.Contains("Manager");
+                var isAdmin = currentUserRoles.Contains("Administrator");
+
+                if (isManager)
+                {
+                    if (duty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
+
+                    if (!duty.DutyDetails.All(d => d.IsCompleted))
+                        throw new InvalidOperationException("Cannot mark as completed until all duty details are completed.");
+                }
+
+                duty.IsCompleted = true;
+                await _dutyRepository.UpdateDutyAsync(duty);
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
+                return new ResponseModel.DutyResultDto
+                {
+                    Id = duty.Id,
+                    Name = duty.Name,
+                    IsCompleted = duty.IsCompleted,
+                    StartDate = duty.StartDate,
+                    AssignedBy = duty.AssignedBy?.Fullname,
+                    DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
+                    {
+                        DutyDetailId = d.DutyDetailId,
+                        UserId = d.UserId,
+                        Name = d.Users?.Fullname,
+                        Description = d.Description,
+                        IsCompleted = d.IsCompleted
+                    }).ToList()
+                };
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "An error occurred while marking duty as completed. Message: {Message}", ex.Message);
+                throw;
+            }
+        }*/
         public async Task<ResponseModel.DutyDetailResultDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetailDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -406,7 +478,8 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     DutyDetailId = existingDutyDetail.DutyDetailId,
                     Name = existingDutyDetail.Users.Fullname,
-                    Description = existingDutyDetail.Description
+                    Description = existingDutyDetail.Description,
+                    IsCompleted = existingDutyDetail.IsCompleted
                 };
             }
             catch (Exception ex)
@@ -416,6 +489,68 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
+        public async Task<string> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
+        {
+            using var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                var detail = await _dutyRepository.GetDutyDetailByIdAsync(dutyDetailId);
+                if (detail == null)
+                    throw new ArgumentException("Duty detail not found");
+
+                var isEmployee = currentUserRoles.Contains("Employee");
+                var isManager = currentUserRoles.Contains("Manager");
+                var isAdmin = currentUserRoles.Contains("Administrator");
+
+                if (isEmployee)
+                {
+                    if (detail.UserId != currentUserId)
+                        throw new UnauthorizedAccessException("Employee can only complete their own duty details.");
+                }
+
+                if (isManager)
+                {
+                    var currentUser = await _context.Users.FindAsync(currentUserId);
+                    if (detail.Duty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager can only modify duties they assigned.");
+
+                    if (detail.Users.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager can only complete duty details of users in the same department.");
+                }
+
+                detail.IsCompleted = true;
+                await _dutyRepository.UpdateDutyDetailAsync(detail);
+                await _context.SaveChangesAsync();
+                await UpdateDutyCompletionStatusAsync(detail.DutyId);
+                await transaction.CommitAsync();
+
+                return "Duty detail " + detail.Description + " completed";
+            }
+            catch (Exception ex)
+            {
+                await transaction.RollbackAsync();
+                _logger.LogError(ex, "An error occurred while marking duty detail as completed. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
+        }
+        private async Task UpdateDutyCompletionStatusAsync(Guid dutyId)
+        {
+            var duty = await _dutyRepository.GetDutyByIdAsync(dutyId);
+            if (duty == null)
+                throw new ArgumentException("Duty not found");
+
+            bool allCompleted = duty.DutyDetails
+                .Where(d => !d.IsDeleted)
+                .All(d => d.IsCompleted);
+
+            if (duty.IsCompleted != allCompleted)
+            {
+                duty.IsCompleted = allCompleted;
+                await _dutyRepository.UpdateDutyAsync(duty);
+                await _context.SaveChangesAsync();
+            }
+        }
+
 
         public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -481,6 +616,7 @@ namespace EmployeeAPI.Services.DutyServices
                 entity.IsDeleted = true;
                 await _dutyRepository.UpdateDutyDetailAsync(entity);
                 await _context.SaveChangesAsync();
+                await UpdateDutyCompletionStatusAsync(entity.DutyId);
                 await transaction.CommitAsync();
                 return "Delete duty detail " + entity.DutyDetailId + " success";
             }
@@ -491,5 +627,7 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
+
+
     }
 }

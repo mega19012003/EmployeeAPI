@@ -25,9 +25,9 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? IpAdress, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, int? pageIndex, int? pageSize)
         {
-            var pageResult = await _allowedIPService.GetAllAsync(IpAdress, pageIndex, pageSize);
+            var pageResult = await _allowedIPService.GetAllAsync(Search, pageIndex, pageSize);
             return Ok(ApiResponse<PagedResult<AllowedIP>>.ReturnResult("Get ip success", pageResult, 200));
         }
 

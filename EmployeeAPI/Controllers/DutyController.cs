@@ -28,7 +28,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? name, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetAll(string? Search, int? pageSize, int? pageIndex)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -36,7 +36,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, name, pageIndex, pageSize);
+            var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, Search, pageIndex, pageSize);
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.DutyResultDto>>.ReturnResult("No result", pagedResult, 200));
 
@@ -47,7 +47,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("{dutyId}")]
+        [HttpGet("duty/{dutyId}")]
         public async Task<IActionResult> GetDutyByIdAsync(Guid dutyId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy chi tiết công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("{detailId}")]
+        [HttpGet("detail/{detailId}")]
         public async Task<IActionResult> GetDetailByIdAsync(Guid detailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -134,6 +134,24 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// Đánh dấu là hoàn tất công việc, manager có thể đánh dấu công việc của mình
+        /// </summary>
+        //[Authorize(Roles = "Administrator, Manager")]
+        //[HttpPut("{dutyId}")]
+        //public async Task<IActionResult> MarkDutyAsCompletedAsync(Guid dutyId)
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return Unauthorized("UserId invalid");
+
+        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+        //    var result = await _dutyService.MarkDutyAsCompletedAsync(dutyId, currentUserId, currentUserRoles);
+
+        //    return Ok(ApiResponse<ResponseModel.DutyResultDto>.ReturnResult("Update duty success", result, 200));
+        //}
+
+        /// <summary>
         /// Cập nhật chi tiết công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
@@ -152,10 +170,28 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// Đánh dấu là hoàn tất chi tiết công việc, employee có thể đánh dấu công việc của mình, manager có thể đánh dấu
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager, Employee")]
+        [HttpPut("{dutyDetailId}")]
+        public async Task<IActionResult> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _dutyService.MarkDutyDetailAsCompletedAsync(dutyDetailId, currentUserId, currentUserRoles);
+
+            return Ok(ApiResponse<string>.ReturnResult("Marked duty detail as completed", result, 200));
+        }
+
+        /// <summary>
         /// Xóa công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("{dutyId}")]
+        [HttpDelete("dutyId")]
         public async Task<IActionResult> SoftDeleteDutyAsync([FromForm] Guid dutyId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -170,7 +206,7 @@ namespace EmployeeAPI.Controllers
         /// Xóa chi tiết công việc
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
-        [HttpDelete("{detailId}")]
+        [HttpDelete("detailId")]
         public async Task<IActionResult> SoftDeleteDutyDetailAsync([FromForm] Guid detailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

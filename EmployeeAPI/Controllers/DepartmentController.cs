@@ -37,9 +37,9 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? name, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, int? pageIndex, int? pageSize)
         {
-            var pagedResult = await _departmentService.GetAllAsync(name, pageIndex, pageSize);
+            var pagedResult = await _departmentService.GetAllAsync(Search, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentResultDto>>.ReturnResult("No result", pagedResult, 200));

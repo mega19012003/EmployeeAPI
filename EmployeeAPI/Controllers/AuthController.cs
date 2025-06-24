@@ -49,20 +49,22 @@ namespace EmployeeAPI.Controllers
         /// Đăng nhập người dùng
         /// </summary>
         /// <remarks>
-        /// - TK admin               { "username": "Admin123", "password": "anno123" }
-        /// - Tk manager Thu ngân    { "username": "Manager123", "password": "anno123" }
-        /// - Tk manager It          { "username": "Manager456", "password": "anno123" }
-        /// - Tk manager sửa chữa    { "username": "Manager789", "password": "anno123" }
-        /// - Tk employee Thu ngân 1 { "username": "user101", "password": "123456" }
-        /// - Tk employee Thu ngân 2 { "username": "user01", "password": "123456" }
-        /// - Tk employee IT         { "username": "user02", "password": "654321" }
-        /// - Tk employee Sửa chữa   { "username": "user100", "password": "123456" }
+        /// - <b>Admin</b>:              {"username": "Admin123", "password": "Administrator!23"}
+        /// - <b>Manager - Thu ngân</b>: {"username": "Manager123", "password": "dQ01no&amp;5nQ$N^%YM"}
+        /// - <b>Manager - IT</b>:       {"username": "Manager456", "password": "zQYoEVA7*c#hP$YH"}
+        /// - <b>Manager - Sửa chữa</b>: {"username": "Manager789", "password": "&gt;8)FkyutD$-c?Jw&gt;"}
+        ///
+        /// - <b>Employee - Thu ngân 1</b>: {"username": "user101", "password": "I@&amp;rMdCnU1hGlp5$"}
+        /// - <b>Employee - Thu ngân 2</b>: {"username": "user01",  "password": "Z&lt;I0xLdS*FGgHOD-"}
+        /// - <b>Employee - IT</b>:         {"username": "user02",  "password": "(*3(PwmT3zuLF)9^"}
+        /// - <b>Employee - Sửa chữa</b>:   {"username": "user100", "password": "Gpw=$$TSh^MrS?f2"}
         /// </remarks>
         [HttpPost, Route("login")]
         public async Task<IActionResult> Login([FromBody] ResponseModel.LoginDto dto)
         {
             var user = await _authService.LoginAsync(dto.Username, dto.Password);
             if (user == null)
+
                 return BadRequest(new ApiResponse<ResponseModel.LoginDto>
                 {
                     Message = "Invalid username or password",

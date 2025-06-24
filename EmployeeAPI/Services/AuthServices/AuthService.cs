@@ -53,10 +53,16 @@ namespace EmployeeAPI.Services.AuthServices
                 if (existed != null)
                     throw new ArgumentException("User already exists");
 
+                //if(!IsStrongPassword(dto.Password))
+                //    throw new ArgumentException("Password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
+
+                var generatedPassword = PasswordGenerator.Generate(16);
+
                 var entity = new User
                 {
                     UserId = Guid.NewGuid(),
                     Username = dto.Username,
+                    //Password = HashPassword.Hash(generatedPassword),
                     Password = HashPassword.ComputeHash(dto.Password),
                     Fullname = dto.Fullname,
                     Role = dto.Role,
@@ -77,6 +83,7 @@ namespace EmployeeAPI.Services.AuthServices
                     userId = entity.UserId,
                     Username = entity.Username,
                     Fullname = entity.Fullname,
+                    Password = generatedPassword, 
                     RoleName = entity.Role.ToString(),
                 };
             }
@@ -96,13 +103,19 @@ namespace EmployeeAPI.Services.AuthServices
         }
         public async Task<User> LoginAsync(string username, string password)
         {
-            try
+            try 
             {
                 var user = await _repository.LoginAsync(username, password);
-                if (user == null)
-                    throw new ArgumentException("Wrong Username or Password ");
-                if(user.IsDeleted)
+
+                if (user.IsDeleted)
                     throw new ArgumentException("User Account has been deleted");
+
+                else if (user == null)
+                    throw new ArgumentException("Username not found");
+
+                else if (HashPassword.Verify(user.Password, password) == false)
+                //else if (user.Password != HashPassword.ComputeHash(password))
+                    throw new ArgumentException("Password is incorrect");
 
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
@@ -139,13 +152,18 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("User not found");
 
-                if (user.Password != HashPassword.ComputeHash(oldPassword))
+                if (!HashPassword.Verify(user.Password , oldPassword))
+                //if (user.Password != HashPassword.ComputeHash(oldPassword))
                     throw new ArgumentException("Password is incorrect");
 
                 if (newPassword != confirmPassword)
                     throw new ArgumentException("New password and confirm password do not match");
 
-                user.Password = HashPassword.ComputeHash(newPassword);
+                if(!IsStrongPassword(newPassword))
+                    throw new ArgumentException("New password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
+
+                user.Password = HashPassword.Hash(newPassword);
+                //user.Password = HashPassword.ComputeHash(newPassword);
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
                 return "Change password success";
@@ -157,14 +175,13 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
+
         public async Task<string> ResetPasswordAsync(Guid userId, ClaimsPrincipal claim)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var currentUserFullName = claim.FindFirstValue("FullName");
                 var currentUsername = claim.Identity?.Name;
-
                 var currentUser = await _repository.GetUserByName(currentUsername);
                 if (currentUser == null)
                     throw new UnauthorizedAccessException("Current user not found");
@@ -173,18 +190,19 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("User not found");
 
-                if (currentUser.Role == RoleType.Manager)
+                if (currentUser.Role == RoleType.Manager &&
+                    user.DepartmentId != currentUser.DepartmentId)
                 {
-                    if (user.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager can only reset password for user in the same department");
+                    throw new UnauthorizedAccessException("Manager can only reset password for users in the same department.");
                 }
 
-                user.Password = HashPassword.ComputeHash("123456");
-
+                var generatedPassword = PasswordGenerator.Generate(16);
+                user.Password = HashPassword.Hash(generatedPassword);
+                //user.Password = HashPassword.ComputeHash(generatedPassword);
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
 
-                return "Reset password to 123456 success";
+                return $"Reset password to: {generatedPassword}";
             }
             catch (Exception ex)
             {
@@ -267,9 +285,47 @@ namespace EmployeeAPI.Services.AuthServices
                 expires: DateTime.UtcNow.AddMinutes(int.Parse(jwtSection["Expire"])),
                 signingCredentials: signinCredentials
             );
-
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
+        public static bool IsStrongPassword(string password)
+        {
+            if (string.IsNullOrWhiteSpace(password)) return false;
+
+            return password.Length >= 16
+                && password.Any(char.IsUpper) 
+                && password.Any(char.IsLower) 
+                && password.Any(char.IsDigit) 
+                && password.Any(ch => "!@#$%^&*()_-+=<>?".Contains(ch)); 
+        }
+
+        public static class PasswordGenerator
+        {
+            private static readonly Random _random = new Random();
+            private const string Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            private const string Lower = "abcdefghijklmnopqrstuvwxyz";
+            private const string Digits = "0123456789";
+            private const string Symbols = "!@#$%^&*()_-+=<>?";
+
+            public static string Generate(int length = 16)
+            {
+                if (length < 8) throw new ArgumentException("Password too short");
+
+                var chars = new List<char>
+                {
+                    Upper[_random.Next(Upper.Length)],
+                    Lower[_random.Next(Lower.Length)],
+                    Digits[_random.Next(Digits.Length)],
+                    Symbols[_random.Next(Symbols.Length)]
+                };
+
+                string all = Upper + Lower + Digits + Symbols;
+                while (chars.Count < length)
+                    chars.Add(all[_random.Next(all.Length)]);
+
+                return new string(chars.OrderBy(x => _random.Next()).ToArray());
+            }
+        }
+
         public async Task<ResponseModel.AuthDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto)
         {
             var result = await _repository.GetLoginUserAsync(dto.UserName);

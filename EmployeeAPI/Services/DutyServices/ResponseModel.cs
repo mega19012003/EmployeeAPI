@@ -21,6 +21,7 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid DutyDetailId { get; set; }
             public Guid UserId { get; set; }
             public string Name { get; set; }
+            public bool IsCompleted { get; set; }
             public string Description { get; set; }
         }
         public class CreateDutyDto
@@ -40,7 +41,7 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid Id { get; set; }
 
             public string Name { get; set; }
-            public bool IsCompleted { get; set; }
+            //public bool IsCompleted { get; set; }
         }
 
         public class CreateDutyDetailDto
@@ -54,5 +55,12 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid userId { get; set; }
             public string Description { get; set; }
         }
+
+        //public class MarkAsCompleted 
+        //{
+        //    public Guid Id { get; set; }
+        //    public string Name { get; set; }
+        //    public bool IsCompleted { get; set; }
+        //}
     }
 }

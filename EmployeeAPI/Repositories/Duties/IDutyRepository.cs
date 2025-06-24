@@ -9,6 +9,7 @@ namespace EmployeeAPI.Repositories.Duties
         Task<Duty> GetDutyByIdAsync(Guid id);
         Task<DutyDetail> GetDutyDetailByIdAsync(Guid id);
         Task<Duty> AddAsync(Duty duty);
+        Task<DutyDetail> AddDutyDetailAsync(DutyDetail detail);
         Task UpdateDutyAsync(Duty duty);
         Task UpdateDutyDetailAsync(DutyDetail duty);
         //Task<Duty> SoftDeleteDutyAsync(Guid id);
