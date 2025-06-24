@@ -23,7 +23,7 @@ namespace EmployeeAPI.Services.CheckinServices
         public class CreateCheckinDto
         {
             public Guid? userId { get; set; }
-            public Enums.LogStatus? LogStatus { get; set; }
+            //public Enums.LogStatus? LogStatus { get; set; }
 
         }
 
@@ -31,7 +31,7 @@ namespace EmployeeAPI.Services.CheckinServices
         {
          
             public Guid? userId { get; set; }
-            public Enums.LogStatus? CheckoutStatus { get; set; } 
+            //public Enums.LogStatus? CheckoutStatus { get; set; } 
         }
 
         public class UpdateCheckinDto

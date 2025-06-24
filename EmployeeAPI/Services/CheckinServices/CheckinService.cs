@@ -132,6 +132,7 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
         
+
         public async Task<CheckinResultDto> CreateAsync(CreateCheckinDto dto, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -144,16 +145,22 @@ namespace EmployeeAPI.Services.CheckinServices
                 Guid targetUserId;
                 targetUserId = currentUserId;
 
-                if (isManager)
+                if (isManager || isManager)
                 {
                     targetUserId = dto.userId == null || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
+                    if (isManager)
+                    {
+                        var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                        var targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    var targetUser = await _userRepository.GetByIdAsync(targetUserId);
+                        if (currentUser == null || targetUser == null) throw new ArgumentException("User not found");
 
-                    if (currentUser == null || targetUser == null) throw new ArgumentException("User not found");
-
-                    if (currentUser.DepartmentId != targetUser.DepartmentId) throw new ArgumentException("Manager can only checkin for users in the same department");
+                        if (currentUser.DepartmentId != targetUser.DepartmentId) throw new ArgumentException("Manager can only checkin for users in the same department");
+                    }
+                }
+                else if (isEmployee)
+                {
+                    targetUserId = currentUserId;
                 }
 
                 var user = await _userRepository.GetByIdAsync(targetUserId);
@@ -197,8 +204,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     Id = Guid.NewGuid(),
                     UserId = targetUserId,
                     CheckinDate = nowUtc,
-                    CheckinStatus = dto.LogStatus ?? checkinStatus,
-                    CheckoutStatus = dto.LogStatus ?? Enums.LogStatus.Absent
+                    CheckinStatus = checkinStatus,
+                    CheckoutStatus = Enums.LogStatus.Absent
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -222,7 +229,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task<ResponseModel.CheckinResultDto> CheckoutAsync(ResponseModel. CreateCheckoutDto dto, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.CheckinResultDto> CheckoutAsync(ResponseModel.CreateCheckoutDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -232,27 +239,21 @@ namespace EmployeeAPI.Services.CheckinServices
                 var isEmployee = currentUserRoles.Contains("Employee");
 
                 Guid targetUserId;
-
-                if (isAdmin)
+                targetUserId = currentUserId;
+                if (isAdmin || isManager)
                 {
                     targetUserId = !dto.userId.HasValue || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
-                }
-                else if (isManager)
-                {
-                    targetUserId = !dto.userId.HasValue || dto.userId == Guid.Empty ? currentUserId : dto.userId.Value;
+                    if (isManager)
+                    {
+                        var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                        var targetUser = await _userRepository.GetByIdAsync(targetUserId);
 
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    var targetUser = await _userRepository.GetByIdAsync(targetUserId);
-
-                    if (currentUser.DepartmentId != targetUser.DepartmentId) throw new ArgumentException("Manager can only checkout for user in the same department");
+                        if (currentUser.DepartmentId != targetUser.DepartmentId) throw new ArgumentException("Manager can only checkout for user in the same department");
+                    }
                 }
                 else if (isEmployee)
                 {
                     targetUserId = currentUserId;
-                }
-                else
-                {
-                    throw new Exception("");
                 }
 
                 var existUser = await _userRepository.GetByIdAsync(targetUserId);
@@ -283,16 +284,13 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
                 var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
-                
-                Enums.LogStatus newStatus;
 
                 TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTime;
 
+                Enums.LogStatus newStatus;
+
                 if (currentTimeOnly > overtimeThreshold)
-                {
                     newStatus = Enums.LogStatus.Overtime;
-                    
-                }
                 else if (currentTimeOnly < schedule.EndTime)
                     newStatus = Enums.LogStatus.LeaveEarly;
                 else
@@ -303,7 +301,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 todayCheckin.CheckoutDate = checkoutUtc;
                 todayCheckin.CheckoutStatus = newStatus;
 
-                todayCheckin.SalaryPerDay = await CalculateSalaryPerDayAsync(existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus/*, OvertimeDuration*/);
+                todayCheckin.SalaryPerDay = await CalculateSalaryPerDayAsync(existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus, OvertimeDuration);
 
                 _context.Checkins.Update(todayCheckin);
                 await _context.SaveChangesAsync();
@@ -327,40 +325,39 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task<double> CalculateSalaryPerDayAsync(User user, Enums.LogStatus checkinStatus, Enums.LogStatus checkoutStatus)
+        public async Task<double> CalculateSalaryPerDayAsync(User user, Enums.LogStatus checkinStatus, Enums.LogStatus checkoutStatus, TimeSpan? overtimeDuration = null)
         {
             var logStatus = await _logStatusConfigRepository.GetAllAsync();
 
             double checkinSalary = 0;
             double checkoutSalary = 0;
-            double salaryToday = 0;
             foreach (var item in logStatus)
             {
-                if(item.Id == (int)checkinStatus)
+                if (item.Id == (int)checkinStatus)
                     checkinSalary = item.SalaryMultiplier;
                 if (item.Id == (int)checkoutStatus)
                     checkoutSalary = item.SalaryMultiplier;
             }
 
-            //if (checkinConfig == null || checkoutConfig == null)
-            //    throw new Exception("Không tìm thấy hệ số lương cho trạng thái Checkin hoặc Checkout.");
-
             double baseSalary = user.BasicSalary;
-
             double halfSalary = baseSalary / 2.0;
+            double salaryToday = 0;
 
-            /*if (OvertimeDuration.Hours > 0)
+            if (checkoutStatus == Enums.LogStatus.Overtime && overtimeDuration.HasValue && overtimeDuration.Value.TotalHours > 0)
             {
-                salaryToday = (halfSalary * checkinSalary) + (halfSalary * checkoutSalary * OvertimeDuration.Hours);
+                double overtimeHours = Math.Floor(overtimeDuration.Value.TotalHours);
+                salaryToday = (halfSalary * checkinSalary) + (halfSalary * checkoutSalary * overtimeHours);
             }
-            else*/ salaryToday = (halfSalary * checkinSalary) + (halfSalary * checkoutSalary);
+            else
+            {
+                salaryToday = (halfSalary * checkinSalary) + (halfSalary * checkoutSalary);
+            }
 
             return salaryToday;
         }
         
         public async Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
- 
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
@@ -378,13 +375,19 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
                 }
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
+                var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+                if (schedule == null) throw new Exception("Work schedule time hasn't been set");
 
-                
+                var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
+                var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
 
+                TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTime;
                 existing.CheckinStatus = dto.CheckinStatus;
                 existing.CheckoutStatus = dto.CheckoutStatus;
-                //existing.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, employee, existing.CheckinStatus, existing.CheckoutStatus);
-                existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinStatus, existing.CheckoutStatus);
+
+                existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinStatus, existing.CheckoutStatus/*, OvertimeDuration*/);
                 
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
@@ -432,6 +435,13 @@ namespace EmployeeAPI.Services.CheckinServices
                 return;
             }
 
+            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+            if (schedule == null) throw new Exception("Work schedule time hasn't been set");
+
+            var currentTimeOnly = TimeOnly.FromDateTime(vnNow);
+            var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
+
+            TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTime;
             // Tính thời gian bắt đầu và kết thúc ngày theo UTC dựa trên VN timezone
             var vnTodayStart = vnNow.Date; 
             var vnTodayStartUtc = TimeZoneInfo.ConvertTimeToUtc(vnTodayStart, vnTimeZone);
@@ -454,7 +464,7 @@ namespace EmployeeAPI.Services.CheckinServices
             foreach (var user in absentUsers)
             {
                 //double salary = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, user, Enums.LogStatus.Absent, Enums.LogStatus.Absent);
-                double salary = await CalculateSalaryPerDayAsync(user, Enums.LogStatus.Absent, Enums.LogStatus.Absent);
+                double salary = await CalculateSalaryPerDayAsync(user, Enums.LogStatus.Absent, Enums.LogStatus.Absent/*, OvertimeDuration*/);
 
                 var checkin = new Checkin
                 {
