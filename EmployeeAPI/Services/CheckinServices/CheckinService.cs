@@ -283,11 +283,16 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
                 var overtimeThreshold = schedule.EndTime.AddMinutes(schedule.LateThresholdMinutes);
-
+                
                 Enums.LogStatus newStatus;
 
+                TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTime;
+
                 if (currentTimeOnly > overtimeThreshold)
+                {
                     newStatus = Enums.LogStatus.Overtime;
+                    
+                }
                 else if (currentTimeOnly < schedule.EndTime)
                     newStatus = Enums.LogStatus.LeaveEarly;
                 else
@@ -298,9 +303,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 todayCheckin.CheckoutDate = checkoutUtc;
                 todayCheckin.CheckoutStatus = newStatus;
 
-                //todayCheckin.SalaryPerDay = await CalculateSalaryPerDay.CalculateSalaryPerDayAsync(_context, existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
-
-                todayCheckin.SalaryPerDay = await CalculateSalaryPerDayAsync(existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus);
+                todayCheckin.SalaryPerDay = await CalculateSalaryPerDayAsync(existUser, todayCheckin.CheckinStatus, todayCheckin.CheckoutStatus/*, OvertimeDuration*/);
 
                 _context.Checkins.Update(todayCheckin);
                 await _context.SaveChangesAsync();
@@ -326,17 +329,31 @@ namespace EmployeeAPI.Services.CheckinServices
         }
         public async Task<double> CalculateSalaryPerDayAsync(User user, Enums.LogStatus checkinStatus, Enums.LogStatus checkoutStatus)
         {
-            var checkinConfig = await _logStatusConfigRepository.GetByIdAsync((int)checkinStatus);
-            var checkoutConfig = await _logStatusConfigRepository.GetByIdAsync((int)checkoutStatus);
+            var logStatus = await _logStatusConfigRepository.GetAllAsync();
 
-            if (checkinConfig == null || checkoutConfig == null)
-                throw new Exception("Không tìm thấy hệ số lương cho trạng thái Checkin hoặc Checkout.");
+            double checkinSalary = 0;
+            double checkoutSalary = 0;
+            double salaryToday = 0;
+            foreach (var item in logStatus)
+            {
+                if(item.Id == (int)checkinStatus)
+                    checkinSalary = item.SalaryMultiplier;
+                if (item.Id == (int)checkoutStatus)
+                    checkoutSalary = item.SalaryMultiplier;
+            }
 
-            var baseSalary = user.BasicSalary;
+            //if (checkinConfig == null || checkoutConfig == null)
+            //    throw new Exception("Không tìm thấy hệ số lương cho trạng thái Checkin hoặc Checkout.");
 
-            var halfSalary = baseSalary / 2.0;
+            double baseSalary = user.BasicSalary;
 
-            var salaryToday = (halfSalary * checkinConfig.SalaryMultiplier) + (halfSalary * checkoutConfig.SalaryMultiplier);
+            double halfSalary = baseSalary / 2.0;
+
+            /*if (OvertimeDuration.Hours > 0)
+            {
+                salaryToday = (halfSalary * checkinSalary) + (halfSalary * checkoutSalary * OvertimeDuration.Hours);
+            }
+            else*/ salaryToday = (halfSalary * checkinSalary) + (halfSalary * checkoutSalary);
 
             return salaryToday;
         }
@@ -361,6 +378,8 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
                 }
+
+                
 
                 existing.CheckinStatus = dto.CheckinStatus;
                 existing.CheckoutStatus = dto.CheckoutStatus;
