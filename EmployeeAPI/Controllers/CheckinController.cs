@@ -88,8 +88,8 @@ namespace EmployeeAPI.Controllers
         /// - Others = 6 (lí do khác)
         /// </remarks>
         [Authorize]
-        [HttpPost("Checkin")]
-        public async Task<IActionResult> Create([FromForm] ResponseModel.CreateCheckinDto dto)
+        [HttpPost("CheckinMorning")]
+        public async Task<IActionResult> CheckinMorning([FromForm] ResponseModel.CreateCheckinDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -110,11 +110,11 @@ namespace EmployeeAPI.Controllers
                 dto.userId = currentUserId;
             }
 
-            var result = await _checkinService.CreateAsync(dto, currentUserId, currentUserRoles);
+            var result = await _checkinService.CheckinAsync(dto.userId, currentUserId, currentUserRoles);
             if (result == null)
                 return BadRequest();
 
-            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkin create success", result, 200));
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkin Morning success", result, 200));
         }
 
         /// <summary>
@@ -137,8 +137,8 @@ namespace EmployeeAPI.Controllers
         /// - Others = 6 (lí do khác)
         /// </remarks>
         [Authorize]
-        [HttpPost("Chekout")]
-        public async Task<IActionResult> Checkout([FromForm] ResponseModel. CreateCheckoutDto dto)
+        [HttpPut("ChekoutMorning")]
+        public async Task<IActionResult> ChekoutMorning([FromForm] ResponseModel. CreateCheckoutDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -153,10 +153,9 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(403, new { Message = $"IP address {ip} is not allowed to check out.", Data = ip });
             }
 
-            var result = await _checkinService.CheckoutAsync(dto, currentUserId, currentUserRoles);
+            var result = await _checkinService.CheckoutAsync(dto.userId, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkout success", result, 200));
         }
-
 
         /// <summary>
         /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban

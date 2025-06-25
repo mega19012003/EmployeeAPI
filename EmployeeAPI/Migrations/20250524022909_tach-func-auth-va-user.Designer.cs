@@ -31,7 +31,7 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CheckinDate")
+                    b.Property<DateTime>("CheckinMorning")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
@@ -126,7 +126,7 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CheckinStatus")
+                    b.Property<int>("CheckinMorningStatus")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
@@ -188,7 +188,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<string>("SalaryRuleId")
                         .HasColumnType("nvarchar(450)");
 
-                    b.Property<int>("CheckinStatus")
+                    b.Property<int>("CheckinMorningStatus")
                         .HasColumnType("int");
 
                     b.Property<string>("Note")

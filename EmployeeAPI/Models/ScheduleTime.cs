@@ -9,8 +9,11 @@ namespace EmployeeAPI.Models
         [Key]
         [JsonIgnore]
         public Guid id { get; set; }
-        public TimeOnly StartTime { get; set; } //= TimeOnly.MinValue;
-        public int LateThresholdMinutes { get; set; } //= 0;
-        public TimeOnly EndTime { get; set; } //= TimeOnly.MaxValue;
+        public TimeOnly StartTimeMorning { get; set; } 
+        public TimeOnly EndTimeMorning { get; set; }
+        public int LogAllowtime { get; set; }
+        public int LateThresholdMinutes { get; set; } 
+        public TimeOnly StartTimeAfternoon { get; set; }
+        public TimeOnly EndTimeAfternoon { get; set; } 
     }
 }

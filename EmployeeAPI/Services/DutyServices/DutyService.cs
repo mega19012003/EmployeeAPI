@@ -203,7 +203,7 @@ namespace EmployeeAPI.Services.DutyServices
                 }
 
                 if (dto.StartDate.Date < DateTime.UtcNow.Date)
-                    throw new Exception("Start date cannot be earlier than today");
+                    throw new ArgumentException("Start date cannot be earlier than today");
 
                 var duty = new Duty
                 {

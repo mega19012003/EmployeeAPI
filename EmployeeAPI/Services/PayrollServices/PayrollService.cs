@@ -274,23 +274,23 @@ namespace EmployeeAPI.Services.PayrollServices
             // Lấy tất cả checkin trong tháng (đã được xác nhận hợp lệ)
             var checkinsInMonth = await _context.Checkins
                 .Where(c => c.UserId == staffId
-                    && c.CheckinDate.Year == year
-                    && c.CheckinDate.Month == month
+                    && c.CheckinMorning.Year == year
+                    && c.CheckinMorning.Month == month
                     && !c.IsDeleted
-                    && c.SalaryPerDay > 0)
+                    /*&& c.SalaryPerDay > 0*/)
                 .ToListAsync();
 
             // Tổng lương = tổng SalaryPerDay của các ngày checkin
-            double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
+            //double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
 
             // Tính tổng ngày làm việc dựa vào số checkin hợp lệ
-            var totalDayWorked = checkinsInMonth.Where(p => p.CheckinStatus != LogStatus.Absent || p.CheckoutStatus != LogStatus.Absent).Select(c => c.CheckinDate.Date).Distinct().Count();
+            var totalDayWorked = checkinsInMonth.Where(p => p.CheckinMorningStatus != LogStatus.Absent || p.CheckoutAfternoonStatus != LogStatus.Absent).Select(c => c.CheckinMorning.Date).Distinct().Count();
 
             var payroll = new Payroll
             {
                 Id = Guid.NewGuid(),
                 UserId = staffId,
-                Salary = totalSalary,
+                //Salary = totalSalary,
                 DaysWorked = totalDayWorked,
                 CreatedDate = DateTime.Now,
                 Note = $"Lương tháng {month}/{year}"
@@ -304,7 +304,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 Id = payroll.Id,
                 UserId = staffId,
                 DaysWorked = totalDayWorked,
-                Salary = totalSalary,
+                //Salary = totalSalary,
                 CreatedDate = payroll.CreatedDate,
                 Note = payroll.Note
             };

@@ -1,7 +1,7 @@
 ﻿using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace EmployeeAPI.Repositories.CheckinStatusConfigs
+namespace EmployeeAPI.Repositories.LogStatusConfigs
 {
     public class EFLogStatusConfigRepository : ILogStatusConfigRepository
     {
@@ -14,17 +14,17 @@ namespace EmployeeAPI.Repositories.CheckinStatusConfigs
 
         public async Task<List<LogStatusConfig>> GetAllAsync()
         {
-            return await _context.CheckinStatusConfigs.ToListAsync();
+            return await _context.LogStatusConfigs.ToListAsync();
         }
 
         public async Task<LogStatusConfig?> GetByIdAsync(int id)
         {
-            return await _context.CheckinStatusConfigs.FindAsync(id);
+            return await _context.LogStatusConfigs.FindAsync(id);
         }
 
         public async Task UpdateAsync(LogStatusConfig config)
         {
-            _context.CheckinStatusConfigs.Update(config);
+            _context.LogStatusConfigs.Update(config);
             await _context.SaveChangesAsync();
         }
     }

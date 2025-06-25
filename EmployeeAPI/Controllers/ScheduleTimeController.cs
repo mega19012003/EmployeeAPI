@@ -34,9 +34,9 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật gian biểu, chỉ có admin dc phép dùng
         /// </summary>
         /// <remarks>
-        /// { "startTime": "08:00:00",
+        /// { "StartTimeMorning": "08:00:00",
         ///"lateThresholdMinutes": 15,
-        ///"endTime": "17:00:00" }
+        ///"EndTimeAfternoon": "17:00:00" }
         /// </remarks>
         [Authorize(Roles = "Administrator")]
         [HttpPut] 
@@ -56,7 +56,7 @@ namespace EmployeeAPI.Controllers
             if (schedule == null)
                 return NotFound("Không có ca làm việc");
 
-            await _checkinService.AutoMarkAbsentAsync(schedule.EndTime);
+            await _checkinService.AutoMarkAbsentAsync(schedule.EndTimeAfternoon);
             return Ok("Đã thử đánh dấu absent");
         }*/
     }

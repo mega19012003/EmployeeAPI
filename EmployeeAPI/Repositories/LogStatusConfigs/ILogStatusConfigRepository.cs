@@ -1,6 +1,6 @@
 ﻿using EmployeeAPI.Models;
 
-namespace EmployeeAPI.Repositories.CheckinStatusConfigs
+namespace EmployeeAPI.Repositories.LogStatusConfigs
 {
     public interface ILogStatusConfigRepository
     {

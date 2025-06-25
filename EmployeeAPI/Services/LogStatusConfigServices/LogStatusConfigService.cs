@@ -1,7 +1,7 @@
 ﻿using EmployeeAPI.Models;
-using EmployeeAPI.Repositories.CheckinStatusConfigs;
+using EmployeeAPI.Repositories.LogStatusConfigs;
 
-namespace EmployeeAPI.Services.CheckinStatusConfigServices
+namespace EmployeeAPI.Services.LogStatusConfigservices
 {
     public class LogStatusConfigService : ILogStatusConfigService
     {

@@ -11,7 +11,7 @@ namespace EmployeeAPI.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_Payrolls_CheckinStatusConfigs_SalaryRuleId",
+                name: "FK_Payrolls_LogStatusConfigs_SalaryRuleId",
                 table: "Payrolls");
 
             migrationBuilder.DropIndex(
@@ -39,10 +39,10 @@ namespace EmployeeAPI.Migrations
                 column: "SalaryRuleId");
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Payrolls_CheckinStatusConfigs_SalaryRuleId",
+                name: "FK_Payrolls_LogStatusConfigs_SalaryRuleId",
                 table: "Payrolls",
                 column: "SalaryRuleId",
-                principalTable: "CheckinStatusConfigs",
+                principalTable: "LogStatusConfigs",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
         }

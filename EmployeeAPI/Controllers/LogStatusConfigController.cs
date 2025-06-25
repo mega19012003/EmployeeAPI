@@ -1,6 +1,6 @@
 ﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
-using EmployeeAPI.Services.CheckinStatusConfigServices;
+using EmployeeAPI.Services.LogStatusConfigservices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 

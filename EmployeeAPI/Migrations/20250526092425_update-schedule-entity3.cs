@@ -16,9 +16,9 @@ namespace EmployeeAPI.Migrations
                 columns: table => new
                 {
                     id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    StartTime = table.Column<TimeSpan>(type: "time", nullable: false),
+                    StartTimeMorning = table.Column<TimeSpan>(type: "time", nullable: false),
                     LateThresholdMinutes = table.Column<int>(type: "int", nullable: false),
-                    EndTime = table.Column<TimeSpan>(type: "time", nullable: false)
+                    EndTimeAfternoon = table.Column<TimeSpan>(type: "time", nullable: false)
                 },
                 constraints: table =>
                 {

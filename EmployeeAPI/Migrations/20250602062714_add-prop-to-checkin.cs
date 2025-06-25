@@ -44,7 +44,7 @@ namespace EmployeeAPI.Migrations
                 keyValue: new Guid("d87d91ee-44de-489d-a8df-6ceeb890e242"));
 
             migrationBuilder.AddColumn<DateTime>(
-                name: "CheckoutDate",
+                name: "CheckinAfternoon",
                 table: "Checkins",
                 type: "datetime2",
                 nullable: false,
@@ -62,7 +62,7 @@ namespace EmployeeAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "CheckoutDate",
+                name: "CheckinAfternoon",
                 table: "Checkins");
 
             migrationBuilder.DropColumn(

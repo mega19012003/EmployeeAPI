@@ -46,7 +46,6 @@ namespace EmployeeAPI.Repositories.Checkins
         public async Task UpdateAsync(Checkin checkin)
         {
             _context.Checkins.Update(checkin);
-
         }
 
         public async Task<Checkin> SoftDeleteAsync(Guid id)

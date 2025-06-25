@@ -13,10 +13,10 @@ namespace EmployeeAPI.Migrations
             migrationBuilder.RenameColumn(
                 name: "Status",
                 table: "Checkins",
-                newName: "CheckoutStatus");
+                newName: "CheckoutAfternoonStatus");
 
             migrationBuilder.AddColumn<int>(
-                name: "CheckinStatus",
+                name: "CheckinMorningStatus",
                 table: "Checkins",
                 type: "int",
                 nullable: false,
@@ -27,11 +27,11 @@ namespace EmployeeAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropColumn(
-                name: "CheckinStatus",
+                name: "CheckinMorningStatus",
                 table: "Checkins");
 
             migrationBuilder.RenameColumn(
-                name: "CheckoutStatus",
+                name: "CheckoutAfternoonStatus",
                 table: "Checkins",
                 newName: "Status");
         }

@@ -13,12 +13,12 @@ namespace EmployeeAPI.Models
         public User Users { get; set; }
         public double Salary { get; set; }
         public DateTime CreatedDate { get; set; } 
-        //public DateTime CheckoutDate { get; set; } //ngày trả lương
+        //public DateTime CheckinAfternoon { get; set; } //ngày trả lương
         public string Note { get; set; }
         public bool IsDeleted { get; set; } = false;
         public int DaysWorked { get; set; } //ngày công
-        //public CheckinStatusConfig SalaryRule { get; set; }
-        //public CheckinStatus CheckinStatus { get; set; }
+        //public CheckinMorningStatusConfig SalaryRule { get; set; }
+        //public CheckinMorningStatus CheckinMorningStatus { get; set; }
         //public bool IsPaid { get; set; } = false; //đã trả lương
         //public List<Checkin> Checkins { get; set; } = new List<Checkin>();
         //public virtual ICollection<Fine> Fines { get; set; }

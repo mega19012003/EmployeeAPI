@@ -6,7 +6,7 @@ using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
-using EmployeeAPI.Repositories.CheckinStatusConfigs;
+using EmployeeAPI.Repositories.LogStatusConfigs;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Holidays;
@@ -18,7 +18,7 @@ using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
-using EmployeeAPI.Services.CheckinStatusConfigServices;
+using EmployeeAPI.Services.LogStatusConfigservices;
 using EmployeeAPI.Services.DepartmentServices;
 using EmployeeAPI.Services.DutyServices;
 using EmployeeAPI.Services.HolidayServices;
@@ -62,7 +62,7 @@ var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
 builder.Services.AddHttpContextAccessor();
 
-builder.Services.AddHostedService<AbsentBackgroundService>();
+//builder.Services.AddHostedService<AbsentBackgroundService>();//////////////////////////background serrvice
 
 builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();

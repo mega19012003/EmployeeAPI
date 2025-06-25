@@ -27,35 +27,35 @@ namespace EmployeeAPI.Migrations
                 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 2,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "LeaveEarly", "Về sớm", 0.69999999999999996 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 3,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "Overtime", "Làm thêm giờ", 1.3 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 4,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "Absent", "Nghỉ không phép", 0.5 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 5,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "LeaveWithPermission", "Nghỉ có phép", 0.90000000000000002 });
 
             migrationBuilder.InsertData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 columns: new[] { "Id", "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { 6, "Others", "Khác", 1.0 });
         }
@@ -67,33 +67,33 @@ namespace EmployeeAPI.Migrations
                 name: "Holidays");
 
             migrationBuilder.DeleteData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 6);
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 2,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "Overtime", "Làm thêm giờ", 1.3 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 3,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "Absent", "Nghỉ không phép", 0.5 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 4,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },
                 values: new object[] { "LeaveWithPermission", "Nghỉ có phép", 0.90000000000000002 });
 
             migrationBuilder.UpdateData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 keyColumn: "Id",
                 keyValue: 5,
                 columns: new[] { "Name", "Note", "SalaryMultiplier" },

@@ -44,7 +44,7 @@ namespace EmployeeAPI.Migrations
                 columns: table => new
                 {
                     SalaryRuleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CheckinStatus = table.Column<int>(type: "int", nullable: false),
+                    CheckinMorningStatus = table.Column<int>(type: "int", nullable: false),
                     multiplier = table.Column<double>(type: "float", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Updated = table.Column<DateTime>(type: "datetime2", nullable: true)
@@ -149,7 +149,7 @@ namespace EmployeeAPI.Migrations
                 {
                     Id = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     StaffId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    CheckinDate = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    CheckinMorning = table.Column<DateTime>(type: "datetime2", nullable: false),
                     Status = table.Column<int>(type: "int", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
@@ -215,7 +215,7 @@ namespace EmployeeAPI.Migrations
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     DaysWorked = table.Column<int>(type: "int", nullable: false),
                     SalaryRuleId = table.Column<string>(type: "nvarchar(450)", nullable: true),
-                    CheckinStatus = table.Column<int>(type: "int", nullable: false),
+                    CheckinMorningStatus = table.Column<int>(type: "int", nullable: false),
                     UserId = table.Column<Guid>(type: "uniqueidentifier", nullable: true)
                 },
                 constraints: table =>

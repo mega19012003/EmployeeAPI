@@ -8,7 +8,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace EmployeeAPI.Migrations
 {
     /// <inheritdoc />
-    public partial class addcheckinstatus : Migration
+    public partial class addCheckinMorningStatus : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -31,7 +31,7 @@ namespace EmployeeAPI.Migrations
                 oldNullable: true);
 
             migrationBuilder.CreateTable(
-                name: "CheckinStatusConfigs",
+                name: "LogStatusConfigs",
                 columns: table => new
                 {
                     Id = table.Column<int>(type: "int", nullable: false),
@@ -41,11 +41,11 @@ namespace EmployeeAPI.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_CheckinStatusConfigs", x => x.Id);
+                    table.PrimaryKey("PK_LogStatusConfigs", x => x.Id);
                 });
 
             migrationBuilder.InsertData(
-                table: "CheckinStatusConfigs",
+                table: "LogStatusConfigs",
                 columns: new[] { "Id", "Name", "Note", "SalaryMultiplier" },
                 values: new object[,]
                 {
@@ -59,10 +59,10 @@ namespace EmployeeAPI.Migrations
                 });
 
             migrationBuilder.AddForeignKey(
-                name: "FK_Payrolls_CheckinStatusConfigs_SalaryRuleId",
+                name: "FK_Payrolls_LogStatusConfigs_SalaryRuleId",
                 table: "Payrolls",
                 column: "SalaryRuleId",
-                principalTable: "CheckinStatusConfigs",
+                principalTable: "LogStatusConfigs",
                 principalColumn: "Id",
                 onDelete: ReferentialAction.Cascade);
         }
@@ -71,11 +71,11 @@ namespace EmployeeAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropForeignKey(
-                name: "FK_Payrolls_CheckinStatusConfigs_SalaryRuleId",
+                name: "FK_Payrolls_LogStatusConfigs_SalaryRuleId",
                 table: "Payrolls");
 
             migrationBuilder.DropTable(
-                name: "CheckinStatusConfigs");
+                name: "LogStatusConfigs");
 
             migrationBuilder.AlterColumn<string>(
                 name: "SalaryRuleId",
@@ -90,7 +90,7 @@ namespace EmployeeAPI.Migrations
                 columns: table => new
                 {
                     SalaryRuleId = table.Column<string>(type: "nvarchar(450)", nullable: false),
-                    CheckinStatus = table.Column<int>(type: "int", nullable: false),
+                    CheckinMorningStatus = table.Column<int>(type: "int", nullable: false),
                     Note = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Updated = table.Column<DateTime>(type: "datetime2", nullable: true),
                     multiplier = table.Column<double>(type: "float", nullable: false)

@@ -31,7 +31,7 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CheckinDate")
+                    b.Property<DateTime>("CheckinMorning")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
@@ -50,7 +50,7 @@ namespace EmployeeAPI.Migrations
                     b.ToTable("Checkins");
                 });
 
-            modelBuilder.Entity("EmployeeAPI.Models.CheckinStatusConfig", b =>
+            modelBuilder.Entity("EmployeeAPI.Models.CheckinMorningStatusConfig", b =>
                 {
                     b.Property<int>("Id")
                         .HasColumnType("int");
@@ -67,7 +67,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CheckinStatusConfigs");
+                    b.ToTable("LogStatusConfigs");
 
                     b.HasData(
                         new
@@ -204,7 +204,7 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<int>("CheckinStatus")
+                    b.Property<int>("CheckinMorningStatus")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("CreatedDate")
@@ -267,13 +267,13 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<TimeOnly>("EndTime")
+                    b.Property<TimeOnly>("EndTimeAfternoon")
                         .HasColumnType("time");
 
                     b.Property<int>("LateThresholdMinutes")
                         .HasColumnType("int");
 
-                    b.Property<TimeOnly>("StartTime")
+                    b.Property<TimeOnly>("StartTimeMorning")
                         .HasColumnType("time");
 
                     b.HasKey("id");
@@ -388,7 +388,7 @@ namespace EmployeeAPI.Migrations
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
-                    b.HasOne("EmployeeAPI.Models.CheckinStatusConfig", "SalaryRule")
+                    b.HasOne("EmployeeAPI.Models.CheckinMorningStatusConfig", "SalaryRule")
                         .WithMany()
                         .HasForeignKey("SalaryRuleId")
                         .OnDelete(DeleteBehavior.Cascade)

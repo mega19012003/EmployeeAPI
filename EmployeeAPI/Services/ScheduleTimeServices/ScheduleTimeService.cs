@@ -19,9 +19,12 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
             var result = await _repository.GetScheduleTime();
             return new ScheduleTime
             {
-                StartTime = result.StartTime,
-                EndTime = result.EndTime,
+                StartTimeMorning = result.StartTimeMorning,
+                EndTimeMorning = result.EndTimeMorning,
+                StartTimeAfternoon = result.StartTimeAfternoon,
+                EndTimeAfternoon = result.EndTimeAfternoon,
                 LateThresholdMinutes = result.LateThresholdMinutes,
+                LogAllowtime = result.LogAllowtime,
             };
         }
 
@@ -37,9 +40,12 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                 }
                 else
                 {
-                    existing.StartTime = newSchedule.StartTime;
+                    existing.StartTimeMorning = newSchedule.StartTimeMorning;
+                    existing.EndTimeMorning = newSchedule.EndTimeMorning;
                     existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
-                    existing.EndTime = newSchedule.EndTime;
+                    existing.StartTimeAfternoon = newSchedule.StartTimeAfternoon;
+                    existing.EndTimeAfternoon = newSchedule.EndTimeAfternoon;
+                    existing.LogAllowtime = newSchedule.LogAllowtime;
                     _context.ScheduleTimes.Update(existing);
                 }
 

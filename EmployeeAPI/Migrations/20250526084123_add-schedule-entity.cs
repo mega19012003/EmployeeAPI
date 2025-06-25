@@ -23,9 +23,9 @@ namespace EmployeeAPI.Migrations
                 name: "ScheduleTimes",
                 columns: table => new
                 {
-                    StartTime = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    StartTimeMorning = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     LateThresholdMinutes = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    EndTime = table.Column<string>(type: "nvarchar(max)", nullable: false)
+                    EndTimeAfternoon = table.Column<string>(type: "nvarchar(max)", nullable: false)
                 },
                 constraints: table =>
                 {

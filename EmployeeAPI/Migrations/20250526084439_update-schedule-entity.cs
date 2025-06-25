@@ -12,7 +12,7 @@ namespace EmployeeAPI.Migrations
         protected override void Up(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<TimeSpan>(
-                name: "StartTime",
+                name: "StartTimeMorning",
                 table: "ScheduleTimes",
                 type: "time",
                 nullable: false,
@@ -28,7 +28,7 @@ namespace EmployeeAPI.Migrations
                 oldType: "nvarchar(max)");
 
             migrationBuilder.AlterColumn<TimeSpan>(
-                name: "EndTime",
+                name: "EndTimeAfternoon",
                 table: "ScheduleTimes",
                 type: "time",
                 nullable: false,
@@ -40,7 +40,7 @@ namespace EmployeeAPI.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.AlterColumn<string>(
-                name: "StartTime",
+                name: "StartTimeMorning",
                 table: "ScheduleTimes",
                 type: "nvarchar(max)",
                 nullable: false,
@@ -56,7 +56,7 @@ namespace EmployeeAPI.Migrations
                 oldType: "int");
 
             migrationBuilder.AlterColumn<string>(
-                name: "EndTime",
+                name: "EndTimeAfternoon",
                 table: "ScheduleTimes",
                 type: "nvarchar(max)",
                 nullable: false,

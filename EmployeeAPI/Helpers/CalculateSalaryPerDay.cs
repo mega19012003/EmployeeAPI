@@ -9,11 +9,11 @@
 //        public static async Task<double> CalculateSalaryPerDayAsync(
 //            AppDbContext context,
 //            User user,
-//            Enums.LogStatus checkinStatus,
-//            Enums.LogStatus checkoutStatus)
+//            Enums.LogStatus CheckinMorningStatus,
+//            Enums.LogStatus CheckoutAfternoonStatus)
 //        {
-//            var checkinConfig = await context.CheckinStatusConfigs.FirstOrDefaultAsync(c => c.Id == (int)checkinStatus);
-//            var checkoutConfig = await context.CheckinStatusConfigs.FirstOrDefaultAsync(c => c.Id == (int)checkoutStatus);
+//            var checkinConfig = await context.LogStatusConfigs.FirstOrDefaultAsync(c => c.Id == (int)CheckinMorningStatus);
+//            var checkoutConfig = await context.LogStatusConfigs.FirstOrDefaultAsync(c => c.Id == (int)CheckoutAfternoonStatus);
 
 //            if (checkinConfig == null || checkoutConfig == null)
 //                throw new Exception("Không tìm thấy hệ số lương cho trạng thái Checkin hoặc Checkout.");

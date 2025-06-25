@@ -14,7 +14,7 @@ namespace EmployeeAPI.Repositories.Payrolls
         /// ////////////////////////////////////////////////
 
 
-        //Task<int> CountCheckinsByStatus(Guid userId, CheckinStatus status, int month, int year);
+        //Task<int> CountCheckinsByStatus(Guid userId, CheckinMorningStatus status, int month, int year);
         Task<bool> ExistsPayrollForMonth(Guid userId, int month, int year);
         //Task<int> CountValidCheckins(Guid userId, int month, int year);
         //Task<int> CountLateCheckins(Guid userId, int month, int year);

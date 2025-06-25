@@ -43,23 +43,32 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CheckinDate")
+                    b.Property<DateTime>("CheckinAfternoon")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CheckinStatus")
+                    b.Property<int?>("CheckinAfternoonStatus")
                         .HasColumnType("int");
 
-                    b.Property<DateTime>("CheckoutDate")
+                    b.Property<DateTime>("CheckinMorning")
                         .HasColumnType("datetime2");
 
-                    b.Property<int>("CheckoutStatus")
+                    b.Property<int?>("CheckinMorningStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CheckoutAfternoon")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CheckoutAfternoonStatus")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("CheckoutMorning")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int?>("CheckoutMorningStatus")
                         .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
-
-                    b.Property<double>("SalaryPerDay")
-                        .HasColumnType("float");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -195,54 +204,61 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("CheckinStatusConfigs");
+                    b.ToTable("LogStatusConfigs");
 
                     b.HasData(
                         new
                         {
                             Id = 0,
+                            Name = "None",
+                            Note = "Chưa checkin/checkout",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 1,
                             Name = "OnTime",
                             Note = "Đi đúng giờ",
                             SalaryMultiplier = 1.0
                         },
                         new
                         {
-                            Id = 1,
+                            Id = 2,
                             Name = "Late",
                             Note = "Đi trễ",
                             SalaryMultiplier = 0.69999999999999996
                         },
                         new
                         {
-                            Id = 2,
+                            Id = 3,
                             Name = "LeaveEarly",
                             Note = "Về sớm",
                             SalaryMultiplier = 0.69999999999999996
                         },
                         new
                         {
-                            Id = 3,
+                            Id = 4,
                             Name = "Overtime",
                             Note = "Làm thêm giờ",
                             SalaryMultiplier = 1.3
                         },
                         new
                         {
-                            Id = 4,
+                            Id = 5,
                             Name = "Absent",
                             Note = "Nghỉ không phép",
                             SalaryMultiplier = 0.5
                         },
                         new
                         {
-                            Id = 5,
+                            Id = 6,
                             Name = "LeaveWithPermission",
                             Note = "Nghỉ có phép",
                             SalaryMultiplier = 0.90000000000000002
                         },
                         new
                         {
-                            Id = 6,
+                            Id = 7,
                             Name = "Others",
                             Note = "Khác",
                             SalaryMultiplier = 1.0
@@ -310,13 +326,22 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<TimeOnly>("EndTime")
+                    b.Property<TimeOnly>("EndTimeAfternoon")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("EndTimeMorning")
                         .HasColumnType("time");
 
                     b.Property<int>("LateThresholdMinutes")
                         .HasColumnType("int");
 
-                    b.Property<TimeOnly>("StartTime")
+                    b.Property<int>("LogAllowtime")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly>("StartTimeAfternoon")
+                        .HasColumnType("time");
+
+                    b.Property<TimeOnly>("StartTimeMorning")
                         .HasColumnType("time");
 
                     b.HasKey("id");
