@@ -42,22 +42,22 @@ namespace EmployeeAPI.Models
                 //new CheckinMorningStatusConfig { Id = 5, Name = "Others", SalaryMultiplier = 1.0, Note = "Khác" }
             );
 
-            modelBuilder.Entity<Checkin>().HasData(
-                new Checkin
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = Guid.Empty, // Sẽ cập nhật sau
-                    CheckoutMorning = DateTime.Now,
-                    CheckinMorning = DateTime.Now,
-                    CheckinAfternoon = DateTime.Now,
-                    CheckoutAfternoon = DateTime.Now,
-                    CheckinMorningStatus = Enums.LogStatus.None, 
-                    CheckoutMorningStatus = Enums.LogStatus.None, // OnTime
-                    CheckinAfternoonStatus = Enums.LogStatus.None, // OnTime
-                    CheckoutAfternoonStatus = Enums.LogStatus.None, // OnTime
-                    IsDeleted = false
-                }
-            );
+            //modelBuilder.Entity<Checkin>().HasData(
+            //    new Checkin
+            //    {
+            //        Id = Guid.NewGuid(),
+            //        UserId = Guid.Empty, // Sẽ cập nhật sau
+            //        CheckoutMorning = DateTime.Now,
+            //        CheckinMorning = DateTime.Now,
+            //        CheckinAfternoon = DateTime.Now,
+            //        CheckoutAfternoon = DateTime.Now,
+            //        CheckinMorningStatus = Enums.LogStatus.None, 
+            //        CheckoutMorningStatus = Enums.LogStatus.None, // OnTime
+            //        CheckinAfternoonStatus = Enums.LogStatus.None, // OnTime
+            //        CheckoutAfternoonStatus = Enums.LogStatus.None, // OnTime
+            //        IsDeleted = false
+            //    }
+            //);
 
             /*modelBuilder.Entity<Holiday>().HasData(
                 new Holiday

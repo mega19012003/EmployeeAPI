@@ -29,15 +29,15 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (schedule != null)
                     {
-                        var EndTimeAfternoon = schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
+                        var EndTimeCheck = schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
                         var nowTimeOnly = TimeOnly.FromDateTime(vnTime);
 
-                        _logger.LogInformation($"[BackgroundService] Bây giờ là {nowTimeOnly}, giờ kết thúc ca là {EndTimeAfternoon}");
+                        _logger.LogInformation($"[BackgroundService] Bây giờ là {nowTimeOnly}, giờ kết thúc ca là {EndTimeCheck}");
 
                         // Gọi AutoMarkAbsentAsync nếu giờ hiện tại >= EndTimeAfternoon (để đảm bảo không bị bỏ lỡ)
-                        if (nowTimeOnly >= EndTimeAfternoon)
+                        if (nowTimeOnly >= EndTimeCheck)
                         {
-                            await checkinService.AutoMarkAbsentAsync(EndTimeAfternoon);
+                            await checkinService.AutoMarkAbsentAsync(EndTimeCheck);
                         }
                     }
                     await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
