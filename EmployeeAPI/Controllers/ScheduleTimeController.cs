@@ -34,7 +34,7 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật gian biểu, chỉ có admin dc phép dùng
         /// </summary>
         /// <remarks>
-        /// { "StartTimeMorning": "08:00:00",
+        /// { "StartTimeMorning":  "08:00:00",
         ///"lateThresholdMinutes": 15,
         ///"EndTimeAfternoon": "17:00:00" }
         /// </remarks>
