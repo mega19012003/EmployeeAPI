@@ -69,7 +69,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Tạo checkin cho user, , manager chỉ dc checkin hộ nhân viên trong cùng phòng ban
+        /// Tạo checkin cho user, manager chỉ dc checkin hộ nhân viên trong cùng phòng ban
         /// </summary>
         /// <remarks>
         /// - CheckIn Status enum values:
