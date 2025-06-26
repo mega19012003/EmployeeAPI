@@ -2,6 +2,7 @@
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Checkins;
+using EmployeeAPI.Repositories.LogStatusConfigs;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.CheckinServices;
@@ -17,14 +18,17 @@ namespace EmployeeAPI.Services.PayrollServices
     {
         private readonly IPayrollRepository _payrollRepository;
         private readonly ICheckinRepository _checkinRepository;
+        private readonly ILogStatusConfigRepository _logStatusConfigRepository;
         private readonly ILogger<PayrollService> _logger;
         private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
-        public PayrollService(IPayrollRepository payrollRepository, IUserRepository userRepository, ICheckinRepository checkinRepository, ILogger<PayrollService> logger, AppDbContext context)
+        public PayrollService(IPayrollRepository payrollRepository, ILogStatusConfigRepository logStatusConfigRepository, IUserRepository userRepository, ICheckinRepository checkinRepository, ILogger<PayrollService> logger, AppDbContext context)
         {
             _payrollRepository = payrollRepository;
+
             _userRepository = userRepository;
             _checkinRepository = checkinRepository;
+            _logStatusConfigRepository = logStatusConfigRepository;
             _logger = logger;
             _context = context;
         }
@@ -88,11 +92,11 @@ namespace EmployeeAPI.Services.PayrollServices
             var payroll = await _payrollRepository.GetPayrollById(id);
             if (payroll == null)
                 throw new ArgumentException("Cannot find payroll");
-            
+
             var manager = currentUserRoles.Contains("Manager");
             var employee = currentUserRoles.Contains("Employee");
 
-            if(manager)
+            if (manager)
             {
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser.DepartmentId == null)
@@ -209,7 +213,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
                 var query = _context.Payrolls
                     .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
-                    .Include(p => p.Users); 
+                    .Include(p => p.Users);
 
                 var totalCount = await query.CountAsync();
 
@@ -242,7 +246,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
         ////////////////////////////////////////////////////////
 
-        public async Task<PaidPayrollDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
             var staff = await _userRepository.GetByIdAsync(staffId);
 
@@ -271,26 +275,38 @@ namespace EmployeeAPI.Services.PayrollServices
             if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
                 throw new InvalidOperationException("Payroll for this month already exists");
 
-            // Lấy tất cả checkin trong tháng (đã được xác nhận hợp lệ)
             var checkinsInMonth = await _context.Checkins
                 .Where(c => c.UserId == staffId
                     && c.CheckinMorning.Year == year
                     && c.CheckinMorning.Month == month
-                    && !c.IsDeleted
-                    /*&& c.SalaryPerDay > 0*/)
+                    && !c.IsDeleted)
                 .ToListAsync();
 
-            // Tổng lương = tổng SalaryPerDay của các ngày checkin
-            //double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
+            double totalSalary = 0;
+            var salaryForDay = 0.0;
+            foreach (var checkin in checkinsInMonth)
+            {
+                salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
+                _logger.LogInformation("Calculated salary for day {Date}: {Salary}", checkin.CheckinMorning.Date, salaryForDay);
+                //_logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
+                //    checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
+                totalSalary += salaryForDay;
+            }
 
-            // Tính tổng ngày làm việc dựa vào số checkin hợp lệ
-            var totalDayWorked = checkinsInMonth.Where(p => p.CheckinMorningStatus != LogStatus.Absent || p.CheckoutAfternoonStatus != LogStatus.Absent).Select(c => c.CheckinMorning.Date).Distinct().Count();
+            var totalDayWorked = checkinsInMonth
+                .Where(p => (p.CheckinMorningStatus != LogStatus.None && p.CheckoutMorningStatus != LogStatus.None
+                            && p.CheckinMorningStatus != LogStatus.Absent && p.CheckoutMorningStatus != LogStatus.Absent)
+                            || (p.CheckinMorningStatus != LogStatus.None && p.CheckoutMorningStatus != LogStatus.None
+                            && p.CheckinMorningStatus != LogStatus.Absent && p.CheckoutMorningStatus != LogStatus.Absent))
+                .Select(c => c.CheckinMorning.Date)
+                .Distinct()
+                .Count();
 
             var payroll = new Payroll
             {
                 Id = Guid.NewGuid(),
                 UserId = staffId,
-                //Salary = totalSalary,
+                Salary = totalSalary,
                 DaysWorked = totalDayWorked,
                 CreatedDate = DateTime.Now,
                 Note = $"Lương tháng {month}/{year}"
@@ -299,16 +315,126 @@ namespace EmployeeAPI.Services.PayrollServices
             await _payrollRepository.CreatePayrollAsync(payroll);
             await _context.SaveChangesAsync();
 
-            return new PaidPayrollDto
+            return new PayrollResultDto
             {
                 Id = payroll.Id,
-                UserId = staffId,
+                Name = payroll.Users.Fullname,
                 DaysWorked = totalDayWorked,
-                //Salary = totalSalary,
+                Salary = totalSalary,
                 CreatedDate = payroll.CreatedDate,
                 Note = payroll.Note
             };
         }
+        public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, TimeSpan? overtimeDuration = null)
+        {
+            var logStatus = await _logStatusConfigRepository.GetAllAsync();
+            var user = await _userRepository.GetByIdAsync(userId);
+
+            double checkinMorningSalary = 0;
+            double checkoutMorningSalary = 0;
+            double checkinAfternoonSalary = 0;
+            double checkoutAfternoonSalary = 0;
+
+            foreach (var item in logStatus)
+            {
+                if (item.Id == (int)(CheckinMorningStatus ?? Enums.LogStatus.None))
+                {
+                    checkinMorningSalary = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckinMorningStatus: {logstatuscs}", CheckinMorningStatus);
+                }
+                if (item.Id == (int)(CheckoutMorningStatus ?? Enums.LogStatus.None))
+                { 
+                    checkoutMorningSalary = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckoutMorningStatus: {logstatuscos}", CheckoutMorningStatus);
+                }
+                if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
+                { 
+                    checkoutAfternoonSalary = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckoutAfternoonStatus: {logstatuscc}", CheckoutMorningStatus);
+                }    
+                if (item.Id == (int) (CheckinAfternoonStatus ?? Enums.LogStatus.None))
+                { 
+                    checkinAfternoonSalary = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckinAfternoonStatus: {logstatuscoc}", CheckinAfternoonStatus);
+                }
+            }
+
+            double baseSalary = user.BasicSalary;
+            double quarterSalary = baseSalary / 4.0;
+            double salaryToday = 0;
+
+            salaryToday = (quarterSalary * checkinMorningSalary) + (quarterSalary * checkoutMorningSalary) + (quarterSalary * checkinAfternoonSalary) + (quarterSalary * checkoutAfternoonSalary);
+            return salaryToday;
+        }
+
+
+        //public async Task<PaidPayrollDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
+        //{
+        //    var staff = await _userRepository.GetByIdAsync(staffId);
+
+        //    if (staff == null)
+        //        throw new Exception("Cannot find User");
+
+        //    if (currentUserRoles.Contains("Manager"))
+        //    {
+        //        var currentUser = await _context.Users
+        //            .Include(u => u.Department)
+        //            .FirstOrDefaultAsync(u => u.UserId == currentUserId);
+
+        //        if (currentUser == null)
+        //            throw new Exception("Cannot find current user");
+
+        //        if (currentUser.DepartmentId == null)
+        //            throw new Exception("Manager does not belong to any department");
+
+        //        if (staff.DepartmentId != currentUser.DepartmentId)
+        //            throw new UnauthorizedAccessException("You can only calculate payrolls for User in your department");
+        //    }
+
+        //    int month = DateTime.Now.Month;
+        //    int year = DateTime.Now.Year;
+
+        //    if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
+        //        throw new InvalidOperationException("Payroll for this month already exists");
+
+        //    // Lấy tất cả checkin trong tháng (đã được xác nhận hợp lệ)
+        //    var checkinsInMonth = await _context.Checkins
+        //        .Where(c => c.UserId == staffId
+        //            && c.CheckinMorning.Year == year
+        //            && c.CheckinMorning.Month == month
+        //            && !c.IsDeleted
+        //            /*&& c.SalaryPerDay > 0*/)
+        //        .ToListAsync();
+
+        //    // Tổng lương = tổng SalaryPerDay của các ngày checkin
+        //    //double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
+
+        //    // Tính tổng ngày làm việc dựa vào số checkin hợp lệ
+        //    var totalDayWorked = checkinsInMonth.Where(p => p.CheckinMorningStatus != LogStatus.Absent || p.CheckoutAfternoonStatus != LogStatus.Absent).Select(c => c.CheckinMorning.Date).Distinct().Count();
+
+        //    var payroll = new Payroll
+        //    {
+        //        Id = Guid.NewGuid(),
+        //        UserId = staffId,
+        //        //Salary = totalSalary,
+        //        DaysWorked = totalDayWorked,
+        //        CreatedDate = DateTime.Now,
+        //        Note = $"Lương tháng {month}/{year}"
+        //    };
+
+        //    await _payrollRepository.CreatePayrollAsync(payroll);
+        //    await _context.SaveChangesAsync();
+
+        //    return new PaidPayrollDto
+        //    {
+        //        Id = payroll.Id,
+        //        UserId = staffId,
+        //        DaysWorked = totalDayWorked,
+        //        //Salary = totalSalary,
+        //        CreatedDate = payroll.CreatedDate,
+        //        Note = payroll.Note
+        //    };
+        //}
 
     }
 }

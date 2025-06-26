@@ -66,6 +66,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Tình chấm công cho nhân viên, do admin/manager xử lý
         /// </summary>
+        [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("calculate")]
         public async Task<IActionResult> CalculatePayroll(Guid userId)
         {
@@ -75,7 +76,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
             var pagedResult = await _payrollService.CalculatePayrollAsync(userId, currentUserId, currentRoles);
-            return Ok(ApiResponse<ResponseModel.PaidPayrollDto>.ReturnResult("Calculate payroll success", pagedResult, 200));
+            return Ok(ApiResponse<ResponseModel.PayrollResultDto>.ReturnResult("Calculate payroll success", pagedResult, 200));
         }
 
         /// <summary>

@@ -21,7 +21,6 @@ namespace EmployeeAPI.Services.CheckinServices
             public string? CheckoutMorningStatus { get; set; }
             public string? CheckinAfternoonStatus { get; set; }
             public string? CheckoutAfternoonStatus { get; set; }
-            public double SalaryPerDay { get; set; } = 0.0;
         }
 
         public class CreateCheckinDto

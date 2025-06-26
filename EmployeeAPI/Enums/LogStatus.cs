@@ -2,13 +2,6 @@
 {
     public enum LogStatus
     {
-        //OnTime = 0,
-        //Late = 1,
-        //LeaveEarly = 2,
-        //Overtime = 3,
-        //Absent = 4,
-        //LeaveWithPermission = 5,
-        //Others = 6,
         None = 0,
         OnTime = 1,
         Late = 2,

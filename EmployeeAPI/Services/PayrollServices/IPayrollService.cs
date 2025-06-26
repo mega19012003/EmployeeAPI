@@ -13,7 +13,8 @@ namespace EmployeeAPI.Services.PayrollServices
         Task<string> SoftDeletePayroll(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         ///////////////////////////////
         //Task<PaidPayroll> CalculatePayrollAsync(Guid staffId);
-        Task<PaidPayrollDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles);
+        //Task<PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles);
+        Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles);
         Task<PagedResult<ResponseModel.PayrollResultDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentRoles, int? pageIndex, int? pageSize);
     }
 }

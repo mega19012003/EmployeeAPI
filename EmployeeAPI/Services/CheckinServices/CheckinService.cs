@@ -414,7 +414,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = checkin?.CheckoutMorningStatus?.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
                     CheckoutAfternoonStatus = checkin?.CheckoutAfternoonStatus?.ToString(),
-                    SalaryPerDay = 0
                 };
             }
             catch (Exception ex)
@@ -440,34 +439,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
             return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
         }
-        public async Task<double> CalculateSalaryPerDayAsync(User user, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, TimeSpan? overtimeDuration = null)
-        {
-            var logStatus = await _logStatusConfigRepository.GetAllAsync();
 
-            double checkinMorningSalary = 0;
-            double checkoutMorningSalary = 0;
-            double checkinAfternoonSalary = 0;
-            double checkoutAfternoonSalary = 0;
-
-            foreach (var item in logStatus)
-            {
-                if (item.Id == (int)(CheckinMorningStatus ?? Enums.LogStatus.None))
-                    checkinMorningSalary = item.SalaryMultiplier;
-                if (item.Id == (int)(CheckoutMorningStatus ?? Enums.LogStatus.None))
-                    checkoutMorningSalary = item.SalaryMultiplier;
-                if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
-                    checkoutAfternoonSalary = item.SalaryMultiplier;
-                if (item.Id == (int)(CheckinAfternoonStatus ?? Enums.LogStatus.None))
-                    checkinAfternoonSalary = item.SalaryMultiplier;
-            }
-
-            double baseSalary = user.BasicSalary;
-            double quarterSalary = baseSalary / 4.0;
-            double salaryToday = 0;
-
-            salaryToday = (quarterSalary * checkinMorningSalary) + (quarterSalary * checkoutMorningSalary) + (quarterSalary * checkinAfternoonSalary) + (quarterSalary * checkoutAfternoonSalary);
-            return salaryToday;
-        }
 
         public async Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -530,7 +502,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task AutoMarkAbsentAsync(TimeOnly EndTimeAfternoon)
+        public async Task AutoMarkAbsentAsync(TimeOnly CheckTime)
         {
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
@@ -549,7 +521,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 return;
             }
 
-            if (TimeOnly.FromDateTime(vnNow) < EndTimeAfternoon)
+            if (TimeOnly.FromDateTime(vnNow) < CheckTime)
             {
                 _logger.LogInformation("Not work end time, no marking absent");
                 return;
@@ -559,7 +531,7 @@ namespace EmployeeAPI.Services.CheckinServices
             if (schedule == null) throw new Exception("Work schedule time hasn't been set");
 
             var currentTimeOnly = TimeOnly.FromDateTime(vnNow);
-            var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LateThresholdMinutes);
+            //var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
 
             TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTimeAfternoon;
 
@@ -581,8 +553,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
             foreach (var user in absentUsers)
             {
-                //double salary = await CalculateSalaryPerDayAsync(user, Enums.LogStatus.Absent, Enums.LogStatus.Absent/*, OvertimeDuration*/);
-                //FIX THIS QUICKKKK
 
                 var checkin = new Checkin
                 {
@@ -590,9 +560,12 @@ namespace EmployeeAPI.Services.CheckinServices
                     UserId = user.UserId,
                     CheckinMorningStatus = Enums.LogStatus.Absent,
                     CheckinMorning = DateTime.UtcNow,
-                    CheckoutAfternoonStatus = Enums.LogStatus.Absent,
+                    CheckoutMorningStatus = Enums.LogStatus.Absent,
+                    CheckoutMorning = DateTime.UtcNow,
+                    CheckinAfternoonStatus = Enums.LogStatus.Absent,
                     CheckinAfternoon = DateTime.UtcNow,
-                    //SalaryPerDay = salary
+                    CheckoutAfternoonStatus = Enums.LogStatus.Absent,
+                    CheckoutAfternoon = DateTime.UtcNow,
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
