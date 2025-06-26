@@ -8,6 +8,7 @@ using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.VisualBasic;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 using static EmployeeAPI.Services.PayrollServices.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -282,14 +283,32 @@ namespace EmployeeAPI.Services.PayrollServices
                     && !c.IsDeleted)
                 .ToListAsync();
 
+            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+            if (schedule == null)
+                throw new Exception("Schedule not found");
+
+            var overtimeDuration = 1;
+
+
             double totalSalary = 0;
             var salaryForDay = 0.0;
             foreach (var checkin in checkinsInMonth)
             {
-                salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
+                // Convert checkouTime to Vietnam time (UTC+7)
+                var utcTime = DateTime.SpecifyKind(checkin.CheckoutAfternoon, DateTimeKind.Utc);
+                var vnTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+
+                var checkouTime = vnTime.Hour;
+                var endTime = schedule.EndTimeAfternoon.Hour;
+                if (checkouTime > endTime)
+                {
+                    overtimeDuration = checkouTime - endTime;
+                }
+                salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
                 _logger.LogInformation("Calculated salary for day {Date}: {Salary}", checkin.CheckinMorning.Date, salaryForDay);
-                //_logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
-                //    checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
+                _logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
+                    checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
+                _logger.LogInformation("Thoi gian lam them gio {end} - {overend}", endTime, checkouTime);
                 totalSalary += salaryForDay;
             }
 
@@ -325,36 +344,40 @@ namespace EmployeeAPI.Services.PayrollServices
                 Note = payroll.Note
             };
         }
-        public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, TimeSpan? overtimeDuration = null)
+
+        public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
         {
             var logStatus = await _logStatusConfigRepository.GetAllAsync();
             var user = await _userRepository.GetByIdAsync(userId);
+            ScheduleTime schedule;
+            schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
 
-            double checkinMorningSalary = 0;
-            double checkoutMorningSalary = 0;
-            double checkinAfternoonSalary = 0;
-            double checkoutAfternoonSalary = 0;
+
+            double checkinMorningMultiply = 0;
+            double checkoutMorningMultiply = 0;
+            double checkinAfternoonMultiply = 0;
+            double checkoutAfternoonMultiply = 0;
 
             foreach (var item in logStatus)
             {
                 if (item.Id == (int)(CheckinMorningStatus ?? Enums.LogStatus.None))
                 {
-                    checkinMorningSalary = item.SalaryMultiplier;
+                    checkinMorningMultiply = item.SalaryMultiplier;
                     //_logger.LogInformation("CheckinMorningStatus: {logstatuscs}", CheckinMorningStatus);
                 }
                 if (item.Id == (int)(CheckoutMorningStatus ?? Enums.LogStatus.None))
-                { 
-                    checkoutMorningSalary = item.SalaryMultiplier;
+                {
+                    checkoutMorningMultiply = item.SalaryMultiplier;
                     //_logger.LogInformation("CheckoutMorningStatus: {logstatuscos}", CheckoutMorningStatus);
                 }
                 if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
                 { 
-                    checkoutAfternoonSalary = item.SalaryMultiplier;
+                    checkoutAfternoonMultiply = item.SalaryMultiplier;
                     //_logger.LogInformation("CheckoutAfternoonStatus: {logstatuscc}", CheckoutMorningStatus);
                 }    
                 if (item.Id == (int) (CheckinAfternoonStatus ?? Enums.LogStatus.None))
-                { 
-                    checkinAfternoonSalary = item.SalaryMultiplier;
+                {
+                    checkinAfternoonMultiply = item.SalaryMultiplier;
                     //_logger.LogInformation("CheckinAfternoonStatus: {logstatuscoc}", CheckinAfternoonStatus);
                 }
             }
@@ -363,78 +386,19 @@ namespace EmployeeAPI.Services.PayrollServices
             double quarterSalary = baseSalary / 4.0;
             double salaryToday = 0;
 
-            salaryToday = (quarterSalary * checkinMorningSalary) + (quarterSalary * checkoutMorningSalary) + (quarterSalary * checkinAfternoonSalary) + (quarterSalary * checkoutAfternoonSalary);
+            if (CheckoutAfternoonStatus == Enums.LogStatus.Overtime)
+            {
+                salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply * overtimeDuration);
+                _logger.LogInformation("sang 1 {moneys} - {cs}", quarterSalary * checkinMorningMultiply , checkinMorningMultiply);
+                _logger.LogInformation("sang 2 {moneys} - {cos}", quarterSalary * checkoutMorningMultiply, checkoutMorningMultiply);
+                _logger.LogInformation("chieu 1 {moneys} - {cc}", quarterSalary * checkinAfternoonMultiply, checkinAfternoonMultiply);
+                _logger.LogInformation("chieu 2 {moneys} - {coc}", quarterSalary * checkoutAfternoonMultiply, checkoutAfternoonMultiply);
+                _logger.LogInformation("Over TIme: {OT}", overtimeDuration);
+            }
+            else salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply);
+            
             return salaryToday;
         }
-
-
-        //public async Task<PaidPayrollDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
-        //{
-        //    var staff = await _userRepository.GetByIdAsync(staffId);
-
-        //    if (staff == null)
-        //        throw new Exception("Cannot find User");
-
-        //    if (currentUserRoles.Contains("Manager"))
-        //    {
-        //        var currentUser = await _context.Users
-        //            .Include(u => u.Department)
-        //            .FirstOrDefaultAsync(u => u.UserId == currentUserId);
-
-        //        if (currentUser == null)
-        //            throw new Exception("Cannot find current user");
-
-        //        if (currentUser.DepartmentId == null)
-        //            throw new Exception("Manager does not belong to any department");
-
-        //        if (staff.DepartmentId != currentUser.DepartmentId)
-        //            throw new UnauthorizedAccessException("You can only calculate payrolls for User in your department");
-        //    }
-
-        //    int month = DateTime.Now.Month;
-        //    int year = DateTime.Now.Year;
-
-        //    if (await _payrollRepository.ExistsPayrollForMonth(staffId, month, year))
-        //        throw new InvalidOperationException("Payroll for this month already exists");
-
-        //    // Lấy tất cả checkin trong tháng (đã được xác nhận hợp lệ)
-        //    var checkinsInMonth = await _context.Checkins
-        //        .Where(c => c.UserId == staffId
-        //            && c.CheckinMorning.Year == year
-        //            && c.CheckinMorning.Month == month
-        //            && !c.IsDeleted
-        //            /*&& c.SalaryPerDay > 0*/)
-        //        .ToListAsync();
-
-        //    // Tổng lương = tổng SalaryPerDay của các ngày checkin
-        //    //double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
-
-        //    // Tính tổng ngày làm việc dựa vào số checkin hợp lệ
-        //    var totalDayWorked = checkinsInMonth.Where(p => p.CheckinMorningStatus != LogStatus.Absent || p.CheckoutAfternoonStatus != LogStatus.Absent).Select(c => c.CheckinMorning.Date).Distinct().Count();
-
-        //    var payroll = new Payroll
-        //    {
-        //        Id = Guid.NewGuid(),
-        //        UserId = staffId,
-        //        //Salary = totalSalary,
-        //        DaysWorked = totalDayWorked,
-        //        CreatedDate = DateTime.Now,
-        //        Note = $"Lương tháng {month}/{year}"
-        //    };
-
-        //    await _payrollRepository.CreatePayrollAsync(payroll);
-        //    await _context.SaveChangesAsync();
-
-        //    return new PaidPayrollDto
-        //    {
-        //        Id = payroll.Id,
-        //        UserId = staffId,
-        //        DaysWorked = totalDayWorked,
-        //        //Salary = totalSalary,
-        //        CreatedDate = payroll.CreatedDate,
-        //        Note = payroll.Note
-        //    };
-        //}
 
     }
 }

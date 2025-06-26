@@ -197,7 +197,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
                     {
-                        checkinSang = isHoliday || isSunday ? Enums.LogStatus.Overtime : Enums.LogStatus.OnTime;
+                        checkinSang = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
                     }
                     else if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
                     {
@@ -218,7 +218,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime))
                     {
-                        checkinChieu = isHoliday || isSunday ? Enums.LogStatus.Overtime : Enums.LogStatus.OnTime;
+                        checkinChieu = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
                     }
                     else if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
                     {
@@ -357,7 +357,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     if (checkin.CheckoutMorningStatus != null && checkin.CheckoutMorningStatus != Enums.LogStatus.None)
                         throw new InvalidOperationException("Already checked out this morning");
 
-                    checkoutSang = Enums.LogStatus.OnTime;
+                    checkoutSang = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
+                    //checkoutSang = Enums.LogStatus.OnTime;
                     checkin.CheckoutMorning = nowUtc;
                     checkin.CheckoutMorningStatus = checkoutSang;
                 }
@@ -384,7 +385,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     if (checkin.CheckoutAfternoonStatus != null && checkin.CheckoutAfternoonStatus != Enums.LogStatus.None)
                         throw new InvalidOperationException("Already checked out this afternoon");
 
-                    checkoutChieu = Enums.LogStatus.OnTime;
+                    checkoutChieu = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
+                    //checkoutChieu = Enums.LogStatus.OnTime;
                     checkin.CheckoutAfternoon = nowUtc;
                     checkin.CheckoutAfternoonStatus = checkoutChieu;
                 }

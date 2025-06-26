@@ -5,7 +5,7 @@
         None = 0,
         OnTime = 1,
         Late = 2,
-        LeaveEarly = 3,
+        OnHoliday = 3,
         Overtime = 4,
         Absent = 5,
         LeaveWithPermission = 6,

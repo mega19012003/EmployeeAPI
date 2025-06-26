@@ -28,7 +28,8 @@ namespace EmployeeAPI.Models
                 new LogStatusConfig { Id = 0, Name = "None", SalaryMultiplier = 0.0, Note = "Chưa checkin/checkout" },
                 new LogStatusConfig { Id = 1, Name = "OnTime", SalaryMultiplier = 1.0, Note = "Đi đúng giờ" },
                 new LogStatusConfig { Id = 2, Name = "Late", SalaryMultiplier = 0.7, Note = "Đi trễ" },
-                new LogStatusConfig { Id = 3, Name = "LeaveEarly", SalaryMultiplier = 0.7, Note = "Về sớm" },
+                //new LogStatusConfig { Id = 3, Name = "LeaveEarly", SalaryMultiplier = 0.7, Note = "Về sớm" },
+                new LogStatusConfig { Id = 3, Name = "OnHoliday", SalaryMultiplier = 2.0, Note = "Làm vào ngày nghỉ" },
                 new LogStatusConfig { Id = 4, Name = "Overtime", SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
                 new LogStatusConfig { Id = 5, Name = "Absent", SalaryMultiplier = 0.5, Note = "Nghỉ không phép" },
                 new LogStatusConfig { Id = 6, Name = "LeaveWithPermission", SalaryMultiplier = 0.9, Note = "Nghỉ có phép" },
@@ -39,6 +40,23 @@ namespace EmployeeAPI.Models
                 //new CheckinMorningStatusConfig { Id = 3, Name = "Absent", SalaryMultiplier = 0.5, Note = "Nghỉ không phép" },
                 //new CheckinMorningStatusConfig { Id = 4, Name = "LeaveWithPermission", SalaryMultiplier = 0.9, Note = "Nghỉ có phép" },
                 //new CheckinMorningStatusConfig { Id = 5, Name = "Others", SalaryMultiplier = 1.0, Note = "Khác" }
+            );
+
+            modelBuilder.Entity<Checkin>().HasData(
+                new Checkin
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = Guid.Empty, // Sẽ cập nhật sau
+                    CheckoutMorning = DateTime.Now,
+                    CheckinMorning = DateTime.Now,
+                    CheckinAfternoon = DateTime.Now,
+                    CheckoutAfternoon = DateTime.Now,
+                    CheckinMorningStatus = Enums.LogStatus.None, 
+                    CheckoutMorningStatus = Enums.LogStatus.None, // OnTime
+                    CheckinAfternoonStatus = Enums.LogStatus.None, // OnTime
+                    CheckoutAfternoonStatus = Enums.LogStatus.None, // OnTime
+                    IsDeleted = false
+                }
             );
 
             /*modelBuilder.Entity<Holiday>().HasData(
