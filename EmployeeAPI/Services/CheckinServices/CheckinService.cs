@@ -425,8 +425,6 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-
-
         private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
         {
             var nowUtc = DateTime.UtcNow;
