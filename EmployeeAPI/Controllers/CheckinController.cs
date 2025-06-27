@@ -88,7 +88,7 @@ namespace EmployeeAPI.Controllers
         /// - Others = 6 (lí do khác)
         /// </remarks>
         [Authorize]
-        [HttpPost("CheckinMorning")]
+        [HttpPost("Checkin")]
         public async Task<IActionResult> CheckinMorning([FromForm] ResponseModel.CreateCheckinDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -137,7 +137,7 @@ namespace EmployeeAPI.Controllers
         /// - Others = 6 (lí do khác)
         /// </remarks>
         [Authorize]
-        [HttpPut("ChekoutMorning")]
+        [HttpPut("Chekout")]
         public async Task<IActionResult> ChekoutMorning([FromForm] ResponseModel. CreateCheckoutDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

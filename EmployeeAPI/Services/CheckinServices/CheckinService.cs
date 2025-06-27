@@ -78,7 +78,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
 
                         CheckinAfternoon = c.CheckinAfternoon,
-                        CheckinAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
+                        CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
                         CheckoutAfternoon = c.CheckoutAfternoon,
                         CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
 
@@ -127,7 +127,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinMorning = c.CheckinMorning,
                     CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
                     CheckoutMorning = c.CheckoutMorning,
-                    CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
+                    CheckoutMorningStatus = c.CheckinAfternoonStatus.ToString(),
 
                     CheckinAfternoon = c.CheckinAfternoon,
                     CheckinAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
@@ -174,107 +174,76 @@ namespace EmployeeAPI.Services.CheckinServices
                 var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDay, vnTimeZone);
                 var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(endOfDay, vnTimeZone);
 
-                var checkin = await _context.Checkins
-                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinMorning >= startOfDayUtc && c.CheckinMorning <= endOfDayUtc);
+                var isMorning = currentTime < schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime);
+                var isAfternoon = currentTime >= schedule.StartTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime);
 
-                var checkinSang = Enums.LogStatus.None;
-                var checkoutSang = Enums.LogStatus.None;
-                var checkoutChieu = Enums.LogStatus.None;
-                var checkinChieu = Enums.LogStatus.None;
-                var timeSang = DateTime.MinValue;
-                var timeChieu = DateTime.MinValue;
-
-                bool isWithinMorning = currentTime >= schedule.StartTimeMorning && currentTime < schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime);
-                bool isWithinAfternoon = currentTime >= schedule.StartTimeAfternoon && currentTime < schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime);
-
-                if (!isWithinMorning && !isWithinAfternoon)
+                if (!isMorning && !isAfternoon)
                     throw new ArgumentException("Hiện tại không trong khung giờ để check-in");
 
-                if (isWithinMorning)
+                var existingCheckin = await _context.Checkins.FirstOrDefaultAsync(c => c.UserId == targetUserId &&
+                    ((c.CheckinMorning >= startOfDayUtc && c.CheckinMorning <= endOfDayUtc) ||
+                     (c.CheckinAfternoon >= startOfDayUtc && c.CheckinAfternoon <= endOfDayUtc)));
+
+                if (existingCheckin != null)
                 {
-                    if (checkin != null && checkin.CheckinMorningStatus != Enums.LogStatus.None)
-                        throw new ArgumentException("Đã check-in buổi sáng");
-
-                    if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
+                    if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) ||
+                        (isAfternoon && existingCheckin.CheckinAfternoonStatus != Enums.LogStatus.None))
                     {
-                        checkinSang = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
-                    }
-                    else if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
-                    {
-                        checkinSang = Enums.LogStatus.Late;
-                    }
-                    else
-                    {
-                        checkinSang = Enums.LogStatus.Absent;
-                        checkoutSang = Enums.LogStatus.Absent;
-                    }
-                    timeSang = nowUtc;
-                }
-
-                if (isWithinAfternoon)
-                {
-                    if (checkin != null && checkin.CheckinAfternoonStatus != Enums.LogStatus.None)
-                        throw new ArgumentException("Đã check-in buổi chiều");
-
-                    if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime))
-                    {
-                        checkinChieu = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
-                    }
-                    else if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
-                    {
-                        checkinChieu = Enums.LogStatus.Late;
-                    }
-                    else
-                    {
-                        checkinChieu = Enums.LogStatus.Absent;
-                        checkoutChieu = Enums.LogStatus.Absent;
-                    }
-                    timeChieu = nowUtc;
-
-                    if (checkin == null || checkin.CheckinMorningStatus == Enums.LogStatus.None)
-                    {
-                        checkinSang = Enums.LogStatus.Absent;
-                        checkoutSang = Enums.LogStatus.Absent;
-                        timeSang = nowUtc;
+                        throw new ArgumentException("Đã check-in trong khung giờ này hôm nay");
                     }
                 }
 
-                if (checkin == null)
+                var checkin = existingCheckin ?? new Checkin
                 {
-                    checkin = new Checkin
+                    Id = Guid.NewGuid(),
+                    UserId = targetUserId,
+                    CheckinMorning = DateTime.MinValue,
+                    CheckoutMorning = DateTime.MinValue,
+                    CheckinAfternoon = DateTime.MinValue,
+                    CheckoutAfternoon = DateTime.MinValue,
+                    CheckinMorningStatus = Enums.LogStatus.None,
+                    CheckoutMorningStatus = Enums.LogStatus.None,
+                    CheckinAfternoonStatus = Enums.LogStatus.None,
+                    CheckoutAfternoonStatus = Enums.LogStatus.None
+                };
+
+                if (isMorning)
+                {
+                    checkin.CheckinMorning = nowUtc;
+                    checkin.CheckinMorningStatus = currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime)
+                        ? (isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime)
+                        : (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes)
+                            ? Enums.LogStatus.Late
+                            : Enums.LogStatus.Absent);
+
+                    if (checkin.CheckinMorningStatus == Enums.LogStatus.Absent)
                     {
-                        Id = Guid.NewGuid(),
-                        UserId = targetUserId,
-                        CheckinMorning = timeSang,
-                        CheckinMorningStatus = checkinSang,
-                        CheckoutMorningStatus = checkoutSang,
-                        CheckinAfternoon = timeChieu,
-                        CheckinAfternoonStatus = checkinChieu,
-                        CheckoutAfternoonStatus = checkoutChieu,
-                    };
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
+                    }
+                }
+                else if (isAfternoon)
+                {
+                    checkin.CheckinAfternoon = nowUtc;
+                    checkin.CheckinAfternoonStatus = currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime)
+                        ? (isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime)
+                        : (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes)
+                            ? Enums.LogStatus.Late
+                            : Enums.LogStatus.Absent);
+
+                    if (existingCheckin == null)
+                    {
+                        checkin.CheckinMorning = nowUtc;
+                        checkin.CheckinMorningStatus = Enums.LogStatus.Absent;
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
+                    }
+                }
+
+                if (existingCheckin == null)
+                {
                     await _checkinRepository.CreateAsync(checkin);
                 }
                 else
                 {
-                    if (timeSang != DateTime.MinValue)
-                    {
-                        checkin.CheckinMorning = timeSang;
-                        checkin.CheckinMorningStatus = checkinSang;
-                        checkin.CheckoutMorningStatus = checkoutSang;
-                    }
-                    if (timeChieu != DateTime.MinValue)
-                    {
-                        checkin.CheckinAfternoon = timeChieu;
-                        checkin.CheckinAfternoonStatus = checkinChieu;
-                        checkin.CheckoutAfternoonStatus = checkoutChieu;
-
-                        if (checkin.CheckinMorningStatus == Enums.LogStatus.None)
-                        {
-                            checkin.CheckinMorningStatus = Enums.LogStatus.Absent;
-                            checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
-                            checkin.CheckinMorning = nowUtc;
-                        }
-                    }
                     await _checkinRepository.UpdateAsync(checkin);
                 }
 
@@ -290,9 +259,9 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinAfternoon = checkin.CheckinAfternoon,
                     CheckoutAfternoon = checkin.CheckoutAfternoon,
                     CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
-                    CheckoutMorningStatus = checkin.CheckoutMorningStatus?.ToString(),
+                    CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
-                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus?.ToString(),
+                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
                 };
             }
             catch (Exception ex)
@@ -302,7 +271,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         public async Task<CheckinResultDto> CheckoutAsync(Guid? userId, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -327,77 +295,98 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                var startOfDay = new DateTime(vnTime.Year, vnTime.Month, vnTime.Day, 0, 0, 0);
-                var endOfDay = new DateTime(vnTime.Year, vnTime.Month, vnTime.Day, 23, 59, 59);
-                var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDay, vnTimeZone);
-                var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(endOfDay, vnTimeZone);
+                var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date, vnTimeZone);
+                var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date.AddDays(1).AddTicks(-1), vnTimeZone);
 
-                var checkin = await _context.Checkins.FirstOrDefaultAsync(c => c.UserId == targetUserId
-                    && ((c.CheckinAfternoon >= startOfDayUtc && c.CheckinAfternoon <= endOfDayUtc) ||
-                        (c.CheckinMorning >= startOfDayUtc && c.CheckinMorning <= endOfDayUtc)));
+                var checkin = await _context.Checkins.FirstOrDefaultAsync(c => c.UserId == targetUserId &&
+                    ((c.CheckinMorning >= startOfDayUtc && c.CheckinMorning <= endOfDayUtc) ||
+                     (c.CheckinAfternoon >= startOfDayUtc && c.CheckinAfternoon <= endOfDayUtc)));
 
                 if (checkin == null)
                     throw new ArgumentException("Check-in record not found for today");
 
-                var checkinSang = checkin.CheckinMorningStatus;
-                var checkoutSang = checkin.CheckoutMorningStatus;
-                var checkoutChieu = checkin.CheckoutAfternoonStatus;
-                var checkinChieu = checkin.CheckinAfternoonStatus;
+                bool isCheckoutMorning = currentTime >= schedule.StartTimeMorning && currentTime <= schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime);
+                bool isCheckoutAfternoonRange = currentTime >= schedule.StartTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime);
 
-                // Buổi sáng
-                if (currentTime >= schedule.StartTimeMorning && currentTime < schedule.EndTimeMorning)
+                var alreadyCheckedOut = (isCheckoutMorning && checkin.CheckoutMorningStatus != Enums.LogStatus.None) ||
+                                         (isCheckoutAfternoonRange && checkin.CheckoutAfternoonStatus != Enums.LogStatus.None);
+
+                if (alreadyCheckedOut)
+                    throw new InvalidOperationException("Already checked out");
+
+                if (isCheckoutMorning)
                 {
-                    throw new InvalidOperationException("Cannot check out during morning working hours");
-                }
-                else if (currentTime >= schedule.EndTimeMorning && currentTime <= schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime))
-                {
-                    if (checkin.CheckinMorning == DateTime.MinValue)
-                        throw new InvalidOperationException("You must check-in before checking out in the morning");
-
-                    if (checkin.CheckoutMorningStatus != null && checkin.CheckoutMorningStatus != Enums.LogStatus.None)
-                        throw new InvalidOperationException("Already checked out this morning");
-
-                    checkoutSang = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
-                    //checkoutSang = Enums.LogStatus.OnTime;
                     checkin.CheckoutMorning = nowUtc;
-                    checkin.CheckoutMorningStatus = checkoutSang;
-                }
-                else if (currentTime > schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime))
-                {
-                    if (checkin.CheckoutMorningStatus == null || checkin.CheckoutMorningStatus == Enums.LogStatus.None)
+                    var workedDuration = checkin.CheckoutMorning - checkin.CheckinMorning;
+                    var totalDuration = schedule.EndTimeMorning - schedule.StartTimeMorning;
+                    var threshold = totalDuration.TotalMinutes * 0.75;
+
+                    //_logger.LogInformation("ACtual time work: {time}", workedDuration);
+                    //_logger.LogInformation("Work schedule: {time}", totalDuration);
+                    //_logger.LogInformation("threshold: {time}", threshold);
+
+                    if (workedDuration.TotalMinutes < threshold)
                     {
-                        checkoutSang = Enums.LogStatus.Absent;
-                        checkin.CheckoutMorning = nowUtc;
-                        checkin.CheckoutMorningStatus = checkoutSang;
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
+                    }
+                    else
+                    {
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.LeaveEarly;
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
                     }
                 }
-
-                // Buổi chiều
-                if (currentTime >= schedule.StartTimeAfternoon && currentTime < schedule.EndTimeAfternoon)
+                else if (isCheckoutAfternoonRange)
                 {
-                    throw new InvalidOperationException("Cannot check out during afternoon working hours");
-                }
-                else if (currentTime >= schedule.EndTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
-                {
-                    if (checkin.CheckinAfternoon == DateTime.MinValue)
-                        throw new InvalidOperationException("You must check-in before checking out in the afternoon");
-
-                    if (checkin.CheckoutAfternoonStatus != null && checkin.CheckoutAfternoonStatus != Enums.LogStatus.None)
-                        throw new InvalidOperationException("Already checked out this afternoon");
-
-                    checkoutChieu = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
-                    //checkoutChieu = Enums.LogStatus.OnTime;
                     checkin.CheckoutAfternoon = nowUtc;
-                    checkin.CheckoutAfternoonStatus = checkoutChieu;
-                }
-                else if (currentTime > schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
-                {
-                    if (checkin.CheckoutAfternoonStatus == null || checkin.CheckoutAfternoonStatus == Enums.LogStatus.None)
+
+                    if (checkin.CheckinAfternoon == DateTime.MinValue)
                     {
-                        checkoutChieu = Enums.LogStatus.Overtime;
-                        checkin.CheckoutAfternoon = nowUtc;
-                        checkin.CheckoutAfternoonStatus = checkoutChieu;
+                        // Set mặc định là giờ bắt đầu ca chiều
+                        var checkinAfternoonTime = vnTime.Date.Add(schedule.StartTimeAfternoon.ToTimeSpan());
+                        checkin.CheckinAfternoon = TimeZoneInfo.ConvertTimeToUtc(checkinAfternoonTime, vnTimeZone);
                     }
+
+                    var workedDuration = checkin.CheckoutAfternoon - checkin.CheckinAfternoon;
+                    var totalDuration = schedule.EndTimeAfternoon - schedule.StartTimeAfternoon;
+                    var threshold = totalDuration.TotalMinutes * 0.75;
+
+                    //_logger.LogInformation("Actual worked time: {time}", workedDuration);
+                    //_logger.LogInformation("Work schedule: {time}", totalDuration);
+                    //_logger.LogInformation("Threshold: {time}", threshold);
+
+                    if (workedDuration.TotalMinutes < threshold)
+                    {
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
+                    }
+                    else if (currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
+                    {
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.LeaveEarly;
+                    }
+                    else
+                    {
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Overtime;
+                    }
+
+                    if (checkin.CheckinMorningStatus == Enums.LogStatus.Absent)
+                    {
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
+                    }
+                    else if (checkin.CheckoutMorningStatus == Enums.LogStatus.None)
+                    {
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.OnTime;
+                    }
+
+                    if (checkin.CheckinAfternoonStatus == Enums.LogStatus.None)
+                    {
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.OnTime;
+                    }
+                }
+                else
+                {
+                    throw new InvalidOperationException("Not within valid checkout time range");
                 }
 
                 await _checkinRepository.UpdateAsync(checkin);
@@ -413,9 +402,9 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinAfternoon = checkin.CheckinAfternoon,
                     CheckoutAfternoon = checkin.CheckoutAfternoon,
                     CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
-                    CheckoutMorningStatus = checkin?.CheckoutMorningStatus?.ToString(),
+                    CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
-                    CheckoutAfternoonStatus = checkin?.CheckoutAfternoonStatus?.ToString(),
+                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
                 };
             }
             catch (Exception ex)
@@ -425,7 +414,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
         {
             var nowUtc = DateTime.UtcNow;
@@ -475,7 +463,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 existing.CheckoutAfternoonStatus = dto.CheckoutAfternoonStatus;
 
                 //existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinMorningStatus, existing.CheckoutAfternoonStatus/*, OvertimeDuration*/);
-                //FIX THIS QUICKKKK
 
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();

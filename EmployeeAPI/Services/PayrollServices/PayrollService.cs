@@ -292,6 +292,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
             double totalSalary = 0;
             var salaryForDay = 0.0;
+            double baseSalary = staff.BasicSalary;
             foreach (var checkin in checkinsInMonth)
             {
                 // Convert checkouTime to Vietnam time (UTC+7)
@@ -304,6 +305,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 {
                     overtimeDuration = checkouTime - endTime;
                 }
+                //salaryForDay = await CalculateSalaryPerDayAsync(checkin, baseSalary);
                 salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
                 //_logger.LogInformation("Calculated salary for day {Date}: {Salary}", checkin.CheckinMorning.Date, salaryForDay);
                 //_logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
@@ -345,6 +347,7 @@ namespace EmployeeAPI.Services.PayrollServices
             };
         }
 
+
         public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
         {
             var logStatus = await _logStatusConfigRepository.GetAllAsync();
@@ -371,11 +374,11 @@ namespace EmployeeAPI.Services.PayrollServices
                     //_logger.LogInformation("CheckoutMorningStatus: {logstatuscos}", CheckoutMorningStatus);
                 }
                 if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
-                { 
+                {
                     checkoutAfternoonMultiply = item.SalaryMultiplier;
                     //_logger.LogInformation("CheckoutAfternoonStatus: {logstatuscc}", CheckoutMorningStatus);
-                }    
-                if (item.Id == (int) (CheckinAfternoonStatus ?? Enums.LogStatus.None))
+                }
+                if (item.Id == (int)(CheckinAfternoonStatus ?? Enums.LogStatus.None))
                 {
                     checkinAfternoonMultiply = item.SalaryMultiplier;
                     //_logger.LogInformation("CheckinAfternoonStatus: {logstatuscoc}", CheckinAfternoonStatus);
@@ -389,14 +392,14 @@ namespace EmployeeAPI.Services.PayrollServices
             if (CheckoutAfternoonStatus == Enums.LogStatus.Overtime)
             {
                 salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply * overtimeDuration);
-                //_logger.LogInformation("sang 1 {moneys} - {cs}", quarterSalary * checkinMorningMultiply , checkinMorningMultiply);
+                //_logger.LogInformation("sang 1 {moneys} - {cs}", quarterSalary * checkinMorningMultiply, checkinMorningMultiply);
                 //_logger.LogInformation("sang 2 {moneys} - {cos}", quarterSalary * checkoutMorningMultiply, checkoutMorningMultiply);
                 //_logger.LogInformation("chieu 1 {moneys} - {cc}", quarterSalary * checkinAfternoonMultiply, checkinAfternoonMultiply);
                 //_logger.LogInformation("chieu 2 {moneys} - {coc}", quarterSalary * checkoutAfternoonMultiply, checkoutAfternoonMultiply);
                 //_logger.LogInformation("Over TIme: {OT}", overtimeDuration);
             }
             else salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply);
-            
+
             return salaryToday;
         }
 

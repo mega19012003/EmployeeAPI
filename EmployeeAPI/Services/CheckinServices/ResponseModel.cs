@@ -16,7 +16,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime CheckinMorning { get; set; }
             public DateTime CheckoutMorning { get; set; }
             public DateTime CheckinAfternoon { get; set; }
-            public DateTime CheckoutAfternoon{ get; set; }
+            public DateTime CheckoutAfternoon { get; set; }
             public string? CheckinMorningStatus { get; set; }
             public string? CheckoutMorningStatus { get; set; }
             public string? CheckinAfternoonStatus { get; set; }
