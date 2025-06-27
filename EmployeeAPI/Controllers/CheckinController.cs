@@ -215,7 +215,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet("employee")]
-        public async Task<IActionResult> GetCheckinsByUser(Guid userId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetCheckinsByUser(Guid userId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -223,12 +223,12 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, userId, pageIndex, pageSize);
+            var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, userId, Day, Month, Year, pageIndex, pageSize);
 
             if (!result.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("No result", result, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDetailDto>>.ReturnResult("No result", result, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("Get list checkin by user success", result, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDetailDto>>.ReturnResult("Get list checkin by user success", result, 200));
 
         }
     }

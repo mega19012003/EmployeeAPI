@@ -21,6 +21,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public string? CheckoutMorningStatus { get; set; }
             public string? CheckinAfternoonStatus { get; set; }
             public string? CheckoutAfternoonStatus { get; set; }
+            public double SalaryPerDay { get; set; }
         }
 
         public class CreateCheckinDto
@@ -45,6 +46,18 @@ namespace EmployeeAPI.Services.CheckinServices
             public Enums.LogStatus CheckoutMorningStatus { get; set; }
             public Enums.LogStatus CheckinAfternoonStatus { get; set; }
             public Enums.LogStatus CheckoutAfternoonStatus { get; set; }
+        }
+
+        public class CheckinDetailDto
+        {
+            public Guid Id { get; set; }
+            public string Name { get; set; }
+            public string CheckinMorningStatus { get; set; }
+            public string CheckoutMorningStatus { get; set; }
+            public string CheckinAfternoonStatus { get; set; }
+            public string CheckoutAfternoonStatus { get; set; }
+            public double SalaryPerDay { get; set; }
+            public DateTime TimeCheckin { get; set; }
         }
     }
 }

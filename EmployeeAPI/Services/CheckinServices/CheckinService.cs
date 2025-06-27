@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Transactions;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace EmployeeAPI.Services.CheckinServices
 {
@@ -283,6 +284,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
                     CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
+                    SalaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, 1)
                 };
             }
             catch (Exception ex)
@@ -340,13 +342,24 @@ namespace EmployeeAPI.Services.CheckinServices
                     checkin.CheckoutMorning = nowUtc;
                     var workedDuration = checkin.CheckoutMorning - checkin.CheckinMorning;
                     var totalDuration = schedule.EndTimeMorning - schedule.StartTimeMorning;
-                    var threshold = totalDuration.TotalMinutes * 0.75;
+                    var threshold1 = totalDuration.TotalMinutes * 0.75; // làm dc 3/4 giờ
+                    var threshold2 = totalDuration.TotalMinutes * 0.5; // làm dc 1/2 giờ
 
                     //_logger.LogInformation("ACtual time work: {time}", workedDuration);
                     //_logger.LogInformation("Work schedule: {time}", totalDuration);
                     //_logger.LogInformation("threshold: {time}", threshold);
 
-                    if (workedDuration.TotalMinutes < threshold)
+                    if (workedDuration.TotalMinutes < threshold2)
+                    {
+                        if (checkin.CheckinMorningStatus == Enums.LogStatus.OnTime || checkin.CheckinMorningStatus == Enums.LogStatus.OnHoliday)
+                        {
+                            checkin.CheckinMorningStatus = Enums.LogStatus.LeaveEarly;
+                        }
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
+                    }
+                    else if (workedDuration.TotalMinutes < threshold1)
                     {
                         checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
                         checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
@@ -372,18 +385,29 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     var workedDuration = checkin.CheckoutAfternoon - checkin.CheckinAfternoon;
                     var totalDuration = schedule.EndTimeAfternoon - schedule.StartTimeAfternoon;
-                    var threshold = totalDuration.TotalMinutes * 0.75;
-
+                    var threshold1 = totalDuration.TotalMinutes * 0.75; // làm dc 3/4 giờ
+                    var threshold2 = totalDuration.TotalMinutes * 0.5; // làm dc 1/2 giờ
+                    //var threshold3 = totalDuration.TotalMinutes * 0.25; // làm dc 1/4 giờ
                     //_logger.LogInformation("Actual worked time: {time}", workedDuration);
                     //_logger.LogInformation("Work schedule: {time}", totalDuration);
                     //_logger.LogInformation("Threshold: {time}", threshold);
 
-                    if (workedDuration.TotalMinutes < threshold)
+                    if (workedDuration.TotalMinutes < threshold2)
                     {
+                        // Làm < 50% thời gian
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
+                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
+                    }
+                    else if (workedDuration.TotalMinutes < threshold1)
+                    {
+                        // Làm 50% đến <75% 
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.LeaveEarly;
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
                     }
                     else if (currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
                     {
+                        // Làm >75% 
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.OnTime;
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.LeaveEarly;
                     }
                     else
@@ -409,7 +433,14 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     throw new InvalidOperationException("Not within valid checkout time range");
                 }
-
+                var overtimeDuration = 1;
+                var checkouTime = vnTime.Hour;
+                var endTime = schedule.EndTimeAfternoon.Hour;
+                if (checkouTime > endTime)
+                {
+                    overtimeDuration = checkouTime - endTime;
+                }
+                double salaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
                 await _checkinRepository.UpdateAsync(checkin);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -426,6 +457,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
                     CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
+                    SalaryPerDay = salaryPerDay
                 };
             }
             catch (Exception ex)
@@ -450,7 +482,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
             return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
         }
-
 
         public async Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -585,6 +616,60 @@ namespace EmployeeAPI.Services.CheckinServices
 
             _logger.LogInformation($"Mark {absentUsers.Count} users absent on {today:dd/MM/yyyy}.");
         }
+        public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
+        {
+            var logStatus = await _logStatusConfigRepository.GetAllAsync();
+            var user = await _userRepository.GetByIdAsync(userId);
+            ScheduleTime schedule;
+            schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+
+
+            double checkinMorningMultiply = 0;
+            double checkoutMorningMultiply = 0;
+            double checkinAfternoonMultiply = 0;
+            double checkoutAfternoonMultiply = 0;
+
+            foreach (var item in logStatus)
+            {
+                if (item.Id == (int)(CheckinMorningStatus ?? Enums.LogStatus.None))
+                {
+                    checkinMorningMultiply = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckinMorningStatus: {logstatuscs}", CheckinMorningStatus);
+                }
+                if (item.Id == (int)(CheckoutMorningStatus ?? Enums.LogStatus.None))
+                {
+                    checkoutMorningMultiply = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckoutMorningStatus: {logstatuscos}", CheckoutMorningStatus);
+                }
+                if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
+                {
+                    checkoutAfternoonMultiply = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckoutAfternoonStatus: {logstatuscc}", CheckoutMorningStatus);
+                }
+                if (item.Id == (int)(CheckinAfternoonStatus ?? Enums.LogStatus.None))
+                {
+                    checkinAfternoonMultiply = item.SalaryMultiplier;
+                    //_logger.LogInformation("CheckinAfternoonStatus: {logstatuscoc}", CheckinAfternoonStatus);
+                }
+            }
+
+            double baseSalary = user.BasicSalary;
+            double quarterSalary = baseSalary / 4.0;
+            double salaryToday = 0;
+
+            if (CheckoutAfternoonStatus == Enums.LogStatus.Overtime)
+            {
+                salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply * overtimeDuration);
+                //_logger.LogInformation("sang 1 {moneys} - {cs}", quarterSalary * checkinMorningMultiply, checkinMorningMultiply);
+                //_logger.LogInformation("sang 2 {moneys} - {cos}", quarterSalary * checkoutMorningMultiply, checkoutMorningMultiply);
+                //_logger.LogInformation("chieu 1 {moneys} - {cc}", quarterSalary * checkinAfternoonMultiply, checkinAfternoonMultiply);
+                //_logger.LogInformation("chieu 2 {moneys} - {coc}", quarterSalary * checkoutAfternoonMultiply, checkoutAfternoonMultiply);
+                //_logger.LogInformation("Over TIme: {OT}", overtimeDuration);
+            }
+            else salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply);
+
+            return salaryToday;
+        }
 
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
@@ -627,7 +712,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.CheckinDetailDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -656,36 +741,74 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 pageIndex ??= 1;
                 pageSize ??= 10;
-                
+                var now = DateTime.Now;
+                Year ??= now.Year;
+
+
                 var user = await _userRepository.GetByIdAsync(staffId.Value);
+
+
                 if (user == null)
                     throw new ArgumentException("Cannot find user id");
 
                 var query = _context.Checkins.Where(p => !p.IsDeleted && p.UserId == staffId.Value);
+                query = query.Where(c => c.CheckinMorning.Year == Year.Value);
+
+                if (Month.HasValue)
+                    query = query.Where(c => c.CheckinMorning.Month == Month.Value);
+
+                if (Day.HasValue)
+                    query = query.Where(c => c.CheckinMorning.Day == Day.Value);
 
                 var totalCount = await query.CountAsync();
 
-                var items = await query
+                //var items = await query
+                //    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                //    .Take(pageSize.Value)
+                //    .Select(c => new ResponseModel.CheckinDetailDto
+                //    {
+                //        Id = c.Id,
+                //        //CheckinMorning = c.CheckinMorning,
+                //        CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
+                //        //CheckoutMorning = c.CheckoutMorning,
+                //        CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
+
+                //        //CheckinAfternoon = c.CheckinAfternoon,
+                //        CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
+                //        //CheckoutAfternoon = c.CheckoutAfternoon,
+                //        CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
+
+                //        Name = c.Users.Fullname,
+                //        //SalaryPerDay = c.SalaryPerDay,
+                //        //SalaryPerDay = 
+                //    }).ToListAsync();
+
+                var itemsRaw = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(c => new ResponseModel.CheckinResultDto
+                    .Include(c => c.Users) 
+                    .ToListAsync();
+
+                var items = new List<ResponseModel.CheckinDetailDto>();
+
+                foreach (var c in itemsRaw)
+                {
+                    var salary = await CalculateSalaryPerDayAsync(c.UserId, c.CheckinMorningStatus, c.CheckoutMorningStatus, c.CheckinAfternoonStatus, c.CheckoutAfternoonStatus, 0);
+
+                    items.Add(new ResponseModel.CheckinDetailDto
                     {
-                        CheckinId = c.Id,
-                        CheckinMorning = c.CheckinMorning,
+                        Id = c.Id,
                         CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
-                        CheckoutMorning = c.CheckoutMorning,
                         CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
-
-                        CheckinAfternoon = c.CheckinAfternoon,
                         CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
-                        CheckoutAfternoon = c.CheckoutAfternoon,
                         CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
-  
                         Name = c.Users.Fullname,
-                        //SalaryPerDay = c.SalaryPerDay,
-                    }).ToListAsync();
+                        SalaryPerDay = salary,
+                        TimeCheckin = c.CheckinMorning.Date
+                    });
+                }
 
-                return new PagedResult<ResponseModel.CheckinResultDto>
+                return new PagedResult<ResponseModel.CheckinDetailDto>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
