@@ -161,20 +161,23 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
         /// </summary>
         /// <remarks>
-        /// - CheckIn Status enum values:
-        /// - OnTime = 0 (đúng giờ)
-        /// - Late = 1 (Đi trễ hơn 15 phút)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
+        /// - None = 0 (Chưa checkin/checkout)
+        /// - OnTime = 1 (Đi đúng giờ)
+        /// - Late = 2 (Đi trễ)
+        /// - LateOnHoliday = 3(Đi trễ vào ngày nghỉ lệ)
+        /// - OnHoliday = 5 (Làm vào ngày nghỉ)
+        /// - Absent = 7 (Nghỉ không phép)
+        /// - LeaveWithPermission = 8 (Nghỉ có phép)
+        /// - Others = 9 (Khác)
         /// -
         /// - CheckOut Status enum values:
-        /// - OnTime = 0 (đúng giờ)
-        /// - LeaveEarly = 2 (Về sớm so với quy định)
-        /// - Overtime = 3 (làm tăng ca)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
+        /// - None = 0 (Chưa checkin/checkout)
+        /// - LeaveEarly = 4 (Về sớm)
+        /// - OnHoliday = 5(Làm vào ngày nghỉ)
+        /// - Overtime = 6 (Làm thêm giờ)
+        /// - Absent = 7 (Nghỉ không phép)
+        /// - LeaveWithPermission = 8 (Nghỉ có phép)
+        /// - Others = 9 (Khác)
         /// </remarks>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPut]
