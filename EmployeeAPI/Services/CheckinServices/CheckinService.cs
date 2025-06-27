@@ -210,25 +210,45 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (isMorning)
                 {
                     checkin.CheckinMorning = nowUtc;
-                    checkin.CheckinMorningStatus = currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime)
-                        ? (isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime)
-                        : (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes)
-                            ? Enums.LogStatus.Late
-                            : Enums.LogStatus.Absent);
 
-                    if (checkin.CheckinMorningStatus == Enums.LogStatus.Absent)
+                    if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
                     {
+                        checkin.CheckinMorningStatus = (isHoliday || isSunday)
+                            ? Enums.LogStatus.OnHoliday
+                            : Enums.LogStatus.OnTime;
+                    }
+                    else if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
+                    {
+                        checkin.CheckinMorningStatus = (isHoliday || isSunday)
+                            ? Enums.LogStatus.LateOnHoliday
+                            : Enums.LogStatus.Late;
+                    }
+                    else
+                    {
+                        checkin.CheckinMorningStatus = Enums.LogStatus.Absent;
                         checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
                     }
                 }
                 else if (isAfternoon)
                 {
                     checkin.CheckinAfternoon = nowUtc;
-                    checkin.CheckinAfternoonStatus = currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime)
-                        ? (isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime)
-                        : (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes)
-                            ? Enums.LogStatus.Late
-                            : Enums.LogStatus.Absent);
+
+                    if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime))
+                    {
+                        checkin.CheckinAfternoonStatus = (isHoliday || isSunday)
+                            ? Enums.LogStatus.OnHoliday
+                            : Enums.LogStatus.OnTime;
+                    }
+                    else if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
+                    {
+                        checkin.CheckinAfternoonStatus = (isHoliday || isSunday)
+                            ? Enums.LogStatus.LateOnHoliday
+                            : Enums.LogStatus.Late;
+                    }
+                    else
+                    {
+                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
+                    }
 
                     if (existingCheckin == null)
                     {
@@ -237,6 +257,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
                     }
                 }
+
 
                 if (existingCheckin == null)
                 {
@@ -376,12 +397,12 @@ namespace EmployeeAPI.Services.CheckinServices
                     }
                     else if (checkin.CheckoutMorningStatus == Enums.LogStatus.None)
                     {
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.OnTime;
+                        checkin.CheckoutMorningStatus = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
                     }
 
                     if (checkin.CheckinAfternoonStatus == Enums.LogStatus.None)
                     {
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.OnTime;
+                        checkin.CheckinAfternoonStatus = isHoliday || isSunday ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnTime;
                     }
                 }
                 else

@@ -5,11 +5,12 @@
         None = 0,
         OnTime = 1,
         Late = 2,
-        LeaveEarly = 3,
-        OnHoliday = 4,
-        Overtime = 5,
-        Absent = 6,
-        LeaveWithPermission = 7,
-        Others = 8,
+        LateOnHoliday = 3,
+        LeaveEarly = 4,
+        OnHoliday = 5,
+        Overtime = 6,
+        Absent = 7,
+        LeaveWithPermission = 8,
+        Others = 9,
     }
 }

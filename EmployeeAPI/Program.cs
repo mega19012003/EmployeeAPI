@@ -62,7 +62,7 @@ var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 
 builder.Services.AddHttpContextAccessor();
 
-//sbuilder.Services.AddHostedService<AbsentBackgroundService>();//////////////////////////background serrvice
+builder.Services.AddHostedService<AbsentBackgroundService>();//////////////////////////background serrvice
 
 builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
