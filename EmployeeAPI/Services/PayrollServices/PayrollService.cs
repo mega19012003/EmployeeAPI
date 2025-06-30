@@ -315,8 +315,8 @@ namespace EmployeeAPI.Services.PayrollServices
             var totalDayWorked = checkinsInMonth
                 .Where(p => (p.CheckinMorningStatus != LogStatus.None && p.CheckoutMorningStatus != LogStatus.None
                             && p.CheckinMorningStatus != LogStatus.Absent && p.CheckoutMorningStatus != LogStatus.Absent)
-                            || (p.CheckinMorningStatus != LogStatus.None && p.CheckoutMorningStatus != LogStatus.None
-                            && p.CheckinMorningStatus != LogStatus.Absent && p.CheckoutMorningStatus != LogStatus.Absent))
+                            || (p.CheckinAfternoonStatus != LogStatus.None && p.CheckoutAfternoonStatus != LogStatus.None
+                            && p.CheckinAfternoonStatus != LogStatus.Absent && p.CheckoutAfternoonStatus != LogStatus.Absent))
                 .Select(c => c.CheckinMorning.Date)
                 .Distinct()
                 .Count();
