@@ -284,31 +284,32 @@ namespace EmployeeAPI.Services.PayrollServices
             if (schedule == null)
                 throw new Exception("Schedule not found");
 
-            var overtimeDuration = 1;
+            //var overtimeDuration = 1;
 
 
             double totalSalary = 0;
-            var salaryForDay = 0.0;
-            double baseSalary = staff.BasicSalary;
+            //var salaryForDay = 0.0;
+            //double baseSalary = staff.BasicSalary;
             foreach (var checkin in checkinsInMonth)
             {
                 // Convert checkouTime to Vietnam time (UTC+7)
-                var utcTime = DateTime.SpecifyKind(checkin.CheckoutAfternoon, DateTimeKind.Utc);
-                var vnTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
+                //var utcTime = DateTime.SpecifyKind(checkin.CheckoutAfternoon, DateTimeKind.Utc);
+                //var vnTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
 
-                var checkouTime = vnTime.Hour;
-                var endTime = schedule.EndTimeAfternoon.Hour;
-                if (checkouTime > endTime)
-                {
-                    overtimeDuration = checkouTime - endTime;
-                }
-                //salaryForDay = await CalculateSalaryPerDayAsync(checkin, baseSalary);
-                salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
-                //_logger.LogInformation("Calculated salary for day {Date}: {Salary}", checkin.CheckinMorning.Date, salaryForDay);
-                //_logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
-                //    checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
-                //_logger.LogInformation("Thoi gian lam them gio {endtime} - {overtime}", endTime, checkouTime);
-                totalSalary += salaryForDay;
+                //var checkouTime = vnTime.Hour;
+                //var endTime = schedule.EndTimeAfternoon.Hour;
+                //if (checkouTime > endTime)
+                //{
+                //    overtimeDuration = checkouTime - endTime;
+                //}
+                ////salaryForDay = await CalculateSalaryPerDayAsync(checkin, baseSalary);
+                //salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
+                ////_logger.LogInformation("Calculated salary for day {Date}: {Salary}", checkin.CheckinMorning.Date, salaryForDay);
+                ////_logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
+                ////    checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
+                ////_logger.LogInformation("Thoi gian lam them gio {endtime} - {overtime}", endTime, checkouTime);
+                totalSalary += checkin.SalaryPerDay;
+                _logger.LogInformation("Thoi gian lam them gio {money}", totalSalary);
             }
 
             var totalDayWorked = checkinsInMonth

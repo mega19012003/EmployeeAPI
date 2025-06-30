@@ -807,7 +807,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 foreach (var c in itemsRaw)
                 {
-                    var salary = await CalculateSalaryPerDayAsync(c.UserId, c.CheckinMorningStatus, c.CheckoutMorningStatus, c.CheckinAfternoonStatus, c.CheckoutAfternoonStatus, 0);
+                    //var salary = await CalculateSalaryPerDayAsync(c.UserId, c.CheckinMorningStatus, c.CheckoutMorningStatus, c.CheckinAfternoonStatus, c.CheckoutAfternoonStatus, 0);
 
                     items.Add(new ResponseModel.CheckinDetailDto
                     {
@@ -817,7 +817,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
                         CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
                         Name = c.Users.Fullname,
-                        SalaryPerDay = salary,
+                        SalaryPerDay = c.SalaryPerDay,
                         TimeCheckin = c.CheckinMorning.Date
                     });
                 }
