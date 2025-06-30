@@ -40,6 +40,15 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                 }
                 else
                 {
+                    if(newSchedule.StartTimeMorning > newSchedule.EndTimeMorning || newSchedule.StartTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.StartTimeMorning > newSchedule.EndTimeAfternoon)
+                        throw new ArgumentException("Start time in the morning cannot be later than end time in the morning, starttime/endtime in the afternoon");
+
+                    if (newSchedule.EndTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.EndTimeMorning > newSchedule.EndTimeAfternoon)
+                        throw new ArgumentException("End time in the morning cannot be later than start time/end time in the afternoon");
+
+                    if (newSchedule.StartTimeAfternoon > newSchedule.EndTimeAfternoon)
+                        throw new ArgumentException("Start time in the afternoon cannot be later than end time in the afternoon");
+
                     existing.StartTimeMorning = newSchedule.StartTimeMorning;
                     existing.EndTimeMorning = newSchedule.EndTimeMorning;
                     existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
