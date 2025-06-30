@@ -19,7 +19,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
         /// <summary>
-        /// Xem danh sách ngày nghỉ lễ, do admin/manager xử lý
+        /// Xem danh sách ngày nghỉ lễ, do admin xử lý
         ///</summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet]
