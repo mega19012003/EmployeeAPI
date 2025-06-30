@@ -198,7 +198,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 {
                     // Admin: bắt buộc phải nhập staffId
                     if (staffId == null || staffId == Guid.Empty)
-                        throw new ArgumentException("Please input staffId");
+                        throw new ArgumentException("Please input userId");
                 }
                 else
                 {

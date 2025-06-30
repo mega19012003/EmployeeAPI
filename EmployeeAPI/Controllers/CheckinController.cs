@@ -30,7 +30,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban
+        /// Lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
@@ -51,7 +51,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy checkin
+        /// Lấy checkin
         /// </summary>
         [Authorize]
         [HttpGet("{checkinId}")]

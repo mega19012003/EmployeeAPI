@@ -25,7 +25,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy toàn bộ danh sách chấm công, manager chỉ dc phép lấy danh sách theo phòng ban của mình
+        /// Lấy toàn bộ danh sách chấm công, manager chỉ dc phép lấy danh sách theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpGet]
@@ -46,7 +46,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy chấm công
+        /// Lấy chấm công
         /// </summary>
         [Authorize]
         [HttpGet("{payrollId}")]

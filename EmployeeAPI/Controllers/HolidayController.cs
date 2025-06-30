@@ -46,7 +46,7 @@ namespace EmployeeAPI.Controllers
         }
         
         /// <summary>
-        /// sủa ngày nghỉ lễ, do admin xử lý
+        /// Cập nhật ngày nghỉ lễ, do admin xử lý
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPut]

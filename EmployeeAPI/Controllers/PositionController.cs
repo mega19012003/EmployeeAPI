@@ -110,7 +110,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
+        /// Lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("employee")]
@@ -130,6 +130,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("Get list employee by position success", pagedResult, 200));
         }
 
+        /// <summary>
+        /// Lấy chức vụ theo id, manager chỉ dc lấy chức vụ theo phòng ban của mình    
+        /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("{positionId}")]
         public async Task<IActionResult> GetPositionById(Guid positionId)

@@ -47,7 +47,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("duty/{dutyId}")]
+        [HttpGet("{dutyId}")]
         public async Task<IActionResult> GetDutyByIdAsync(Guid dutyId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy chi tiết công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("detail/{detailId}")]
+        [HttpGet("{detailId}")]
         public async Task<IActionResult> GetDetailByIdAsync(Guid detailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;

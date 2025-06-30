@@ -94,7 +94,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
+        /// Lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("employee")]
@@ -115,7 +115,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
+        /// Lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("position")]
