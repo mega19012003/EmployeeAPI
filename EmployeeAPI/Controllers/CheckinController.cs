@@ -71,25 +71,9 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Tạo checkin cho user, manager chỉ dc checkin hộ nhân viên trong cùng phòng ban
         /// </summary>
-        /// <remarks>
-        /// - CheckIn Status enum values:
-        /// - OnTime = 0 (đúng giờ)
-        /// - Late = 1 (Đi trễ hơn 15 phút)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
-        /// -
-        /// - CheckOut Status enum values:
-        /// - OnTime = 0 (đúng giờ)
-        /// - LeaveEarly = 2 (Về sớm so với quy định)
-        /// - Overtime = 3 (làm tăng ca)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
-        /// </remarks>
         [Authorize]
         [HttpPost("Checkin")]
-        public async Task<IActionResult> CheckinMorning([FromForm] ResponseModel.CreateCheckinDto dto)
+        public async Task<IActionResult> Checkin([FromForm] ResponseModel.CreateCheckinDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -120,25 +104,9 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật checkout cho user
         /// </summary>
-        /// <remarks>
-        /// - CheckIn Status enum values:
-        /// - OnTime = 0 (đúng giờ)
-        /// - Late = 1 (Đi trễ hơn 15 phút)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
-        /// -
-        /// - CheckOut Status enum values:
-        /// - OnTime = 0 (đúng giờ)
-        /// - LeaveEarly = 2 (Về sớm so với quy định)
-        /// - Overtime = 3 (làm tăng ca)
-        /// - Absent = 4 (Vắng)
-        /// - LeaveWithPermission = 5 (Vắng có phép)
-        /// - Others = 6 (lí do khác)
-        /// </remarks>
         [Authorize]
         [HttpPut("Chekout")]
-        public async Task<IActionResult> ChekoutMorning([FromForm] ResponseModel. CreateCheckoutDto dto)
+        public async Task<IActionResult> Chekout([FromForm] ResponseModel. CreateCheckoutDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
