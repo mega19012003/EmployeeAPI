@@ -36,7 +36,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
-        public async Task<IActionResult> Create([FromForm] string IPAddress)
+        public async Task<IActionResult> Create([FromQuery] string IPAddress)
         {
             var result = await _allowedIPService.AddAsync(IPAddress);
             return Ok(ApiResponse<AllowedIP>.ReturnResult("Add new IP success", result, 200));
