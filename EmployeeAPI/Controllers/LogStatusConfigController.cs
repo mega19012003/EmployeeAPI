@@ -29,6 +29,19 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<IEnumerable<LogStatusConfig>>.ReturnResult("Get all configs success", configs, 200));
         }
 
+
+        /// <summary>
+        /// Lấy cấu hình trạng thái checkin theo id chỉ có admin dc phép dùng
+        /// </summary>
+        /// <returns></returns>
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("{StatusId}")]
+        public async Task<IActionResult> GetById(int StatusId)
+        {
+            var configs = await _service.GetConfigAsync(StatusId);
+            return Ok(ApiResponse<LogStatusConfig>.ReturnResult("Get status configs success", configs, 200));
+        }
+
         /// <summary>
         /// Cập nhật cấu hình, chỉ có admin dc phép dùng
         /// </summary>

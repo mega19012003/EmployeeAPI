@@ -52,5 +52,15 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete IP success", result, 200));
         }
 
+        /// <summary>
+        ///  Lấy danh sách ip, Chỉ có admin dc phép dùng
+        /// </summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("{IPAddressId}")]
+        public async Task<IActionResult> GetById(Guid IPAddressId)
+        {
+            var pageResult = await _allowedIPService.GetByIdAsync(IPAddressId);
+            return Ok(ApiResponse<AllowedIP>.ReturnResult("Get ip success", pageResult, 200));
+        }
     }
 }

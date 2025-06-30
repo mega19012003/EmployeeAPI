@@ -30,6 +30,19 @@ namespace EmployeeAPI.Controllers
                 return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("No result", pagedResult, 200));
             return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("Get list holiday success", pagedResult, 200));
         }
+
+        /// <summary>
+        /// Xem ngày nghỉ lễ, do admin/manager xử lý
+        ///</summary>
+        [Authorize(Roles = "Administrator")]
+        [HttpGet("{HolidayId}")]
+        public async Task<IActionResult> GetHOlidayById(Guid HolidayId)
+        {
+            var pagedResult = await _holidayService.GetByIdAsync(HolidayId);
+
+            return Ok(ApiResponse<ResponseModel.HolidayResultDto>.ReturnResult("Get holiday success", pagedResult, 200));
+        }
+
         /// <summary>
         /// Thêm ngày nghỉ lễ, dùng checkin để kiểm tra xem người dùng có đi làm vào ngày nghỉ ko, do admin xử lý
         /// </summary>
