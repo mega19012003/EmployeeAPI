@@ -512,7 +512,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
                 var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LateThresholdMinutes);
 
-                TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTimeAfternoon;
+
                 existing.CheckinMorningStatus = dto.CheckinMorningStatus;
                 existing.CheckoutMorningStatus = dto.CheckoutMorningStatus;
                 existing.CheckinAfternoonStatus = dto.CheckinAfternoonStatus;
@@ -546,7 +546,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = existing.CheckoutMorningStatus.ToString(),
 
                     Name = employee.Fullname,
-                    //SalaryPerDay = existing.SalaryPerDay,
+                    SalaryPerDay = salaryPerDay
                 };
             }
             catch
@@ -555,79 +555,79 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task AutoMarkAbsentAsync(TimeOnly CheckTime)
-        {
-            var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
-            var today = vnNow.Date;
+        //public async Task AutoMarkAbsentAsync(TimeOnly CheckTime)
+        //{
+        //    var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        //    var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
+        //    var today = vnNow.Date;
 
-            if (vnNow.DayOfWeek == DayOfWeek.Sunday)
-            {
-                _logger.LogInformation("Sunday, no checkin");
-                return;
-            }
+        //    if (vnNow.DayOfWeek == DayOfWeek.Sunday)
+        //    {
+        //        _logger.LogInformation("Sunday, no checkin");
+        //        return;
+        //    }
 
-            bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
-            if (isHoliday)
-            {
-                _logger.LogInformation("today is a holiday, no marking absent");
-                return;
-            }
+        //    bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
+        //    if (isHoliday)
+        //    {
+        //        _logger.LogInformation("today is a holiday, no marking absent");
+        //        return;
+        //    }
 
-            if (TimeOnly.FromDateTime(vnNow) < CheckTime)
-            {
-                _logger.LogInformation("Not work end time, no marking absent");
-                return;
-            }
+        //    if (TimeOnly.FromDateTime(vnNow) < CheckTime)
+        //    {
+        //        _logger.LogInformation("Not work end time, no marking absent");
+        //        return;
+        //    }
 
-            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-            if (schedule == null) throw new Exception("Work schedule time hasn't been set");
+        //    var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+        //    if (schedule == null) throw new Exception("Work schedule time hasn't been set");
 
-            var currentTimeOnly = TimeOnly.FromDateTime(vnNow);
-            //var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
+        //    var currentTimeOnly = TimeOnly.FromDateTime(vnNow);
+        //    //var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
 
-            TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTimeAfternoon;
+        //    TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTimeAfternoon;
 
-            var vnTodayStart = vnNow.Date; 
-            var vnTodayStartUtc = TimeZoneInfo.ConvertTimeToUtc(vnTodayStart, vnTimeZone);
-            var vnTodayEndUtc = vnTodayStartUtc.AddDays(1);
+        //    var vnTodayStart = vnNow.Date; 
+        //    var vnTodayStartUtc = TimeZoneInfo.ConvertTimeToUtc(vnTodayStart, vnTimeZone);
+        //    var vnTodayEndUtc = vnTodayStartUtc.AddDays(1);
 
-            var checkinsInRange = await _context.Checkins
-                .Where(c => c.CheckinMorning >= vnTodayStartUtc && c.CheckinMorning < vnTodayEndUtc)
-                .ToListAsync();
+        //    var checkinsInRange = await _context.Checkins
+        //        .Where(c => c.CheckinMorning >= vnTodayStartUtc && c.CheckinMorning < vnTodayEndUtc)
+        //        .ToListAsync();
 
-            var checkedInUserIds = checkinsInRange
-                .Where(c => TimeZoneInfo.ConvertTimeFromUtc(c.CheckinMorning, vnTimeZone).Date == today)
-                .Select(c => c.UserId).Distinct().ToList();
+        //    var checkedInUserIds = checkinsInRange
+        //        .Where(c => TimeZoneInfo.ConvertTimeFromUtc(c.CheckinMorning, vnTimeZone).Date == today)
+        //        .Select(c => c.UserId).Distinct().ToList();
 
-            var allUsers = await _userRepository.GetAll().ToListAsync();
+        //    var allUsers = await _userRepository.GetAll().ToListAsync();
 
-            var absentUsers = allUsers.Where(u => !checkedInUserIds.Contains(u.UserId)).ToList();
+        //    var absentUsers = allUsers.Where(u => !checkedInUserIds.Contains(u.UserId)).ToList();
 
-            foreach (var user in absentUsers)
-            {
+        //    foreach (var user in absentUsers)
+        //    {
 
-                var checkin = new Checkin
-                {
-                    Id = Guid.NewGuid(),
-                    UserId = user.UserId,
-                    CheckinMorningStatus = Enums.LogStatus.Absent,
-                    CheckinMorning = DateTime.UtcNow,
-                    CheckoutMorningStatus = Enums.LogStatus.Absent,
-                    CheckoutMorning = DateTime.UtcNow,
-                    CheckinAfternoonStatus = Enums.LogStatus.Absent,
-                    CheckinAfternoon = DateTime.UtcNow,
-                    CheckoutAfternoonStatus = Enums.LogStatus.Absent,
-                    CheckoutAfternoon = DateTime.UtcNow,
-                };
+        //        var checkin = new Checkin
+        //        {
+        //            Id = Guid.NewGuid(),
+        //            UserId = user.UserId,
+        //            CheckinMorningStatus = Enums.LogStatus.Absent,
+        //            CheckinMorning = DateTime.UtcNow,
+        //            CheckoutMorningStatus = Enums.LogStatus.Absent,
+        //            CheckoutMorning = DateTime.UtcNow,
+        //            CheckinAfternoonStatus = Enums.LogStatus.Absent,
+        //            CheckinAfternoon = DateTime.UtcNow,
+        //            CheckoutAfternoonStatus = Enums.LogStatus.Absent,
+        //            CheckoutAfternoon = DateTime.UtcNow,
+        //        };
 
-                await _checkinRepository.CreateAsync(checkin);
-            }
+        //        await _checkinRepository.CreateAsync(checkin);
+        //    }
 
-            await _context.SaveChangesAsync();
+        //    await _context.SaveChangesAsync();
 
-            _logger.LogInformation($"Mark {absentUsers.Count} users absent on {today:dd/MM/yyyy}.");
-        }
+        //    _logger.LogInformation($"Mark {absentUsers.Count} users absent on {today:dd/MM/yyyy}.");
+        //}
         public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
         {
             var logStatus = await _logStatusConfigRepository.GetAllAsync();
