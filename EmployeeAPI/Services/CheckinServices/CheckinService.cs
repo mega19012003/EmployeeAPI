@@ -502,20 +502,32 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
                 }
+
+                var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date, vnTimeZone);
+                var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date.AddDays(1).AddTicks(-1), vnTimeZone);
                 var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
-                var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-                if (schedule == null) throw new Exception("Work schedule time hasn't been set");
 
                 var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
                 var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LateThresholdMinutes);
 
                 TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTimeAfternoon;
                 existing.CheckinMorningStatus = dto.CheckinMorningStatus;
+                existing.CheckoutMorningStatus = dto.CheckoutMorningStatus;
+                existing.CheckinAfternoonStatus = dto.CheckinAfternoonStatus;
                 existing.CheckoutAfternoonStatus = dto.CheckoutAfternoonStatus;
 
+                var overtimeDuration = 1;
+                var checkouTime = vnTime.Hour;
+                var endTime = schedule.EndTimeAfternoon.Hour;
+                if (checkouTime > endTime)
+                {
+                    overtimeDuration = checkouTime - endTime;
+                }
                 //existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinMorningStatus, existing.CheckoutAfternoonStatus/*, OvertimeDuration*/);
-
+                double salaryPerDay = await CalculateSalaryPerDayAsync(employee.UserId, existing.CheckinMorningStatus, existing.CheckoutMorningStatus, existing.CheckinAfternoonStatus, existing.CheckoutAfternoonStatus, overtimeDuration);
+                
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
