@@ -26,7 +26,7 @@ namespace EmployeeAPI.Services.PositionServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<PositionResultDto>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
@@ -61,7 +61,7 @@ namespace EmployeeAPI.Services.PositionServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
-                    .Select(f => new PositionResultDto
+                    .Select(f => new PositionDTO
                     {
                         Id = f.Id,
                         Name = f.Name,
@@ -69,7 +69,7 @@ namespace EmployeeAPI.Services.PositionServices
                     })
                     .ToListAsync();
 
-                return new PagedResult<PositionResultDto>
+                return new PagedResult<PositionDTO>
                 {
                     Items = items,
                     PageIndex = pageIndex.Value,
@@ -84,7 +84,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
@@ -107,7 +107,7 @@ namespace EmployeeAPI.Services.PositionServices
                         throw new UnauthorizedAccessException("Manager can only view positions in their department.");
                 }
 
-                return new ResponseModel.PositionResultDto
+                return new ResponseModel.PositionDTO
                 {
                     Id = position.Id,
                     Name = position.Name,
@@ -121,7 +121,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionResultDto> AddAsync(ResponseModel.CreatePositionDto dto, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePositionDto dto, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -167,7 +167,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var result = await _positionRepository.GetByIdAsync(model.Id);
 
-                return new ResponseModel.PositionResultDto
+                return new ResponseModel.PositionDTO
                 {
                     Id = model.Id,
                     Name = model.Name,
@@ -182,7 +182,7 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<ResponseModel.PositionResultDto?> UpdateAsync(Guid id, string newName, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<ResponseModel.PositionDTO?> UpdateAsync(Guid id, string newName, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -210,7 +210,7 @@ namespace EmployeeAPI.Services.PositionServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new ResponseModel.PositionResultDto
+                return new ResponseModel.PositionDTO
                 {
                     Id = result.Id,
                     Name = result.Name,

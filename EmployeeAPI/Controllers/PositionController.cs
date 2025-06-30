@@ -50,9 +50,9 @@ namespace EmployeeAPI.Controllers
             var result = await _positionService.GetAllAsync(Search, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!result.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.PositionResultDto>>.ReturnResult("No result", result, 200));
+                return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.PositionResultDto>>.ReturnResult("Get list position success", result, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
         }
 
         /// <summary>
@@ -69,7 +69,7 @@ namespace EmployeeAPI.Controllers
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
             //if (string.IsNullOrWhiteSpace(name)) return BadRequest("Position name cannot be empty");
             var result = await _positionService.AddAsync(dto, currentUserId, currentUserRoles);
-            return Ok(ApiResponse<ResponseModel.PositionResultDto>.ReturnResult("Create position success", result, 200));
+            return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace EmployeeAPI.Controllers
             if (result == null)
                 return BadRequest(ApiResponse<string>.ReturnResult("Could not find position", null, 404));
 
-            return Ok(ApiResponse<ResponseModel.PositionResultDto>.ReturnResult("Update position success", result, 200));
+            return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Update position success", result, 200));
         }
 
         /// <summary>
@@ -97,7 +97,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("{positionId}")]
-        public async Task<IActionResult> SoftDeletePosition([FromQuery] Guid positionId)
+        public async Task<IActionResult> SoftDeletePosition(Guid positionId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -145,7 +145,7 @@ namespace EmployeeAPI.Controllers
 
             var pagedResult = await _positionService.GetByIdAsync(positionId, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<PositionResultDto>.ReturnResult("Get position success", pagedResult, 200));
+            return Ok(ApiResponse<PositionDTO>.ReturnResult("Get position success", pagedResult, 200));
         }
     }
 }
