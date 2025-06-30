@@ -94,13 +94,17 @@ namespace EmployeeAPI.Services.HolidayServices
                     throw new ArgumentException("Holiday input invalid");
                 }
 
+                if(dto.startDate > dto.endDate)
+                {
+                    throw new ArgumentException("Start date cannot be after end date");
+                }
+
                 var model = new Models.Holiday
                 {
                     Id = Guid.NewGuid(),
                     name = dto.Name,
                     startDate = dto.startDate,
                     endDate = dto.endDate,
-
                 };
 
                 await _holidayRepository.CreateAsync(model);
@@ -131,6 +135,11 @@ namespace EmployeeAPI.Services.HolidayServices
                 var result = await _holidayRepository.GetByIdAsync(dto.HolidayId);
                 if (result == null)
                     throw new ArgumentException("Cannot find holiday");
+
+                if(dto.startDate > dto.endDate)
+                {
+                    throw new ArgumentException("Start date cannot be after end date");
+                }
 
                 result.name = dto.Name;
                 result.startDate = dto.startDate;
