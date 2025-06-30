@@ -291,8 +291,8 @@ namespace EmployeeAPI.Services.DutyServices
                 var existingUserIds = duty.DutyDetails.Select(dd => dd.UserId).ToHashSet();
                 foreach (var detailDto in dto.DutyDetails)
                 {
-                    if (!existingUserIds.Contains(detailDto.userId))
-                    {
+                    /*if (!existingUserIds.Contains(detailDto.userId))
+                    {*/
                         var newDetail = new DutyDetail
                         {
                             UserId = detailDto.userId,
@@ -301,10 +301,10 @@ namespace EmployeeAPI.Services.DutyServices
                         };
                         await _dutyRepository.AddDutyDetailAsync(newDetail);
                     }
-                    else {
+                    /*else {
                         throw new Exception("This user is already assigned to this duty");
                         }
-                    }
+                    }*/
 
                 await _context.SaveChangesAsync();
                 await UpdateDutyCompletionStatusAsync(duty.Id);
@@ -387,56 +387,6 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-        /*public async Task<ResponseModel.DutyResultDto> MarkDutyAsCompletedAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var duty = await _dutyRepository.GetDutyByIdAsync(dutyId);
-                if (duty == null)
-                    throw new ArgumentException("Duty not found");
-
-                var isManager = currentUserRoles.Contains("Manager");
-                var isAdmin = currentUserRoles.Contains("Administrator");
-
-                if (isManager)
-                {
-                    if (duty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
-
-                    if (!duty.DutyDetails.All(d => d.IsCompleted))
-                        throw new InvalidOperationException("Cannot mark as completed until all duty details are completed.");
-                }
-
-                duty.IsCompleted = true;
-                await _dutyRepository.UpdateDutyAsync(duty);
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
-
-                return new ResponseModel.DutyResultDto
-                {
-                    Id = duty.Id,
-                    Name = duty.Name,
-                    IsCompleted = duty.IsCompleted,
-                    StartDate = duty.StartDate,
-                    AssignedBy = duty.AssignedBy?.Fullname,
-                    DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
-                    {
-                        DutyDetailId = d.DutyDetailId,
-                        UserId = d.UserId,
-                        Name = d.Users?.Fullname,
-                        Description = d.Description,
-                        IsCompleted = d.IsCompleted
-                    }).ToList()
-                };
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "An error occurred while marking duty as completed. Message: {Message}", ex.Message);
-                throw;
-            }
-        }*/
         public async Task<ResponseModel.DutyDetailResultDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetailDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -627,7 +577,5 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-
-
     }
 }
