@@ -21,7 +21,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy tất cả cấu hình trạng thái checkin, dùng để tính lương
         /// </summary>
         /// <returns></returns>
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {

@@ -21,9 +21,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy thời gian biểu hiện tại, dùng cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ, chỉ có admin dc phép dùng
+        /// Lấy thời gian biểu hiện tại, dùng cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ
         /// </summary>
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetScheduleTime()
         {
@@ -31,14 +31,14 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ScheduleTime>.ReturnResult("Get Schedule time Success", result, 200));
         }
         /// <summary>
-        /// Cập nhật gian biểu
+        /// Cập nhật gian biểu, chỉ có admin dc phép dùng
         /// </summary>
         /// <remarks>
         /// { "StartTimeMorning": "08:00:00",
         ///"lateThresholdMinutes": 15,
         ///"EndTimeAfternoon": "17:00:00" }
         /// </remarks>
-        [Authorize]
+        [Authorize(Roles = "Administrator")]
         [HttpPut] 
         public async Task<ActionResult<ScheduleTime>> UpdateScheduleTime(ScheduleTime scheduleTime)
         {
