@@ -65,7 +65,7 @@ namespace EmployeeAPI.Controllers
         /// Lấy chi tiết công việc theo id
         /// </summary>
         [Authorize]
-        [HttpGet("{detailId}")]
+        [HttpGet("detail/{detailId}")]
         public async Task<IActionResult> GetDetailByIdAsync(Guid detailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
