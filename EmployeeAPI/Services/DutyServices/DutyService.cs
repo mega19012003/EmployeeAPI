@@ -65,6 +65,7 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = d.Name,
                     IsCompleted = d.IsCompleted,
                     StartDate = d.StartDate,
+                    EndDate = d.EndDate,
                     AssignedBy = d.AssignedBy.Fullname,
                     DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailResultDto
                     {
@@ -118,6 +119,7 @@ namespace EmployeeAPI.Services.DutyServices
                 Name = duty.Name,
                 IsCompleted = duty.IsCompleted,
                 StartDate = duty.StartDate,
+                EndDate = duty.EndDate,
                 AssignedBy = duty.AssignedBy?.Fullname,
                 DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                 {
@@ -204,11 +206,15 @@ namespace EmployeeAPI.Services.DutyServices
                 if (dto.StartDate.Date < DateTime.UtcNow.Date)
                     throw new ArgumentException("Start date cannot be earlier than today");
 
+                if(dto.StartDate > dto.EndDate)
+                    throw new ArgumentException("Start date cannot be later than end date");
+
                 var duty = new Duty
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
                     StartDate = dto.StartDate,
+                    EndDate = dto.EndDate,
                     AssignedById = currentUserId,
                     DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                     {
@@ -355,7 +361,14 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
                 }
 
+                //if (dto.StartDate.Date < DateTime.UtcNow.Date)
+                //    throw new ArgumentException("Start date cannot be earlier than today");
+                if (dto.StartDate > dto.EndDate)
+                    throw new ArgumentException("Start date cannot be earlier than end date");
+
                 existingDuty.Name = dto.Name;
+                existingDuty.StartDate = dto.StartDate;
+                existingDuty.EndDate = dto.EndDate;
                 //existingDuty.IsCompleted = dto.IsCompleted;
 
                 await _dutyRepository.UpdateDutyAsync(existingDuty);
@@ -368,6 +381,7 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = existingDuty.Name,
                     IsCompleted = existingDuty.IsCompleted,
                     StartDate = existingDuty.StartDate,
+                    EndDate = existingDuty.EndDate,
                     AssignedBy = existingDuty.AssignedBy?.Fullname,
                     DutyDetails = existingDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
@@ -453,8 +467,15 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (isEmployee)
                 {
-                    if (detail.UserId != currentUserId)
-                        throw new UnauthorizedAccessException("Employee can only complete their own duty details.");
+                    if (detail.Duty.EndDate < DateTime.UtcNow.Date)
+                    {
+                        throw new ArgumentException("Your're too late to complete your task");
+                    }
+                    else
+                    {
+                        if (detail.UserId != currentUserId)
+                            throw new UnauthorizedAccessException("Employee can only complete their own duty details.");
+                    }
                 }
 
                 if (isManager)

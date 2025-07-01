@@ -12,6 +12,7 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid Id { get; set; }
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
             public string AssignedBy { get; set; }
             public bool IsCompleted { get; set; }
             public List<DutyDetailResultDto> DutyDetails { get; set; } = new List<DutyDetailResultDto>();
@@ -28,6 +29,7 @@ namespace EmployeeAPI.Services.DutyServices
         {
             public string Name { get; set; }
             public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
             public List<CreateDutyDetailDto> DutyDetails { get; set; } = new List<CreateDutyDetailDto>();
         }
 
@@ -41,6 +43,8 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid Id { get; set; }
 
             public string Name { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
             //public bool IsCompleted { get; set; }
         }
 
