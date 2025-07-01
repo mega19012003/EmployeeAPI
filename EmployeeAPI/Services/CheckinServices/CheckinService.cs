@@ -106,7 +106,7 @@ namespace EmployeeAPI.Services.CheckinServices
             try
             {
                 var c = await _checkinRepository.GetByIdAsync(id);
-                if (c == null) return null;
+                if (c == null) throw new ArgumentException("Checkin information not found");
 
                 var manager = currentUserRoles.Contains("Manager");
                 var employee = currentUserRoles.Contains("Employee");

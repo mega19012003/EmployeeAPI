@@ -21,7 +21,16 @@ namespace EmployeeAPI.Services.LogStatusConfigservices
 
         public async Task<LogStatusConfig?> GetConfigAsync(int id)
         {
-            return await _repository.GetByIdAsync(id);
+            var result = await _repository.GetByIdAsync(id);
+            if (result == null)
+                throw new KeyNotFoundException("Config not found");
+            return new LogStatusConfig
+            {
+                Id = result.Id,
+                Name = result.Name,
+                SalaryMultiplier = result.SalaryMultiplier,
+                Note = result.Note
+            };
         }
 
         public async Task<LogStatusConfig> UpdateConfigAsync(LogStatusConfig updatedConfig)

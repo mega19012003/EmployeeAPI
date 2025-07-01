@@ -53,7 +53,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        ///  Lấy danh sách ip, Chỉ có admin dc phép dùng
+        ///  Lấy ip, Chỉ có admin dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet("{IPAddressId}")]

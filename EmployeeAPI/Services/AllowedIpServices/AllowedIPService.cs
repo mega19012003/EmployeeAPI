@@ -49,6 +49,9 @@ namespace EmployeeAPI.Services.AllowedIpServices
         public async Task<AllowedIP> GetByIdAsync(Guid id)
         {
             var result = await _allowedIPRepository.GetByIdAsync(id);
+            if (result == null)
+                throw new KeyNotFoundException("IP not found");
+
             return new AllowedIP
             {
                 AllowedIPId = result.AllowedIPId,
