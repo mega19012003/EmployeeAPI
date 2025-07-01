@@ -23,7 +23,7 @@ namespace EmployeeAPI.Services.LogStatusConfigservices
         {
             var result = await _repository.GetByIdAsync(id);
             if (result == null)
-                throw new KeyNotFoundException("Config not found");
+                throw new ArgumentException("Config not found");
             return new LogStatusConfig
             {
                 Id = result.Id,
@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.LogStatusConfigservices
             {
                 var existing = await _repository.GetByIdAsync(updatedConfig.Id);
                 if (existing == null)
-                    throw new Exception("Config not found");
+                    throw new ArgumentException("Config not found");
 
                 existing.SalaryMultiplier = updatedConfig.SalaryMultiplier;
                 existing.Name = updatedConfig.Name;

@@ -41,13 +41,14 @@ namespace EmployeeAPI.Services.AuthServices
                 var currentUser = await _repository.GetUserByName(currentUsername);
 
                 if (currentUser == null)
-                    throw new UnauthorizedAccessException("Current user not found");
+                    throw new ArgumentException("Current user not found");
 
                 if (currentUser.Role != RoleType.Administrator && currentUser.Role != RoleType.Manager)
-                    throw new UnauthorizedAccessException("Only Admin or Manager can register new users");
+                    throw new ArgumentException("Only Admin or Manager can register new users");
 
                 if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
-                    throw new UnauthorizedAccessException("Manager can only register employee user");
+                    //throw new UnauthorizedAccessException("Manager can only register employee user");
+                    throw new ArgumentException("Manager can only register employee user");
 
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
@@ -184,7 +185,7 @@ namespace EmployeeAPI.Services.AuthServices
                 var currentUsername = claim.Identity?.Name;
                 var currentUser = await _repository.GetUserByName(currentUsername);
                 if (currentUser == null)
-                    throw new UnauthorizedAccessException("Current user not found");
+                    throw new ArgumentException("Current user not found");
 
                 var user = await _repository.GetByIdAsync(userId);
                 if (user == null)
@@ -193,7 +194,7 @@ namespace EmployeeAPI.Services.AuthServices
                 if (currentUser.Role == RoleType.Manager &&
                     user.DepartmentId != currentUser.DepartmentId)
                 {
-                    throw new UnauthorizedAccessException("Manager can only reset password for users in the same department.");
+                    throw new ArgumentException("Manager can only reset password for users in the same department.");
                 }
 
                 var generatedPassword = PasswordGenerator.Generate(16);

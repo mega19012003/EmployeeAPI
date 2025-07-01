@@ -50,7 +50,7 @@ namespace EmployeeAPI.Services.AllowedIpServices
         {
             var result = await _allowedIPRepository.GetByIdAsync(id);
             if (result == null)
-                throw new KeyNotFoundException("IP not found");
+                throw new ArgumentException("IP not found");
 
             return new AllowedIP
             {

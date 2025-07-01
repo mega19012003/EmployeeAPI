@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     var user = await _userRepository.GetByIdAsync(currentUserId);
                     if (user == null || user.DepartmentId == null)
-                        throw new Exception("Manager does not have department, Please contact admin to add Department");
+                        throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
                     departmentId = user.DepartmentId;
                 }
 
@@ -93,13 +93,13 @@ namespace EmployeeAPI.Services.PositionServices
                 Guid? departmentId = null;
 
                 var position = await _positionRepository.GetByIdAsync(id);
-                if (position == null) throw new Exception("Position not found");
+                if (position == null) throw new ArgumentException("Position not found");
 
                 if (isManager)
                 {
                     var user = await _userRepository.GetByIdAsync(currentUserId);
                     if (user == null || user.DepartmentId == null)
-                        throw new Exception("Manager does not have department, Please contact admin to add Department");
+                        throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
 
                     departmentId = user.DepartmentId;
 
@@ -275,7 +275,7 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
                     if (currentUser?.DepartmentId == null)
-                        throw new Exception("Manager does not have department, please contact admin to add department.");
+                        throw new ArgumentException("Manager does not have department, please contact admin to add department.");
                     departmentId = currentUser.DepartmentId;
                 }
 

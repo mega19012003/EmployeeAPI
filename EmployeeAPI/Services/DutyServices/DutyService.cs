@@ -38,7 +38,7 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new ArgumentException("Cannot find current user");
 
                 if (currentUser.DepartmentId == null)
-                    throw new Exception("Manager does not belong to any department");
+                    throw new ArgumentException("Manager does not belong to any department");
                 //query = query.Where(d => d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
                 query = query.Where(d => d.AssignedById == currentUserId);
             }
@@ -101,7 +101,7 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new ArgumentException("Cannot find current user");
 
                 if (currentUser.DepartmentId == null)
-                    throw new Exception("Manager does not belong to any department");
+                    throw new ArgumentException("Manager does not belong to any department");
 
                 if (duty.AssignedById != currentUserId)
                     throw new UnauthorizedAccessException("Manager can only access duties they assigned");
@@ -186,18 +186,18 @@ namespace EmployeeAPI.Services.DutyServices
                     .FirstOrDefaultAsync();
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                    throw new Exception("User not found");
+                    throw new ArgumentException("User not found");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");
+                        throw new ArgumentException("Manager does not belong to any department");
 
                     if (assignedUsers.Any(u => u.Role != RoleType.Employee))
-                        throw new Exception("Only employees can be assigned to a duty");
+                        throw new ArgumentException("Only employees can be assigned to a duty");
 
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
-                        throw new Exception("Manager can only assign employee from the same department");
+                        throw new ArgumentException("Manager can only assign employee from the same department");
 
                     if (conflict != Guid.Empty)
                         throw new InvalidOperationException("One or more employees are already assigned to an uncompleted duty.");
@@ -276,7 +276,7 @@ namespace EmployeeAPI.Services.DutyServices
                    .FirstOrDefaultAsync();
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                    throw new Exception("User not found");
+                    throw new ArgumentException("User not found");
 
                 if (currentUserRoles.Contains("Manager"))
                 {

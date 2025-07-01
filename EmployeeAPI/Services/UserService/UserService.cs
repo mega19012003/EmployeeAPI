@@ -216,10 +216,10 @@ namespace EmployeeAPI.Services.UserService
                 if (isManager && !isAdmin)
                 {
                     if (!currentUser.DepartmentId.HasValue)
-                        throw new Exception("Manager does not belong to any department");
+                        throw new ArgumentException("Manager does not belong to any department");
 
                     if (existingUser.DepartmentId != currentUser.DepartmentId)
-                        throw new Exception("Manager cannot delete user from other department");
+                        throw new ArgumentException("Manager cannot delete user from other department");
                 }
 
                 existingUser.IsDeleted = true;

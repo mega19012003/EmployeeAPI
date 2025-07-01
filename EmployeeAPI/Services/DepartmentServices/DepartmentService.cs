@@ -189,7 +189,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 else if (isManager)
                 {
                     if (!currentUser.DepartmentId.HasValue)
-                        throw new Exception("Manager does not belong to any department");
+                        throw new ArgumentException("Manager does not belong to any department");
 
                     filterDepartmentId = currentUser.DepartmentId;
                 }
@@ -261,7 +261,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             else if (isManager)
             {
                 if (!currentUser.DepartmentId.HasValue)
-                    throw new Exception("Manager does not belong to any department");
+                    throw new ArgumentException("Manager does not belong to any department");
 
                 filterDepartmentId = currentUser.DepartmentId;
             }

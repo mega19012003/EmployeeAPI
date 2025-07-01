@@ -53,7 +53,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
 
                     var currentDepartmentId = currentUser.DepartmentId;
                     query = query.Where(c => c.Users.DepartmentId == currentDepartmentId);
@@ -114,7 +114,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (manager)
                 {
                     var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
                     if (c.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkin from other department");
                 }
                 else if (employee)
@@ -337,7 +337,7 @@ namespace EmployeeAPI.Services.CheckinServices
                                          (isCheckoutAfternoonRange && checkin.CheckoutAfternoonStatus != Enums.LogStatus.None);
 
                 if (alreadyCheckedOut)
-                    throw new InvalidOperationException("Already checked out");
+                    throw new ArgumentException("Already checked out");
 
                 if (isCheckoutMorning)
                 {
@@ -557,79 +557,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        //public async Task AutoMarkAbsentAsync(TimeOnly CheckTime)
-        //{
-        //    var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        //    var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
-        //    var today = vnNow.Date;
-
-        //    if (vnNow.DayOfWeek == DayOfWeek.Sunday)
-        //    {
-        //        _logger.LogInformation("Sunday, no checkin");
-        //        return;
-        //    }
-
-        //    bool isHoliday = await _holidayRepository.IsHolidayAsync(today);
-        //    if (isHoliday)
-        //    {
-        //        _logger.LogInformation("today is a holiday, no marking absent");
-        //        return;
-        //    }
-
-        //    if (TimeOnly.FromDateTime(vnNow) < CheckTime)
-        //    {
-        //        _logger.LogInformation("Not work end time, no marking absent");
-        //        return;
-        //    }
-
-        //    var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-        //    if (schedule == null) throw new Exception("Work schedule time hasn't been set");
-
-        //    var currentTimeOnly = TimeOnly.FromDateTime(vnNow);
-        //    //var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
-
-        //    TimeSpan OvertimeDuration = currentTimeOnly - schedule.EndTimeAfternoon;
-
-        //    var vnTodayStart = vnNow.Date; 
-        //    var vnTodayStartUtc = TimeZoneInfo.ConvertTimeToUtc(vnTodayStart, vnTimeZone);
-        //    var vnTodayEndUtc = vnTodayStartUtc.AddDays(1);
-
-        //    var checkinsInRange = await _context.Checkins
-        //        .Where(c => c.CheckinMorning >= vnTodayStartUtc && c.CheckinMorning < vnTodayEndUtc)
-        //        .ToListAsync();
-
-        //    var checkedInUserIds = checkinsInRange
-        //        .Where(c => TimeZoneInfo.ConvertTimeFromUtc(c.CheckinMorning, vnTimeZone).Date == today)
-        //        .Select(c => c.UserId).Distinct().ToList();
-
-        //    var allUsers = await _userRepository.GetAll().ToListAsync();
-
-        //    var absentUsers = allUsers.Where(u => !checkedInUserIds.Contains(u.UserId)).ToList();
-
-        //    foreach (var user in absentUsers)
-        //    {
-
-        //        var checkin = new Checkin
-        //        {
-        //            Id = Guid.NewGuid(),
-        //            UserId = user.UserId,
-        //            CheckinMorningStatus = Enums.LogStatus.Absent,
-        //            CheckinMorning = DateTime.UtcNow,
-        //            CheckoutMorningStatus = Enums.LogStatus.Absent,
-        //            CheckoutMorning = DateTime.UtcNow,
-        //            CheckinAfternoonStatus = Enums.LogStatus.Absent,
-        //            CheckinAfternoon = DateTime.UtcNow,
-        //            CheckoutAfternoonStatus = Enums.LogStatus.Absent,
-        //            CheckoutAfternoon = DateTime.UtcNow,
-        //        };
-
-        //        await _checkinRepository.CreateAsync(checkin);
-        //    }
-
-        //    await _context.SaveChangesAsync();
-
-        //    _logger.LogInformation($"Mark {absentUsers.Count} users absent on {today:dd/MM/yyyy}.");
-        //}
+        
         public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
         {
             var logStatus = await _logStatusConfigRepository.GetAllAsync();
@@ -704,7 +632,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 else if (currentUserRoles.Contains("Manager"))
                 {
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
 
                     if (currentUser.DepartmentId != employee.DepartmentId) throw new UnauthorizedAccessException("Manager cannot delete checkin from other department");
                 }
@@ -776,27 +704,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var totalCount = await query.CountAsync();
 
-                //var items = await query
-                //    .Skip((pageIndex.Value - 1) * pageSize.Value)
-                //    .Take(pageSize.Value)
-                //    .Select(c => new ResponseModel.CheckinDetailDto
-                //    {
-                //        Id = c.Id,
-                //        //CheckinMorning = c.CheckinMorning,
-                //        CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
-                //        //CheckoutMorning = c.CheckoutMorning,
-                //        CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
-
-                //        //CheckinAfternoon = c.CheckinAfternoon,
-                //        CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
-                //        //CheckoutAfternoon = c.CheckoutAfternoon,
-                //        CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
-
-                //        Name = c.Users.Fullname,
-                //        //SalaryPerDay = c.SalaryPerDay,
-                //        //SalaryPerDay = 
-                //    }).ToListAsync();
-
                 var itemsRaw = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
@@ -807,8 +714,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 foreach (var c in itemsRaw)
                 {
-                    //var salary = await CalculateSalaryPerDayAsync(c.UserId, c.CheckinMorningStatus, c.CheckoutMorningStatus, c.CheckinAfternoonStatus, c.CheckoutAfternoonStatus, 0);
-
                     items.Add(new ResponseModel.CheckinDetailDto
                     {
                         Id = c.Id,

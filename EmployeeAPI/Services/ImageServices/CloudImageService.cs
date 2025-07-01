@@ -29,7 +29,7 @@ namespace EmployeeAPI.Services.ImageServices
 
             if (file.Length > maxFileSize)
             {
-                throw new Exception("Image size too large. Please chosse an image that below 10MB.");
+                throw new ArgumentException("Image size too large. Please chosse an image that below 10MB.");
             }
 
             await using var stream = file.OpenReadStream();
