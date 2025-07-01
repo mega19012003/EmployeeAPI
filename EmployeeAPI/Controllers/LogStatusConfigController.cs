@@ -18,7 +18,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy tất cả cấu hình trạng thái checkin, dùng để tính lương, chỉ có admin dc phép dùng
+        /// Lấy tất cả cấu hình trạng thái checkin, dùng để tính lương
         /// </summary>
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]

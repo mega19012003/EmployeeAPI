@@ -15,7 +15,7 @@ namespace EmployeeAPI.Models
         public Enums.LogStatus? CheckoutMorningStatus { get; set; }
         public Enums.LogStatus? CheckinAfternoonStatus { get; set; }
         public Enums.LogStatus? CheckoutAfternoonStatus { get; set; }
-        //public double SalaryPerDay { get; set; } 
+        public double SalaryPerDay { get; set; } 
         public bool IsDeleted { get; set; } = false;
 
     }

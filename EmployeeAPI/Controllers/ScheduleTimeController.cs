@@ -31,14 +31,14 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ScheduleTime>.ReturnResult("Get Schedule time Success", result, 200));
         }
         /// <summary>
-        /// Cập nhật gian biểu, chỉ có admin dc phép dùng
+        /// Cập nhật gian biểu
         /// </summary>
         /// <remarks>
         /// { "StartTimeMorning": "08:00:00",
         ///"lateThresholdMinutes": 15,
         ///"EndTimeAfternoon": "17:00:00" }
         /// </remarks>
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         [HttpPut] 
         public async Task<ActionResult<ScheduleTime>> UpdateScheduleTime(ScheduleTime scheduleTime)
         {

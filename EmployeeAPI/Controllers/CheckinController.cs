@@ -158,7 +158,7 @@ namespace EmployeeAPI.Controllers
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
             var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
-            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("", updated, 200));
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Update success", updated, 200));
         }
 
         /// <summary>

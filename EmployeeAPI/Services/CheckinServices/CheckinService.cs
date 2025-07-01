@@ -194,6 +194,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     }
                 }
 
+
                 var checkin = existingCheckin ?? new Checkin
                 {
                     Id = Guid.NewGuid(),
@@ -205,7 +206,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinMorningStatus = Enums.LogStatus.None,
                     CheckoutMorningStatus = Enums.LogStatus.None,
                     CheckinAfternoonStatus = Enums.LogStatus.None,
-                    CheckoutAfternoonStatus = Enums.LogStatus.None
+                    CheckoutAfternoonStatus = Enums.LogStatus.None,
                 };
 
                 if (isMorning)
@@ -259,6 +260,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     }
                 }
 
+                checkin.SalaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, 0);
 
                 if (existingCheckin == null)
                 {
@@ -284,7 +286,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
                     CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
-                    SalaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, 1)
+                    SalaryPerDay = checkin.SalaryPerDay
                 };
             }
             catch (Exception ex)
@@ -527,7 +529,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 //existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinMorningStatus, existing.CheckoutAfternoonStatus/*, OvertimeDuration*/);
                 double salaryPerDay = await CalculateSalaryPerDayAsync(employee.UserId, existing.CheckinMorningStatus, existing.CheckoutMorningStatus, existing.CheckinAfternoonStatus, existing.CheckoutAfternoonStatus, overtimeDuration);
-                
+                existing.SalaryPerDay = salaryPerDay;
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -546,7 +548,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = existing.CheckoutMorningStatus.ToString(),
 
                     Name = employee.Fullname,
-                    SalaryPerDay = salaryPerDay
+                    SalaryPerDay = existing.SalaryPerDay
                 };
             }
             catch
