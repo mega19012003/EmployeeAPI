@@ -67,6 +67,10 @@ namespace EmployeeAPI.Services.HolidayServices
             try
             {
                 var holiday = await _holidayRepository.GetByIdAsync(id);
+                if (holiday == null)
+                {
+                    throw new KeyNotFoundException("Holiday not found");
+                }
 
                 return new ResponseModel.HolidayResultDto
                 {
