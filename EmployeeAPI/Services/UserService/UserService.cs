@@ -45,7 +45,7 @@ namespace EmployeeAPI.Services.UserService
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
                 if (dto.BasicSalary != default) existingUser.BasicSalary = (double)dto.BasicSalary;
                 existingUser.IsActive = dto.IsActive;
-
+                existingUser.Role = (RoleType)dto.Role;
                 // Xử lý ảnh đại diện
                 if (dto.ImageUrl != null)
                 {
@@ -65,7 +65,6 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.ImageUrl = uploadedImageUrl;
                 }
 
-                // Xử lý Department và Position
                 if (dto.DepartmentId.HasValue)
                 {
                     existingUser.DepartmentId = dto.DepartmentId;
