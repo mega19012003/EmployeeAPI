@@ -49,15 +49,14 @@ namespace EmployeeAPI.Controllers
         /// Đăng nhập người dùng
         /// </summary>
         /// <remarks>
-        /// - <b>Admin</b>:              {"username": "Admin123", "password": "Administrator!23"}
-        /// - <b>Manager - Thu ngân</b>: {"username": "Manager123", "password": "dQ01no&amp;5nQ$N^%YM"}
-        /// - <b>Manager - IT</b>:       {"username": "Manager456", "password": "zQYoEVA7*c#hP$YH"}
-        /// - <b>Manager - Sửa chữa</b>: {"username": "Manager789", "password": "&gt;8)FkyutD$-c?Jw&gt;"}
-        ///
-        /// - <b>Employee - Thu ngân 1 (Le Hanh C)</b>: {"username": "user101", "password": "I@&amp;rMdCnU1hGlp5$"}
-        /// - <b>Employee - Thu ngân 2 (Nguyen Van A)</b>: {"username": "user01",  "password": "Z&lt;I0xLdS*FGgHOD-"}
-        /// - <b>Employee - IT</b>:         {"username": "user02",  "password": "(*3(PwmT3zuLF)9^"}
-        /// - <b>Employee - Sửa chữa</b>:   {"username": "user100", "password": "Gpw=$$TSh^MrS?f2"}
+        /// - Admin: {"username": "Admin123", "password": "Administrator!23"}
+        /// - Manager - Thu ngân: {"username": "Manager123", "password": "ManagerUser!2345"}
+        /// - Manager - IT: {"username": "Manager456", "password": "ManagerUser4$678"}
+        /// - Manager - Sửa chữa: { "username": "Manager789", "password": "ManagerUser789!2"}
+        /// - Employee - Thu ngân 1 (Le Hanh C): { "username": "user101", "password": "UserEmployee!234"}
+        /// - Employee - Thu ngân 2 (Nguyen Van A): { "username": "user01", "password": "UserEmployee!234"}
+        /// - Employee - IT: { "username": "user02", "password": "UserEmployee!234"}
+        /// - Employee - Sửa chữa: { "username": "user100", "password": "UserEmployee!234"}
         /// </remarks>
         [HttpPost, Route("login")]
         public async Task<IActionResult> Login([FromBody] ResponseModel.LoginDto dto)
