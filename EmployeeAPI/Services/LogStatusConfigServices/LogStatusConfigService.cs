@@ -44,6 +44,7 @@ namespace EmployeeAPI.Services.LogStatusConfigservices
 
                 existing.SalaryMultiplier = updatedConfig.SalaryMultiplier;
                 existing.Name = updatedConfig.Name;
+                existing.Note = updatedConfig.Note;
 
                 await _repository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
