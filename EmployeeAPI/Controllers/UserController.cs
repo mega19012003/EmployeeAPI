@@ -84,7 +84,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
-        public async Task<IActionResult> GetAllUserAsync(string? Name, Guid? departmentId, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetAllUserAsync(string? Search, Guid? departmentId, int? pageSize, int? pageIndex)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -92,7 +92,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _userService.GetAllAsync(Name, departmentId, currentUserId, currentUserRoles, pageIndex, pageSize);
+            var pagedResult = await _userService.GetAllAsync(Search, departmentId, currentUserId, currentUserRoles, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("No result", pagedResult, 200));
