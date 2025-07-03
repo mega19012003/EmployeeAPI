@@ -32,7 +32,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin người dùng, sẽ do admin chỉnh sửa hết thông tin
+        /// Cập nhật thông tin người dùng, sẽ do admin/manager chỉnh sửa
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
@@ -71,7 +71,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpGet]
-        public async Task<IActionResult> GetAllUserAsync(string? Search, Guid? departmentId, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetAllUserAsync(string? Search, Guid? departmentId, [FromQuery] int? pageIndex = 1, [FromQuery] int? pageSize = 10)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))

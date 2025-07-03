@@ -191,9 +191,6 @@ namespace EmployeeAPI.Services.UserService
         {
             try
             {
-                pageIndex ??= 1;
-                pageSize ??= 10;
-
                 var query = _userRepository.GetAll();
 
                 var isAdmin = currentUserRoles.Contains("Administrator");
