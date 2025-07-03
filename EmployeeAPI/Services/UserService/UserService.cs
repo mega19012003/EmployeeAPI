@@ -78,6 +78,8 @@ namespace EmployeeAPI.Services.UserService
                     else if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager does not have department, please contact admin to add department.");
                     departmentId = currentUser.DepartmentId;
+                    if( existingUser.DepartmentId != departmentId)
+                        throw new ArgumentException("Manager can only update users in their own department");
                 }
                 else if (isAdmin)
                 {
