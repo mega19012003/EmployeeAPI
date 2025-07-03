@@ -19,7 +19,7 @@ namespace EmployeeAPI.Repositories.Checkins
             return _context.Checkins
                 .AsNoTracking()
                 .Include(c => c.Users)
-                .Where(c => !c.IsDeleted && (!c.Users.IsDeleted && c.Users.IsActive));
+                .Where(c => !c.IsDeleted && !c.Users.IsDeleted);
         }
 
         public IQueryable<Checkin> GetAll()
@@ -27,14 +27,14 @@ namespace EmployeeAPI.Repositories.Checkins
             return _context.Checkins
                 .AsNoTracking()
                 .Include(c => c.Users)
-                .Where(c => !c.IsDeleted && !c.Users.IsDeleted && c.Users.IsActive);
+                .Where(c => !c.IsDeleted && !c.Users.IsDeleted);
         }
 
         public async Task<Checkin> GetByIdAsync(Guid id)
         {
             return await _context.Checkins
                 .Include(c => c.Users)
-                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted && (!c.Users.IsDeleted && c.Users.IsActive));
+                .FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted && !c.Users.IsDeleted);
         }
 
         public async Task CreateAsync(Checkin checkin)

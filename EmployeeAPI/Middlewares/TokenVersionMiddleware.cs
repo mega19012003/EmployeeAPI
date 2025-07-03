@@ -34,7 +34,7 @@ namespace EmployeeAPI.Middlewares
 
                 if (!string.IsNullOrEmpty(userIdClaim) && !string.IsNullOrEmpty(tokenVersionClaim))
                 {
-                    var userEntity = await userRepository.GetByIdAsync(Guid.Parse(userIdClaim));
+                    var userEntity = await userRepository.GetActiveUserIdAsync(Guid.Parse(userIdClaim));
                     if (userEntity != null)
                     {
                         var dbTokenVersion = userEntity.TokenVersion.ToString();

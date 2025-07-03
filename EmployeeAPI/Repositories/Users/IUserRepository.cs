@@ -5,9 +5,10 @@ namespace EmployeeAPI.Repositories.Users
 {
     public interface IUserRepository
     {
-        Task<Guid?> GetDepartmentIdByUserIdAsync(Guid userId);
+        //Task<Guid?> GetDepartmentIdByUserIdAsync(Guid userId);
         Task<User> UpdateAsync(User user);
-        Task<User> GetByIdAsync(Guid id);
+        Task<User> GetUserInfoAsync(Guid id);
+        Task<User> GetActiveUserIdAsync(Guid id);
         IQueryable<User> GetAll();
         //Task<User> GetAllUser();
         //Task<User> GetByIdAsync(Guid id);

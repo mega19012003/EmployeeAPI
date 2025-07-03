@@ -129,11 +129,11 @@ namespace EmployeeAPI.Services.PayrollServices
                 if (existing == null)
                     throw new ArgumentException("Cannot find checkin");
 
-                var employee = await _userRepository.GetByIdAsync(existing.UserId);
+                var employee = await _userRepository.GetUserInfoAsync(existing.UserId);
                 if (employee == null)
                     throw new ArgumentException("Cannot find employee for this checkin");
 
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
@@ -183,7 +183,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
 
                     // Kiểm tra user được lấy có tồn tại không
-                    var findUser = await _userRepository.GetByIdAsync(staffId.Value);
+                    var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
                     if (findUser == null)
                         throw new ArgumentException("Cannot find user");
 
@@ -205,7 +205,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var user = await _userRepository.GetByIdAsync(staffId.Value);
+                var user = await _userRepository.GetUserInfoAsync(staffId.Value);
                 if (user == null)
                     throw new ArgumentException("Cannot find user");
 
@@ -246,7 +246,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
         public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
-            var staff = await _userRepository.GetByIdAsync(staffId);
+            var staff = await _userRepository.GetActiveUserIdAsync(staffId);
 
             if (staff == null)
                 throw new ArgumentException("Cannot find User");
@@ -284,30 +284,10 @@ namespace EmployeeAPI.Services.PayrollServices
             if (schedule == null)
                 throw new ArgumentException("Schedule not found");
 
-            //var overtimeDuration = 1;
-
-
             double totalSalary = 0;
-            //var salaryForDay = 0.0;
-            //double baseSalary = staff.BasicSalary;
+
             foreach (var checkin in checkinsInMonth)
             {
-                // Convert checkouTime to Vietnam time (UTC+7)
-                //var utcTime = DateTime.SpecifyKind(checkin.CheckoutAfternoon, DateTimeKind.Utc);
-                //var vnTime = TimeZoneInfo.ConvertTimeFromUtc(utcTime, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time"));
-
-                //var checkouTime = vnTime.Hour;
-                //var endTime = schedule.EndTimeAfternoon.Hour;
-                //if (checkouTime > endTime)
-                //{
-                //    overtimeDuration = checkouTime - endTime;
-                //}
-                ////salaryForDay = await CalculateSalaryPerDayAsync(checkin, baseSalary);
-                //salaryForDay = await CalculateSalaryPerDayAsync(staffId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
-                ////_logger.LogInformation("Calculated salary for day {Date}: {Salary}", checkin.CheckinMorning.Date, salaryForDay);
-                ////_logger.LogInformation("CheckinMorningStatus: {CheckinMorningStatus}, CheckoutMorningStatus: {CheckoutMorningStatus}, CheckinAfternoonStatus: {CheckinAfternoonStatus}, CheckoutAfternoonStatus: {CheckoutAfternoonStatus}", 
-                ////    checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus);
-                ////_logger.LogInformation("Thoi gian lam them gio {endtime} - {overtime}", endTime, checkouTime);
                 totalSalary += checkin.SalaryPerDay;
                 _logger.LogInformation("Tien luong {money}", totalSalary);
             }
@@ -344,60 +324,5 @@ namespace EmployeeAPI.Services.PayrollServices
                 Note = payroll.Note
             };
         }
-
-        //public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
-        //{
-        //    var logStatus = await _logStatusConfigRepository.GetAllAsync();
-        //    var user = await _userRepository.GetByIdAsync(userId);
-        //    ScheduleTime schedule;
-        //    schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-
-
-        //    double checkinMorningMultiply = 0;
-        //    double checkoutMorningMultiply = 0;
-        //    double checkinAfternoonMultiply = 0;
-        //    double checkoutAfternoonMultiply = 0;
-
-        //    foreach (var item in logStatus)
-        //    {
-        //        if (item.Id == (int)(CheckinMorningStatus ?? Enums.LogStatus.None))
-        //        {
-        //            checkinMorningMultiply = item.SalaryMultiplier;
-        //            //_logger.LogInformation("CheckinMorningStatus: {status}", CheckinMorningStatus);
-        //        }
-        //        if (item.Id == (int)(CheckoutMorningStatus ?? Enums.LogStatus.None))
-        //        {
-        //            checkoutMorningMultiply = item.SalaryMultiplier;
-        //            //_logger.LogInformation("CheckoutMorningStatus: {status}", CheckoutMorningStatus);
-        //        }
-        //        if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
-        //        {
-        //            checkoutAfternoonMultiply = item.SalaryMultiplier;
-        //            //_logger.LogInformation("CheckoutAfternoonStatus: {status}", CheckoutMorningStatus);
-        //        }
-        //        if (item.Id == (int)(CheckinAfternoonStatus ?? Enums.LogStatus.None))
-        //        {
-        //            checkinAfternoonMultiply = item.SalaryMultiplier;
-        //            //_logger.LogInformation("CheckinAfternoonStatus: {status}", CheckinAfternoonStatus);
-        //        }
-        //    }
-
-        //    double baseSalary = user.BasicSalary;
-        //    double quarterSalary = baseSalary / 4.0;
-        //    double salaryToday = 0;
-
-        //    if (CheckoutAfternoonStatus == Enums.LogStatus.Overtime)
-        //    {
-        //        salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply * overtimeDuration);
-        //        //_logger.LogInformation("sang 1 {moneys} - {status}", quarterSalary * checkinMorningMultiply, checkinMorningMultiply);
-        //        //_logger.LogInformation("sang 2 {moneys} - {status}", quarterSalary * checkoutMorningMultiply, checkoutMorningMultiply);
-        //        //_logger.LogInformation("chieu 1 {moneys} - {status}", quarterSalary * checkinAfternoonMultiply, checkinAfternoonMultiply);
-        //        //_logger.LogInformation("chieu 2 {moneys} - {status}", quarterSalary * checkoutAfternoonMultiply, checkoutAfternoonMultiply);
-        //        //_logger.LogInformation("Over TIme: {OT}", overtimeDuration);
-        //    }
-        //    else salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply);
-
-        //    return salaryToday;
-        //}
     }
 }

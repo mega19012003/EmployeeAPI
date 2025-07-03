@@ -105,37 +105,38 @@ namespace EmployeeAPI.Services.CheckinServices
         {
             try
             {
-                var c = await _checkinRepository.GetByIdAsync(id);
-                if (c == null) throw new ArgumentException("Checkin information not found");
+                var checkin = await _checkinRepository.GetByIdAsync(id);
+                if (checkin == null) throw new ArgumentException("Checkin information not found");
 
                 var manager = currentUserRoles.Contains("Manager");
                 var employee = currentUserRoles.Contains("Employee");
 
                 if (manager)
                 {
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
-                    if (c.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkin from other department");
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null) throw new ArgumentException("Current user not found");
+                    else if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
+                    if (checkin.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkin from other department");
                 }
                 else if (employee)
                 {
-                    if (c.UserId != currentUserId) throw new UnauthorizedAccessException("Employee can only access their own checkin");
+                    if (checkin.UserId != currentUserId) throw new UnauthorizedAccessException("Employee can only access their own checkin");
                 }
 
                 return new ResponseModel.CheckinResultDto
                 {
-                    CheckinId = c.Id,
-                    CheckinMorning = c.CheckinMorning,
-                    CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
-                    CheckoutMorning = c.CheckoutMorning,
-                    CheckoutMorningStatus = c.CheckinAfternoonStatus.ToString(),
+                    CheckinId = checkin.Id,
+                    CheckinMorning = checkin.CheckinMorning,
+                    CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
+                    CheckoutMorning = checkin.CheckoutMorning,
+                    CheckoutMorningStatus = checkin.CheckinAfternoonStatus.ToString(),
 
-                    CheckinAfternoon = c.CheckinAfternoon,
-                    CheckinAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
-                    CheckoutAfternoon = c.CheckoutAfternoon,
-                    CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
+                    CheckinAfternoon = checkin.CheckinAfternoon,
+                    CheckinAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
+                    CheckoutAfternoon = checkin.CheckoutAfternoon,
+                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
 
-                    Name = c.Users.Fullname,
+                    Name = checkin.Users.Fullname,
                     //SalaryPerDay = c.SalaryPerDay,
                 };
             }
@@ -157,8 +158,13 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 Guid targetUserId = userId ?? currentUserId;
 
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                var targetUser = await _userRepository.GetByIdAsync(targetUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser == null)
+                    throw new ArgumentException("Current user not found");
+                else if (currentUser.DepartmentId == null && isManager)
+                    throw new ArgumentException("Manager does not belong to any department");
+
+                var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
                     throw new ArgumentException("User not found");
 
@@ -307,8 +313,13 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 Guid targetUserId = userId ?? currentUserId;
 
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                var targetUser = await _userRepository.GetByIdAsync(targetUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser == null)
+                    throw new ArgumentException("Current user not found");
+                else if (currentUser.DepartmentId == null && isManager)
+                    throw new ArgumentException("Manager does not belong to any department");
+
+                var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
                     throw new ArgumentException("User not found");
 
@@ -493,10 +504,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
                 if (existing == null) throw new ArgumentException("Checkin not found");
 
-                var employee = await _userRepository.GetByIdAsync(existing.UserId);
+                var employee = await _userRepository.GetActiveUserIdAsync(existing.UserId);
                 if (employee == null) throw new ArgumentException("User not found");
 
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
                 if (currentUserRoles.Contains("Manager"))
                 {
@@ -561,7 +572,7 @@ namespace EmployeeAPI.Services.CheckinServices
         public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
         {
             var logStatus = await _logStatusConfigRepository.GetAllAsync();
-            var user = await _userRepository.GetByIdAsync(userId);
+            var user = await _userRepository.GetActiveUserIdAsync(userId);
             ScheduleTime schedule;
             schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
 
@@ -622,10 +633,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 var existing = await _checkinRepository.GetByIdAsync(id);
                 if (existing == null) throw new ArgumentException("Cannot find checkin");
 
-                var employee = await _userRepository.GetByIdAsync(existing.UserId);
+                var employee = await _userRepository.GetUserInfoAsync(existing.UserId);
                 if (employee == null) throw new ArgumentException("Cannot find employee for this checkin");
 
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
@@ -670,7 +681,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Please input userid");
 
-                    var findUser = await _userRepository.GetByIdAsync(staffId.Value);
+                    var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
                     if (findUser == null) throw new ArgumentException("Cannot find user id");
 
                     if (findUser.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
@@ -686,9 +697,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 var now = DateTime.Now;
                 Year ??= now.Year;
 
-
-                var user = await _userRepository.GetByIdAsync(staffId.Value);
-
+                var user = await _userRepository.GetUserInfoAsync(staffId.Value);
 
                 if (user == null)
                     throw new ArgumentException("Cannot find user id");

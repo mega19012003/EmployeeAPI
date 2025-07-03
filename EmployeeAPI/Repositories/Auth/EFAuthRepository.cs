@@ -32,25 +32,16 @@ namespace EmployeeAPI.Repositories.Auth
             await _context.SaveChangesAsync();
         }
 
-        public IQueryable<User> GetAll()
-        {
-            return _context.Users
-                .AsNoTracking()
-                .Include(p => p.Department)
-                .Include(p => p.Position)
-                .Where(p => !p.IsDeleted && p.IsActive);
-        }
+        //public IQueryable<User> GetAll()
+        //{
+        //    return _context.Users
+        //        .AsNoTracking()
+        //        .Include(p => p.Department)
+        //        .Include(p => p.Position)
+        //        .Where(p => !p.IsDeleted && p.IsActive);
+        //}
         public async Task<User> GetUserByName(string username)
         {
-            /*var result = await _context.Users
-                .Include(p => p.Department)
-                .Include(p => p.Position)
-                .FirstOrDefaultAsync(p => p.Username == users.Username);
-
-            if (result != null)
-                return null;
-
-            return result;*/
             return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
 

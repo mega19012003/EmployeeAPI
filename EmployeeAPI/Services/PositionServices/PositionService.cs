@@ -38,10 +38,12 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if (isManager)
                 {
-                    var user = await _userRepository.GetByIdAsync(currentUserId);
-                    if (user == null || user.DepartmentId == null)
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    else if (currentUser == null || currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
-                    departmentId = user.DepartmentId;
+                    departmentId = currentUser.DepartmentId;
                 }
 
                 var query = _positionRepository.GetQueryable(); 
@@ -97,11 +99,13 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if (isManager)
                 {
-                    var user = await _userRepository.GetByIdAsync(currentUserId);
-                    if (user == null || user.DepartmentId == null)
+                    var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    if (currentUser == null || currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
 
-                    departmentId = user.DepartmentId;
+                    departmentId = currentUser.DepartmentId;
 
                     if (position.DepartmentId != departmentId)
                         throw new UnauthorizedAccessException("Manager can only view positions in their department.");
@@ -136,11 +140,13 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if (isManager)
                 {
-                    var user = await _userRepository.GetByIdAsync(currentUserId);
-                    if (user?.DepartmentId == null)
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    else if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager does not belong to any department. Please contact admin to add department id.");
 
-                    departmentId = user.DepartmentId.Value;
+                    departmentId = currentUser.DepartmentId.Value;
                 }
                 else if (isAdmin)
                 {
@@ -196,7 +202,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if (isManager)
                 {
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager does not belong to any department");
 
@@ -238,8 +244,10 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if(isManager)
                 {
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    if (currentUser?.DepartmentId == null)
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    else if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager does not belong to any department");
 
                     if (result.DepartmentId != currentUser.DepartmentId)
@@ -273,8 +281,10 @@ namespace EmployeeAPI.Services.PositionServices
                 var isManager = currentUserRole.Contains("Manager");
                 if (isManager)
                 {
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                    if (currentUser?.DepartmentId == null)
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    else if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager does not have department, please contact admin to add department.");
                     departmentId = currentUser.DepartmentId;
                 }
@@ -285,7 +295,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 var allUsers = query
                     .SelectMany(d => d.Users
-                    .Where(s => s.IsActive && !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));
+                    .Where(s => !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));
 
                 var totalCount = allUsers.Count();
 

@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Base;
+﻿using CloudinaryDotNet.Actions;
+using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
@@ -31,22 +32,26 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserResultDto> AdminUpdateStaffAsync(ResponseModel.AdminUpdateDto dto)
+        public async Task<ResponseModel.UserResultDto> UpdateStaffAsync(ResponseModel.AdminUpdateDto dto, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
+                var existingUser = await _userRepository.GetUserInfoAsync(dto.UserId);
                 if (existingUser == null)
                     throw new ArgumentException("Cannot find user");
+
+                var isAdmin = currentUserRole.Contains("Administrator");
+                var isManager = currentUserRole.Contains("Manager");
+                Guid? departmentId = null;
 
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
-                if (dto.BasicSalary != default) existingUser.BasicSalary = (double)dto.BasicSalary;
-                existingUser.IsActive = dto.IsActive;
-                existingUser.Role = (RoleType)dto.Role;
-                // Xử lý ảnh đại diện
+                if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
+                if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
+
+
                 if (dto.ImageUrl != null)
                 {
                     if (!string.IsNullOrEmpty(existingUser.ImageUrl))
@@ -65,13 +70,41 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.ImageUrl = uploadedImageUrl;
                 }
 
-                if (dto.DepartmentId.HasValue)
+                if (isManager)
                 {
-                    existingUser.DepartmentId = dto.DepartmentId;
-
-                    if (dto.PositionId.HasValue)
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    else if (currentUser?.DepartmentId == null)
+                        throw new ArgumentException("Manager does not have department, please contact admin to add department.");
+                    departmentId = currentUser.DepartmentId;
+                }
+                else if (isAdmin)
+                {
+                    if (dto.Role.HasValue) existingUser.Role = (RoleType)dto.Role;
+                    if (dto.DepartmentId.HasValue)
                     {
-                        var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
+                        existingUser.DepartmentId = dto.DepartmentId;
+
+                        if (dto.PositionId.HasValue)
+                        {
+                            var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
+                            if (department == null)
+                                throw new ArgumentException("Department not found");
+
+                            bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+                            if (!isValidPosition)
+                                throw new ArgumentException("Position does not belong to this department");
+
+                            existingUser.PositionId = dto.PositionId;
+                        }
+                    }
+                    else if (dto.PositionId.HasValue)
+                    {
+                        if (!existingUser.DepartmentId.HasValue)
+                            throw new ArgumentException("User does not have a department");
+
+                        var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
                         if (department == null)
                             throw new ArgumentException("Department not found");
 
@@ -82,26 +115,10 @@ namespace EmployeeAPI.Services.UserService
                         existingUser.PositionId = dto.PositionId;
                     }
                 }
-                else if (dto.PositionId.HasValue)
-                {
-                    if (!existingUser.DepartmentId.HasValue)
-                        throw new ArgumentException("User does not have a department");
-
-                    var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
-                    if (department == null)
-                        throw new ArgumentException("Department not found");
-
-                    bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
-                    if (!isValidPosition)
-                        throw new ArgumentException("Position does not belong to this department");
-
-                    existingUser.PositionId = dto.PositionId;
-                }
 
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
 
-                // Load các navigation properties nếu cần
                 await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
                 await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
 
@@ -118,6 +135,7 @@ namespace EmployeeAPI.Services.UserService
                     DepartmentName = existingUser.Department?.Name,
                     PositionName = existingUser.Position?.Name,
                     ImageUrl = existingUser.ImageUrl,
+                    IsActive = existingUser.IsActive
                 };
             }
             catch (Exception ex)
@@ -128,85 +146,16 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-        public async Task<UserResultDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId)
-        {
-            using var transaction = await _context.Database.BeginTransactionAsync();
-            try
-            {
-                var existingUser = await _userRepository.GetByIdAsync(dto.UserId);
-                if (existingUser == null) throw new ArgumentException("Cannot find user");
-
-                var manager = await _userRepository.GetByIdAsync(managerId);
-                if (manager == null || manager.DepartmentId == null)
-                    throw new ArgumentException("Manager does not have department, Please contact admin to add Department");
-
-                if (existingUser.DepartmentId == null || existingUser.DepartmentId != manager.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager can only update for user in the same department");
-
-                if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
-                if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
-                if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
-                if (dto.PositionId.HasValue) existingUser.PositionId = dto.PositionId.Value;
-                if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
-                //if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
-
-                if (dto.ImageUrl != null)
-                {
-                    if (!string.IsNullOrEmpty(existingUser.ImageUrl))
-                    {
-                        var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
-                        if (!string.IsNullOrEmpty(oldPublicId))
-                        {
-                            await _cloudImageService.DeleteImageAsync(oldPublicId);
-                        }
-                    }
-
-                    var uploadedImageUrl = await _cloudImageService.UploadImageAsync(dto.ImageUrl);
-                    existingUser.ImageUrl = uploadedImageUrl;
-                }
-
-                existingUser.DepartmentId = manager.DepartmentId;
-
-                await _userRepository.UpdateAsync(existingUser);
-                await _context.SaveChangesAsync();
-
-                // Load lại navigation properties để lấy tên phòng ban và chức vụ
-                await _context.Entry(existingUser).Reference(u => u.Department).LoadAsync();
-                await _context.Entry(existingUser).Reference(u => u.Position).LoadAsync();
-
-                await transaction.CommitAsync();
-
-                return new UserResultDto
-                {
-                    UserId = existingUser.UserId,
-                    Fullname = existingUser.Fullname,
-                    RoleName = existingUser.Role.ToString(),
-                    Address = existingUser.Address,
-                    PhoneNumber = existingUser.PhoneNumber,
-                    BasicSalary = existingUser.BasicSalary,
-                    DepartmentName = existingUser.Department?.Name,
-                    PositionName = existingUser.Position?.Name,
-                    ImageUrl = existingUser.ImageUrl,
-                };
-            }
-            catch (Exception ex)
-            {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error when updating user Message: {Message}", ex.Message);
-                throw;
-            }
-        }
-
         public async Task<string> SoftDeleteAsync(Guid Id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
-                var existingUser = await _userRepository.GetByIdAsync(Id);
+                var existingUser = await _userRepository.GetUserInfoAsync(Id);
                 if (existingUser == null)
                     throw new ArgumentException("Cannot find user");
 
@@ -252,7 +201,7 @@ namespace EmployeeAPI.Services.UserService
 
                 if (isManager)
                 {
-                    var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser == null || currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager doesn't belong to any department");
 
@@ -310,14 +259,16 @@ namespace EmployeeAPI.Services.UserService
             var isAdmin = currentUserRoles.Contains("Administrator");
             var isManager = currentUserRoles.Contains("Manager");
 
-            var results = await _userRepository.GetByIdAsync(id);
+            var results = await _userRepository.GetUserInfoAsync(id);
             if (results == null)
                 throw new ArgumentException("Cannot find User");
 
             if (isManager) 
             {
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
-                if (currentUser?.DepartmentId == null)
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser == null)
+                    throw new ArgumentException("Current user not found");
+                else if (currentUser?.DepartmentId == null)
                     throw new ArgumentException("Manager does not belong to any department");
 
                 if (results.DepartmentId != currentUser.DepartmentId)

@@ -9,7 +9,7 @@ namespace EmployeeAPI.Repositories.Auth
         Task<User> LoginAsync(string username, string password);
         Task UpdateUserAsync(User user);
         Task<User> GetLoginUserAsync(string username);
-        IQueryable<User> GetAll();
+        //IQueryable<User> GetAll();
         Task<User> GetByIdAsync(Guid id);
 
     }

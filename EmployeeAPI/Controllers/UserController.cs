@@ -34,32 +34,19 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật thông tin người dùng, sẽ do admin chỉnh sửa hết thông tin
         /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpPut("AdminUpdateUser")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> AdminUpdateStaffAsync([FromForm] ResponseModel.AdminUpdateDto dto)
+        [Authorize(Roles = "Administrator, Manager")]
+        [HttpPut]
+        //[Consumes("multipart/form-data")]
+        public async Task<IActionResult> UpdateStaffAsync([FromForm] ResponseModel.AdminUpdateDto dto)
         {
-            /* var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-             var userRole = User.FindFirst(ClaimTypes.Role)?.Value;*/
-            var result = await _userService.AdminUpdateStaffAsync(dto);
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var result = await _userService.UpdateStaffAsync(dto, currentUserId, currentUserRoles);
 
             return Ok(ApiResponse<ResponseModel.UserResultDto>.ReturnResult("Update user success", result, 200));
-        }
-
-        /// <summary>
-        /// Cập nhật thông tin người dùng, sẽ do manager chỉnh, manager ko dc chỉnh role và departmentid sẽ tự gán cho user
-        /// </summary>
-        [Authorize(Roles = "Manager")]
-        [HttpPut("ManagerUpdateUser")]
-        [Consumes("multipart/form-data")]
-        public async Task<IActionResult> ManagerUpdateStaffAsync([FromForm] ResponseModel.ManagerUpdateDto dto)
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var userRole = User.FindFirst(ClaimTypes.Role)?.Value;
-            var managerId = Guid.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-            var result = await _userService.ManagerUpdateStaffAsync(dto, managerId);
-
-            return Ok(ApiResponse<ResponseModel.UserResultDto>.ReturnResult("Update staff success", result, 200));
         }
 
         /// <summary>

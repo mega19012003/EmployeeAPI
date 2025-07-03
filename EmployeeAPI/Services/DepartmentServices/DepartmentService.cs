@@ -169,7 +169,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+                var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Cannot find current user");
 
@@ -241,7 +241,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            var currentUser = await _userRepository.GetByIdAsync(currentUserId);
+            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
             if (currentUser == null)
                 throw new ArgumentException("Cannot find current user");
 

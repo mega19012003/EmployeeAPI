@@ -40,6 +40,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                 }
                 else
                 {
+                    //Bỏ sang BE
                     if(newSchedule.StartTimeMorning > newSchedule.EndTimeMorning || newSchedule.StartTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.StartTimeMorning > newSchedule.EndTimeAfternoon)
                         throw new ArgumentException("Start time in the morning cannot be later than end time in the morning, starttime/endtime in the afternoon");
 
@@ -63,10 +64,10 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
                 return newSchedule;
             }
-            catch
+            catch (Exception ex)
             {
                 await trasaction.RollbackAsync();
-                throw new ArgumentException("Invalid input data for schedule time update.");
+                throw new ArgumentException(ex.Message);
             }
         }
     }
