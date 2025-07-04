@@ -54,7 +54,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("{userId}")]
-        public async Task<IActionResult> SoftDeleteAsync([FromForm] Guid userId)
+        public async Task<IActionResult> SoftDeleteAsync(Guid userId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
