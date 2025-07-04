@@ -98,7 +98,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
 
                         Name = c.Users.Fullname,
-                        //SalaryPerDay = c.SalaryPerDay,
+                        SalaryPerDay = c.SalaryPerDay,
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinResultDto>
@@ -213,7 +213,6 @@ namespace EmployeeAPI.Services.CheckinServices
                         throw new ArgumentException("Đã check-in trong khung giờ này hôm nay");
                     }
                 }
-
 
                 var checkin = existingCheckin ?? new Checkin
                 {
@@ -392,9 +391,17 @@ namespace EmployeeAPI.Services.CheckinServices
                         checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
                     }
-                    else if (workedDuration.TotalMinutes >= threshold1) //làm trên 75% nhưng trc giờ checkout
+                    else // làm >= 75%
                     {
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.LeaveEarly;
+                        if (currentTime >= schedule.EndTimeMorning && currentTime <= schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime))
+                        {
+                            checkin.CheckoutMorningStatus = Enums.LogStatus.OnTime;
+                        }
+                        else // checkout trước giờ kết thúc
+                        {
+                            checkin.CheckoutMorningStatus = Enums.LogStatus.LeaveEarly;
+                        }
+
                         checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
                     }
@@ -402,7 +409,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 else if (isCheckoutAfternoonRange)
                 {
                     checkin.CheckoutAfternoon = nowUtc;
-
+                    if (checkin.CheckoutMorningStatus == Enums.LogStatus.None)
+                    {
+                        checkin.CheckoutMorningStatus = Enums.LogStatus.OnTime;
+                    }
                     if (checkin.CheckinAfternoon == DateTime.MinValue)
                     {
                         var checkinAfternoonTime = vnTime.Date.Add(schedule.StartTimeAfternoon.ToTimeSpan());
@@ -413,7 +423,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     var totalDuration = schedule.EndTimeAfternoon - schedule.StartTimeAfternoon;
                     var threshold75 = totalDuration.TotalMinutes * 0.75;
                     var threshold50 = totalDuration.TotalMinutes * 0.5;
-
 
                     if (workedDuration.TotalMinutes < threshold50)
                     {
@@ -426,15 +435,15 @@ namespace EmployeeAPI.Services.CheckinServices
                         // Làm 50–75%: checkout = Absent
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
                     }
-                        // Làm >= 75%
+                        
                     else if (currentTime < schedule.EndTimeAfternoon)
                     {
-                        // Trước giờ kết thúc ca → checkout sớm
+                        // // Làm >= 75% và trc giờ kết thúc ca 
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.LeaveEarly;
                     }
                     else if (currentTime >= schedule.EndTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
                     {
-                        // Checkout đúng giờ (trong khoảng EndTimeAfternoon → EndTimeAfternoon + LogAllowtime)
+                        // Checkout đúng giờ 
                         checkin.CheckinAfternoonStatus = Enums.LogStatus.OnTime;
                         checkin.CheckoutAfternoonStatus = Enums.LogStatus.OnTime;
                     }
@@ -455,6 +464,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     overtimeDuration = checkouTime - endTime;
                 }
                 double salaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
+                checkin.SalaryPerDay = salaryPerDay;
                 await _checkinRepository.UpdateAsync(checkin);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -471,7 +481,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
                     CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
                     CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
-                    SalaryPerDay = salaryPerDay
+                    SalaryPerDay = checkin.SalaryPerDay
                 };
             }
             catch (Exception ex)

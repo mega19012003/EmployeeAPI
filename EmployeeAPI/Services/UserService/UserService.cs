@@ -51,7 +51,6 @@ namespace EmployeeAPI.Services.UserService
                 if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
                 if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
 
-
                 if (dto.ImageUrl != null)
                 {
                     if (!string.IsNullOrEmpty(existingUser.ImageUrl))
