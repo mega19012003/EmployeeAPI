@@ -173,7 +173,7 @@ namespace EmployeeAPI.Controllers
         /// Đánh dấu là hoàn tất chi tiết công việc, employee có thể đánh dấu công việc của mình, manager có thể đánh dấu
         /// </summary>
         [Authorize(Roles = "Administrator, Manager, Employee")]
-        [HttpPut("{dutyDetailId}")]
+        [HttpPut("MarkCompleted/{dutyDetailId}")]
         public async Task<IActionResult> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
