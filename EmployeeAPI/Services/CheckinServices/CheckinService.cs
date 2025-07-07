@@ -58,7 +58,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     var currentDepartmentId = currentUser.DepartmentId;
                     query = query.Where(c => c.Users.DepartmentId == currentDepartmentId);
                 }
-
+                else if (currentUserRoles.Contains("Employee"))
+                {
+                    query = query.Where(c => c.UserId == currentUserId);
+                }
                 ///////////////////
                 var now = DateTime.Now;
                 Year ??= now.Year;

@@ -32,7 +32,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? Search, int? Day, int? Month , int? Year, int? pageIndex, int? pageSize)
         {

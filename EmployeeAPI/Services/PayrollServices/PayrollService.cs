@@ -56,6 +56,14 @@ namespace EmployeeAPI.Services.PayrollServices
 
                 query = query.Where(p => p.Users.DepartmentId == departmentId);
             }
+            if( currentUserRoles.Contains("Employee"))
+            {
+                var employee = await _context.Users.FindAsync(currentUserId);
+                if (employee == null)
+                    throw new ArgumentException("Employee not found");
+                query = query.Where(p => p.UserId == employee.UserId);
+            }
+
 
             if (!string.IsNullOrEmpty(name))
             {

@@ -27,7 +27,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy toàn bộ danh sách chấm công, manager chỉ dc phép lấy danh sách theo phòng ban của mình
         /// </summary>
-        [Authorize(Roles = "Administrator,Manager")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllPayrolls(string? Search, int? pageIndex, int? pageSize)
         {
