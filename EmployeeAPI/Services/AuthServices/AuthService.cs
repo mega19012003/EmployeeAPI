@@ -43,9 +43,6 @@ namespace EmployeeAPI.Services.AuthServices
                 if (currentUser == null)
                     throw new ArgumentException("Current user not found");
 
-                if (currentUser.Role != RoleType.Administrator && currentUser.Role != RoleType.Manager)
-                    throw new ArgumentException("Only Admin or Manager can register new users");
-
                 if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
                     //throw new UnauthorizedAccessException("Manager can only register employee user");
                     throw new ArgumentException("Manager can only register employee user");
@@ -56,6 +53,12 @@ namespace EmployeeAPI.Services.AuthServices
 
                 if(!IsStrongPassword(dto.Password))
                     throw new ArgumentException("Password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
+
+                var departmentId = Guid.Empty;
+                if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId != null)
+                {
+                    departmentId = currentUser.DepartmentId.Value;
+                }
 
                 var generatedPassword = PasswordGenerator.Generate(16);
 
@@ -70,7 +73,7 @@ namespace EmployeeAPI.Services.AuthServices
                     PhoneNumber = "",
                     Address = "",
                     ImageUrl = "",
-                    DepartmentId = null,
+                    DepartmentId = departmentId,
                     PositionId = null,
                     BasicSalary = 0,
                 };
