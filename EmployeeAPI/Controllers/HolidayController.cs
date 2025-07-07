@@ -21,7 +21,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Xem danh sách ngày nghỉ lễ, do admin xử lý
         ///</summary>
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllHolidays(string? Search, int? pageIndex, int? pageSize)
         {
@@ -36,7 +36,7 @@ namespace EmployeeAPI.Controllers
         ///</summary>
         [Authorize(Roles = "Administrator")]
         [HttpGet("{HolidayId}")]
-        public async Task<IActionResult> GetHOlidayById(Guid HolidayId)
+        public async Task<IActionResult> GetHolidayById(Guid HolidayId)
         {
             var pagedResult = await _holidayService.GetByIdAsync(HolidayId);
 
