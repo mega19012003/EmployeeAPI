@@ -52,7 +52,7 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("User already exists");
 
                 if(!IsStrongPassword(dto.Password))
-                    throw new ArgumentException("Password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
+                    throw new ArgumentException("Password must be at least 8 characters long, contain uppercase, lowercase, digit, and special character");
 
                 var departmentId = Guid.Empty;
                 if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId != null)
@@ -60,23 +60,32 @@ namespace EmployeeAPI.Services.AuthServices
                     departmentId = currentUser.DepartmentId.Value;
                 }
 
-                var generatedPassword = PasswordGenerator.Generate(16);
+                //var generatedPassword = PasswordGenerator.Generate(8);
 
                 var entity = new User
                 {
                     UserId = Guid.NewGuid(),
                     Username = dto.Username,
-                    //Password = HashPassword.Hash(generatedPassword),
                     Password = HashPassword.Hash(dto.Password),
                     Fullname = dto.Fullname,
                     Role = dto.Role,
                     PhoneNumber = "",
                     Address = "",
                     ImageUrl = "",
-                    DepartmentId = departmentId,
                     PositionId = null,
                     BasicSalary = 0,
                 };
+
+                // Nếu currentUser là Manager → luôn gán DepartmentId
+                if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId.HasValue)
+                {
+                    entity.DepartmentId = currentUser.DepartmentId;
+                }
+                else
+                {
+                    // Admin: để null hoặc có thể gán dto.DepartmentId nếu bạn muốn
+                    entity.DepartmentId = null;
+                }
 
                 _context.Users.Add(entity);
                 await _context.SaveChangesAsync();
@@ -93,8 +102,9 @@ namespace EmployeeAPI.Services.AuthServices
             }
             catch (Exception ex)
             {
-                await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while registering user");
+                _logger.LogError(ex, "Error when registering user: {Message}", ex.Message);
+                if (ex.InnerException != null)
+                    _logger.LogError(ex.InnerException, "Inner exception: {Message}", ex.InnerException.Message);
                 throw;
             }
         }
@@ -156,15 +166,15 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user == null)
                     throw new ArgumentException("User not found");
 
-                if (!HashPassword.Verify(user.Password , oldPassword))
+                if (!HashPassword.Verify(user.Password, oldPassword))
                 //if (user.Password != HashPassword.ComputeHash(oldPassword))
-                    throw new ArgumentException("Password is incorrect");
+                    throw new ArgumentException("Old Password is incorrect");
 
                 if (newPassword != confirmPassword)
                     throw new ArgumentException("New password and confirm password do not match");
 
                 if(!IsStrongPassword(newPassword))
-                    throw new ArgumentException("New password must be at least 16 characters long, contain uppercase, lowercase, digit, and special character");
+                    throw new ArgumentException("New password must be at least 8 characters long, contain uppercase, lowercase, digit, and special character");
 
                 user.Password = HashPassword.Hash(newPassword);
                 //user.Password = HashPassword.ComputeHash(newPassword);
@@ -200,13 +210,13 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("Manager can only reset password for users in the same department.");
                 }
 
-                var generatedPassword = PasswordGenerator.Generate(16);
-                user.Password = HashPassword.Hash(generatedPassword);
+               // var generatedPassword = PasswordGenerator.Generate(8);
+                user.Password = HashPassword.Hash(user.Username);
                 //user.Password = HashPassword.ComputeHash(generatedPassword);
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
 
-                return $"Reset password to: {generatedPassword}";
+                return $"Reset password success. Pass là username";
             }
             catch (Exception ex)
             {
@@ -295,7 +305,7 @@ namespace EmployeeAPI.Services.AuthServices
         {
             if (string.IsNullOrWhiteSpace(password)) return false;
 
-            return password.Length >= 16
+            return password.Length >= 8
                 && password.Any(char.IsUpper) 
                 && password.Any(char.IsLower) 
                 && password.Any(char.IsDigit) 
@@ -310,7 +320,7 @@ namespace EmployeeAPI.Services.AuthServices
             private const string Digits = "0123456789";
             private const string Symbols = "!@#$%^&*()_-+=<>?";
 
-            public static string Generate(int length = 16)
+            public static string Generate(int length = 8)
             {
                 if (length < 8) throw new ArgumentException("Password too short");
 
