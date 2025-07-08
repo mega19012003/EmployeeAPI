@@ -73,6 +73,9 @@ namespace EmployeeAPI.Services.PayrollServices
 
             if (Day.HasValue)
                 query = query.Where(c => c.CreatedDate.Day == Day.Value);
+
+            if (Year.HasValue)
+                query = query.Where(c => c.CreatedDate.Year == Year.Value);
             ////////////////////
 
             if (!string.IsNullOrEmpty(name))

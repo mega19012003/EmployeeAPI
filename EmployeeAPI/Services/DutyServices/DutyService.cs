@@ -56,6 +56,9 @@ namespace EmployeeAPI.Services.DutyServices
 
             if (Day.HasValue)
                 query = query.Where(c => c.StartDate.Day == Day.Value);
+
+            if (Year.HasValue)
+                query = query.Where(c => c.StartDate.Year == Year.Value);
             ////////////////////
 
             if (!string.IsNullOrWhiteSpace(name))

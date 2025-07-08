@@ -71,6 +71,9 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (Day.HasValue)
                     query = query.Where(c => c.CheckinMorning.Day == Day.Value);
+
+                if (Year.HasValue)
+                    query = query.Where(c => c.CheckinMorning.Year == Year.Value);
                 ////////////////////
 
                 if (!string.IsNullOrEmpty(Name))
