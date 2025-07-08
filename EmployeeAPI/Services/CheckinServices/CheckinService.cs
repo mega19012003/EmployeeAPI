@@ -143,10 +143,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinMorning = checkin.CheckinMorning,
                     CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
                     CheckoutMorning = checkin.CheckoutMorning,
-                    CheckoutMorningStatus = checkin.CheckinAfternoonStatus.ToString(),
+                    CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
 
                     CheckinAfternoon = checkin.CheckinAfternoon,
-                    CheckinAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
+                    CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
                     CheckoutAfternoon = checkin.CheckoutAfternoon,
                     CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
 
