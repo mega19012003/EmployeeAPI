@@ -212,6 +212,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     {
                         throw new ArgumentException("Đã check-in trong khung giờ này hôm nay");
                     }
+                    else if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) &&
+                        existingCheckin.CheckinAfternoonStatus == Enums.LogStatus.None)
+                    {
+                        throw new ArgumentException("Đã đi trễ, hãy checkin ca chiều");
+                    }
                 }
 
                 var checkin = existingCheckin ?? new Checkin
