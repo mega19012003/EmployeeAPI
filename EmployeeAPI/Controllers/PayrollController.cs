@@ -29,7 +29,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAllPayrolls(string? Search, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllPayrolls(string? Search, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -37,7 +37,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, Search, pageIndex, pageSize);
+            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, Search, Day, Month, Year, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));

@@ -8,7 +8,7 @@ namespace EmployeeAPI.Services.PayrollServices
 {
      public interface IPayrollService
     {
-        Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize);
+        Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize);
         Task<ResponseModel.PayrollResultDto> GetById(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeletePayroll(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         ///////////////////////////////

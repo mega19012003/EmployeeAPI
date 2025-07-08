@@ -34,7 +34,7 @@ namespace EmployeeAPI.Services.PayrollServices
             _context = context;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
@@ -64,6 +64,16 @@ namespace EmployeeAPI.Services.PayrollServices
                 query = query.Where(p => p.UserId == employee.UserId);
             }
 
+            ///////////////////
+            var now = DateTime.Now;
+            Year ??= now.Year;
+
+            if (Month.HasValue)
+                query = query.Where(c => c.CreatedDate.Month == Month.Value);
+
+            if (Day.HasValue)
+                query = query.Where(c => c.CreatedDate.Day == Day.Value);
+            ////////////////////
 
             if (!string.IsNullOrEmpty(name))
             {

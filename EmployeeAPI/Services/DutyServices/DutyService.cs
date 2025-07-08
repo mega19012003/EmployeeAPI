@@ -24,7 +24,7 @@ namespace EmployeeAPI.Services.DutyServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<ResponseModel.DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
@@ -46,6 +46,17 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 query = query.Where(d => d.DutyDetails.Any(dd => dd.UserId == currentUserId));
             }
+
+            ///////////////////
+            var now = DateTime.Now;
+            Year ??= now.Year;
+
+            if (Month.HasValue)
+                query = query.Where(c => c.StartDate.Month == Month.Value);
+
+            if (Day.HasValue)
+                query = query.Where(c => c.StartDate.Day == Day.Value);
+            ////////////////////
 
             if (!string.IsNullOrWhiteSpace(name))
             {
