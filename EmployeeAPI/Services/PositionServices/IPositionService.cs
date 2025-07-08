@@ -6,7 +6,8 @@ namespace EmployeeAPI.Services.PositionServices
 {
      public interface IPositionService
      {
-        Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole);
+         
+        Task<PagedResult<ResponseModel.PositionDTO>> GetAllAsync(string? name, Guid? departmentId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole);
         Task<ResponseModel.PositionDTO> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRole);
         Task<ResponseModel.PositionDTO> AddAsync(ResponseModel.CreatePositionDto dto, Guid currentUserId, IList<string> currentUserRole);
         Task<ResponseModel.PositionDTO> UpdateAsync(Guid id, string Name, Guid currentUserId, IList<string> currentUserRole);

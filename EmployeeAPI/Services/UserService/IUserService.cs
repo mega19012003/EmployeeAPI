@@ -13,7 +13,7 @@ namespace EmployeeAPI.Services.UserService
         //Task<ResponseModel.UserResultDto> ManagerUpdateStaffAsync(ResponseModel.ManagerUpdateDto dto, Guid managerId/*, ClaimsPrincipal user*/);
         Task<string> SoftDeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
 
-        Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize);
+        Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize);
         //Task<ResponseModel.UserResultDto> GetAllUser();
         Task<ResponseModel.UserResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         //Task<IQueryable<ResponseModel.UserResultDto>> GetAllUser(Guid currentUserId, IList<string> currentUserRoles, Guid? departmentId);

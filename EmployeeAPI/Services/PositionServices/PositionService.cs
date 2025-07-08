@@ -26,7 +26,7 @@ namespace EmployeeAPI.Services.PositionServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, Guid? departmentId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
@@ -34,7 +34,6 @@ namespace EmployeeAPI.Services.PositionServices
                 pageSize ??= 10;
                 var isManager = currentUserRole.Contains("Manager");
                 var isAdmin = currentUserRole.Contains("Administrator");
-                Guid? departmentId = null;
 
                 if (isManager)
                 {
@@ -46,7 +45,7 @@ namespace EmployeeAPI.Services.PositionServices
                     departmentId = currentUser.DepartmentId;
                 }
 
-                var query = _positionRepository.GetQueryable(); 
+                var query = _positionRepository.GetQueryable();
 
                 if (!string.IsNullOrEmpty(name))
                 {

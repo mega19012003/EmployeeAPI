@@ -188,7 +188,7 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
             {
@@ -211,6 +211,11 @@ namespace EmployeeAPI.Services.UserService
                 if (isAdmin && departmentId.HasValue)
                 {
                     query = query.Where(u => u.DepartmentId == departmentId.Value);
+                }
+
+                if (positionId.HasValue)
+                {
+                    query = query.Where(u => u.PositionId == positionId.Value);
                 }
 
                 if (!string.IsNullOrEmpty(SearchTerm))
