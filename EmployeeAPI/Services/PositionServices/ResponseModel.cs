@@ -9,6 +9,7 @@ namespace EmployeeAPI.Services.PositionServices
         {
             public Guid Id { get; set; }
             public string Name { get; set; }
+            public Guid? DepartmentId { get; set; }
             public string DepartmentName { get; set; }
         }
         public class CreatePositionDto

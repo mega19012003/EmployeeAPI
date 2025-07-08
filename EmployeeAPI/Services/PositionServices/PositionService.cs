@@ -66,6 +66,7 @@ namespace EmployeeAPI.Services.PositionServices
                     {
                         Id = f.Id,
                         Name = f.Name,
+                        DepartmentId = f.DepartmentId,
                         DepartmentName = f.Department.Name,
                     })
                     .ToListAsync();
