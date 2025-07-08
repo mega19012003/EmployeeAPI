@@ -238,7 +238,9 @@ namespace EmployeeAPI.Services.UserService
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
                         DepartmentName = f.Department != null ? f.Department.Name : string.Empty,
+                        DepartmentId = f.Department != null ? f.Department.Id : null,
                         PositionName = f.Position != null ? f.Position.Name : string.Empty,
+                        PositionId = f.Position != null ? f.Position.Id : null,
                         BasicSalary = f.BasicSalary,
                         ImageUrl = f.ImageUrl,
                     })
