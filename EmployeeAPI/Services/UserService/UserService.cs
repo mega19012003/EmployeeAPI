@@ -79,6 +79,15 @@ namespace EmployeeAPI.Services.UserService
                     departmentId = currentUser.DepartmentId;
                     if( existingUser.DepartmentId != departmentId)
                         throw new ArgumentException("Manager can only update users in their own department");
+
+                    var department = await _departmentRepository.GetByIdAsync(departmentId.Value);
+                    if (department == null)
+                        throw new ArgumentException("Department not found");
+                    bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+                    if (!isValidPosition)
+                        throw new ArgumentException("Position does not belong to your department");
+
+                    existingUser.PositionId = dto.PositionId;
                 }
                 else if (isAdmin)
                 {
