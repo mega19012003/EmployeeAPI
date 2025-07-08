@@ -133,7 +133,9 @@ namespace EmployeeAPI.Services.UserService
                     Address = existingUser.Address,
                     PhoneNumber = existingUser.PhoneNumber,
                     BasicSalary = existingUser.BasicSalary,
+                    DepartmentId = existingUser.DepartmentId,
                     DepartmentName = existingUser.Department?.Name,
+                    PositionId = existingUser.PositionId,
                     PositionName = existingUser.Position?.Name,
                     ImageUrl = existingUser.ImageUrl,
                     IsActive = existingUser.IsActive
