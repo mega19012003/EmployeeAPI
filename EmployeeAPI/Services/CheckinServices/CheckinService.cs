@@ -95,6 +95,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckinTime = c.CheckinTime,
                         CheckoutTime = c.CheckoutTime,
                         LogStatus = c.LogStatus,
+                        Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
                     }).ToListAsync();
@@ -299,7 +300,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     checkin.LogStatus = Enums.LogStatus.Overtime;
                     overtimeHours = (currentTime - workEndTime).TotalHours;
                 }
-                else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime))
+                else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime) && checkin.LogStatus == Enums.LogStatus.OnTime)
                 {
                     checkin.LogStatus = Enums.LogStatus.OnTime;
                 }
@@ -311,7 +312,16 @@ namespace EmployeeAPI.Services.CheckinServices
                 var totalWorkedHours = (checkin.CheckoutTime - checkin.CheckinTime).TotalHours;
 
                 var lunchBreak = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
-                var normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreak);
+
+                double normalWorkedHours;
+                if (checkin.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan() && checkin.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+                {
+                    normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreak);
+                }
+                else
+                {
+                    normalWorkedHours = Math.Floor(totalWorkedHours);
+                }
 
                 if (normalWorkedHours < 0) normalWorkedHours = 0;
 
@@ -407,7 +417,16 @@ namespace EmployeeAPI.Services.CheckinServices
                 double lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
 
                 double totalWorkedHours = (existing.CheckoutTime - existing.CheckinTime).TotalHours;
-                var normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreakHours);
+                var normalWorkedHours = 0.0;
+                if (existing.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan() && existing.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+                {
+                    normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreakHours);
+                }
+                else
+                {
+                    normalWorkedHours = Math.Floor(totalWorkedHours);
+                }
+
                 if (normalWorkedHours < 0) normalWorkedHours = 0;
 
                 existing.LogStatus = dto.LogStatus;
