@@ -217,7 +217,7 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new InvalidOperationException("One or more employees are already assigned to an uncompleted duty.");
                 }
 
-                if (dto.StartDate.Date < DateTime.UtcNow.Date)
+                if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
                     throw new ArgumentException("Start date cannot be earlier than today");
 
                 if(dto.StartDate > dto.EndDate)
@@ -481,7 +481,7 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (isEmployee)
                 {
-                    if (detail.Duty.EndDate < DateTime.UtcNow.Date)
+                    if (detail.Duty.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
                     {
                         throw new ArgumentException("Your're too late to complete your task");
                     }

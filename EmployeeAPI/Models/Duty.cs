@@ -8,8 +8,8 @@ namespace EmployeeAPI.Models
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
-        public DateTime StartDate { get; set; }
-        public DateTime EndDate { get; set; }
+        public DateOnly StartDate { get; set; }
+        public DateOnly EndDate { get; set; }
 
         public Guid AssignedById { get; set; } 
         public User AssignedBy { get; set; }

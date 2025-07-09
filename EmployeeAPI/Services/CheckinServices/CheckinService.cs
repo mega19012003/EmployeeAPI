@@ -510,6 +510,7 @@ namespace EmployeeAPI.Services.CheckinServices
             if (schedule == null) throw new Exception("Schedule not found");
 
             var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
+            //var isHoliday = await _holidayRepository.IsHolidayAsync(DateOnly.FromDateTime(nowUtc));
             var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
 
             return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
