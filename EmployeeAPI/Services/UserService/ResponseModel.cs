@@ -19,7 +19,7 @@ namespace EmployeeAPI.Services.UserService
             public Guid? DepartmentId { get; set; }
             public string PositionName { get; set; }
             public Guid? PositionId { get; set; }
-            public double? BasicSalary { get; set; }
+            public double? SalaryPerHour { get; set; }
             public string ImageUrl { get; set; }
             public bool IsActive { get; set; } 
         }
@@ -34,7 +34,7 @@ namespace EmployeeAPI.Services.UserService
             public Guid? DepartmentId { get; set; }
             public Guid? PositionId { get; set; }
             //[Required]
-            public double? BasicSalary { get; set; }
+            public double? SalaryPerHour { get; set; }
             public IFormFile? ImageUrl { get; set; }
             public bool? IsActive { get; set; }
         }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250602062714_add-prop-to-checkin")]
-    partial class addproptocheckin
+    [Migration("20250709130520_sua-model-checkin1")]
+    partial class suamodelcheckin1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -46,20 +46,20 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CheckinMorning")
+                    b.Property<DateTime>("CheckinTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<DateTime>("CheckinAfternoon")
+                    b.Property<DateTime>("CheckoutTime")
                         .HasColumnType("datetime2");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<int>("LogStatus")
+                        .HasColumnType("int");
+
                     b.Property<double>("SalaryPerDay")
                         .HasColumnType("float");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -69,77 +69,6 @@ namespace EmployeeAPI.Migrations
                     b.HasIndex("UserId");
 
                     b.ToTable("Checkins");
-                });
-
-            modelBuilder.Entity("EmployeeAPI.Models.CheckinMorningStatusConfig", b =>
-                {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Note")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("SalaryMultiplier")
-                        .HasColumnType("float");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("LogStatusConfigs");
-
-                    b.HasData(
-                        new
-                        {
-                            Id = 0,
-                            Name = "OnTime",
-                            Note = "Đi đúng giờ",
-                            SalaryMultiplier = 1.0
-                        },
-                        new
-                        {
-                            Id = 1,
-                            Name = "Late",
-                            Note = "Đi trễ",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "LeaveEarly",
-                            Note = "Về sớm",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Overtime",
-                            Note = "Làm thêm giờ",
-                            SalaryMultiplier = 1.3
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "Absent",
-                            Note = "Nghỉ không phép",
-                            SalaryMultiplier = 0.5
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "LeaveWithPermission",
-                            Note = "Nghỉ có phép",
-                            SalaryMultiplier = 0.90000000000000002
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "Others",
-                            Note = "Khác",
-                            SalaryMultiplier = 1.0
-                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
@@ -169,6 +98,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("AssignedById")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateOnly>("EndDate")
+                        .HasColumnType("date");
+
                     b.Property<bool>("IsCompleted")
                         .HasColumnType("bit");
 
@@ -179,8 +111,8 @@ namespace EmployeeAPI.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
 
                     b.Property<Guid?>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -207,6 +139,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("DutyId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<bool>("IsCompleted")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -219,7 +154,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetail");
+                    b.ToTable("DutyDetails");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
@@ -231,19 +166,111 @@ namespace EmployeeAPI.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
-                    b.Property<DateTime>("endDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("endDate")
+                        .HasColumnType("date");
 
                     b.Property<string>("name")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateTime>("startDate")
-                        .HasColumnType("datetime2");
+                    b.Property<DateOnly>("startDate")
+                        .HasColumnType("date");
 
                     b.HasKey("Id");
 
                     b.ToTable("Holidays");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
+                {
+                    b.Property<int>("Id")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("Note")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<double>("SalaryMultiplier")
+                        .HasColumnType("float");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("LogStatusConfigs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 0,
+                            Name = "None",
+                            Note = "Chưa checkin/checkout",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Name = "OnTime",
+                            Note = "Đi đúng giờ",
+                            SalaryMultiplier = 1.0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Late",
+                            Note = "Đi trễ",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "LateOnHoliday",
+                            Note = "Đi trễ vào ngày nghỉ lệ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "LeaveEarly",
+                            Note = "Về sớm",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "OnHoliday",
+                            Note = "Làm vào ngày nghỉ",
+                            SalaryMultiplier = 2.0
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "Overtime",
+                            Note = "Làm thêm giờ",
+                            SalaryMultiplier = 1.3
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Absent",
+                            Note = "Nghỉ không phép",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "LeaveWithPermission",
+                            Note = "Nghỉ có phép",
+                            SalaryMultiplier = 0.90000000000000002
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "Others",
+                            Note = "Khác",
+                            SalaryMultiplier = 1.0
+                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -310,8 +337,17 @@ namespace EmployeeAPI.Migrations
                     b.Property<TimeOnly>("EndTimeAfternoon")
                         .HasColumnType("time");
 
+                    b.Property<TimeOnly>("EndTimeMorning")
+                        .HasColumnType("time");
+
                     b.Property<int>("LateThresholdMinutes")
                         .HasColumnType("int");
+
+                    b.Property<int>("LogAllowtime")
+                        .HasColumnType("int");
+
+                    b.Property<TimeOnly>("StartTimeAfternoon")
+                        .HasColumnType("time");
 
                     b.Property<TimeOnly>("StartTimeMorning")
                         .HasColumnType("time");
@@ -328,17 +364,16 @@ namespace EmployeeAPI.Migrations
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Address")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("SalaryPerHour")
-                        .HasColumnType("float");
+                        .HasMaxLength(200)
+                        .HasColumnType("nvarchar(200)");
 
                     b.Property<Guid?>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<string>("Fullname")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.Property<string>("ImageUrl")
                         .HasColumnType("nvarchar(max)");
@@ -354,7 +389,8 @@ namespace EmployeeAPI.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("PhoneNumber")
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(11)
+                        .HasColumnType("nvarchar(11)");
 
                     b.Property<Guid?>("PositionId")
                         .HasColumnType("uniqueidentifier");
@@ -368,12 +404,16 @@ namespace EmployeeAPI.Migrations
                     b.Property<int>("Role")
                         .HasColumnType("int");
 
+                    b.Property<double>("SalaryPerHour")
+                        .HasColumnType("float");
+
                     b.Property<int>("TokenVersion")
                         .HasColumnType("int");
 
                     b.Property<string>("Username")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.HasKey("UserId");
 

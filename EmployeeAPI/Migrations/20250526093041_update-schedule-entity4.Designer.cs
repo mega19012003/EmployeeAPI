@@ -234,7 +234,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<string>("Address")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<double>("BasicSalary")
+                    b.Property<double>("SalaryPerHour")
                         .HasColumnType("float");
 
                     b.Property<Guid?>("DepartmentId")

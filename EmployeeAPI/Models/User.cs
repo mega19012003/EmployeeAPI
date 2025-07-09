@@ -27,7 +27,7 @@ namespace EmployeeAPI.Models
         public Guid? PositionId { get; set; }
         public Position Position { get; set; }
         [Range(0, double.MaxValue, ErrorMessage = "Lương cơ bản phải >= 0")]
-        public double BasicSalary { get; set; }
+        public double SalaryPerHour { get; set; }
         public bool IsActive { get; set; }
         public bool IsDeleted { get; set; } 
         public string? ImageUrl { get; set; }

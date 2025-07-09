@@ -307,7 +307,7 @@ namespace EmployeeAPI.Services.PositionServices
                         UserId = st.UserId,
                         Name = st.Fullname,
                         Position = st.Position.Name,
-                        BasicSalary = st.BasicSalary,
+                        SalaryPerHour = st.SalaryPerHour,
                         ImageUrl = st.ImageUrl,
                     })
                     .ToList();

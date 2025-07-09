@@ -298,8 +298,8 @@ namespace EmployeeAPI.Services.PayrollServices
             // Lấy dữ liệu checkin
             var checkinsInMonth = await _context.Checkins
                 .Where(c => c.UserId == staffId
-                    && c.CheckinMorning.Year == year
-                    && c.CheckinMorning.Month == month
+                    && c.CheckinTime.Year == year
+                    && c.CheckinTime.Month == month
                     && !c.IsDeleted)
                 .ToListAsync();
 
@@ -315,11 +315,8 @@ namespace EmployeeAPI.Services.PayrollServices
             }
 
             var totalDayWorked = checkinsInMonth
-                .Where(p => (p.CheckinMorningStatus != LogStatus.None && p.CheckoutMorningStatus != LogStatus.None
-                             && p.CheckinMorningStatus != LogStatus.Absent && p.CheckoutMorningStatus != LogStatus.Absent)
-                         || (p.CheckinAfternoonStatus != LogStatus.None && p.CheckoutAfternoonStatus != LogStatus.None
-                             && p.CheckinAfternoonStatus != LogStatus.Absent && p.CheckoutAfternoonStatus != LogStatus.Absent))
-                .Select(c => c.CheckinMorning.Date)
+                .Where(p => (p.LogStatus != LogStatus.None))
+                .Select(c => c.CheckinTime.Date)
                 .Distinct()
                 .Count();
 
@@ -394,19 +391,16 @@ namespace EmployeeAPI.Services.PayrollServices
 
                     var checkinsInMonth = await _context.Checkins
                         .Where(c => c.UserId == staff.UserId
-                            && c.CheckinMorning.Year == year
-                            && c.CheckinMorning.Month == month
+                            && c.CheckinTime.Year == year
+                            && c.CheckinTime.Month == month
                             && !c.IsDeleted)
                         .ToListAsync();
 
                     double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
 
                     var totalDayWorked = checkinsInMonth
-                        .Where(p => (p.CheckinMorningStatus != LogStatus.None && p.CheckoutMorningStatus != LogStatus.None
-                                     && p.CheckinMorningStatus != LogStatus.Absent && p.CheckoutMorningStatus != LogStatus.Absent)
-                                 || (p.CheckinAfternoonStatus != LogStatus.None && p.CheckoutAfternoonStatus != LogStatus.None
-                                     && p.CheckinAfternoonStatus != LogStatus.Absent && p.CheckoutAfternoonStatus != LogStatus.Absent))
-                        .Select(c => c.CheckinMorning.Date)
+                        .Where(p => (p.LogStatus != LogStatus.None))
+                        .Select(c => c.CheckinTime.Date)
                         .Distinct()
                         .Count();
 

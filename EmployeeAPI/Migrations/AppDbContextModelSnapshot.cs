@@ -43,32 +43,17 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<DateTime>("CheckinAfternoon")
+                    b.Property<DateTime>("CheckinTime")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("CheckinAfternoonStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CheckinMorning")
+                    b.Property<DateTime>("CheckoutTime")
                         .HasColumnType("datetime2");
-
-                    b.Property<int?>("CheckinMorningStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CheckoutAfternoon")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("CheckoutAfternoonStatus")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CheckoutMorning")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("CheckoutMorningStatus")
-                        .HasColumnType("int");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
+
+                    b.Property<int>("LogStatus")
+                        .HasColumnType("int");
 
                     b.Property<double>("SalaryPerDay")
                         .HasColumnType("float");
@@ -352,9 +337,6 @@ namespace EmployeeAPI.Migrations
                     b.Property<TimeOnly>("EndTimeMorning")
                         .HasColumnType("time");
 
-                    b.Property<int>("LateThresholdMinutes")
-                        .HasColumnType("int");
-
                     b.Property<int>("LogAllowtime")
                         .HasColumnType("int");
 
@@ -378,9 +360,6 @@ namespace EmployeeAPI.Migrations
                     b.Property<string>("Address")
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
-
-                    b.Property<double>("BasicSalary")
-                        .HasColumnType("float");
 
                     b.Property<Guid?>("DepartmentId")
                         .HasColumnType("uniqueidentifier");
@@ -418,6 +397,9 @@ namespace EmployeeAPI.Migrations
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
+
+                    b.Property<double>("SalaryPerHour")
+                        .HasColumnType("float");
 
                     b.Property<int>("TokenVersion")
                         .HasColumnType("int");

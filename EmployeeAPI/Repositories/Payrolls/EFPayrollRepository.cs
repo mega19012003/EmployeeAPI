@@ -65,8 +65,8 @@ namespace EmployeeAPI.Repositories.Payrolls
         public async Task<int> CountDayWorked(Guid UserId, int month, int year)
         {
             return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.CheckinMorning.Month == month &&
-                                                           c.CheckinMorning.Year == year &&
+                                                           c.CheckinTime.Month == month &&
+                                                           c.CheckinTime.Year == year &&
                                                            c.IsDeleted == false);
         }
     }

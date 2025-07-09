@@ -382,7 +382,7 @@ namespace EmployeeAPI.Migrations
                         .HasMaxLength(200)
                         .HasColumnType("nvarchar(200)");
 
-                    b.Property<double>("BasicSalary")
+                    b.Property<double>("SalaryPerHour")
                         .HasColumnType("float");
 
                     b.Property<Guid?>("DepartmentId")

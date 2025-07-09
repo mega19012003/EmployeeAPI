@@ -215,7 +215,7 @@ namespace EmployeeAPI.Services.DepartmentServices
                     {
                         UserId = st.UserId,
                         Name = st.Fullname,
-                        BasicSalary = st.BasicSalary,
+                        SalaryPerHour = st.SalaryPerHour,
                         ImageUrl = st.ImageUrl,
                         Department = st.Department.Name,
                     })

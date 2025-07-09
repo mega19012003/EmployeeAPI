@@ -85,7 +85,7 @@ namespace EmployeeAPI.Migrations
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PositionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BasicSalary = table.Column<double>(type: "float", nullable: false),
+                    SalaryPerHour = table.Column<double>(type: "float", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)
@@ -121,7 +121,7 @@ namespace EmployeeAPI.Migrations
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PositionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
-                    BasicSalary = table.Column<double>(type: "float", nullable: false),
+                    SalaryPerHour = table.Column<double>(type: "float", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),
                     IsDeleted = table.Column<bool>(type: "bit", nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false)

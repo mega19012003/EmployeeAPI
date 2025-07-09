@@ -18,7 +18,7 @@
 //            if (checkinConfig == null || checkoutConfig == null)
 //                throw new Exception("Không tìm thấy hệ số lương cho trạng thái Checkin hoặc Checkout.");
 
-//            var baseSalary = user.BasicSalary;
+//            var baseSalary = user.SalaryPerHour;
 
 //            var halfSalary = baseSalary / 2.0;
 

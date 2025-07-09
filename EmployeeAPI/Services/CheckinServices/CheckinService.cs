@@ -65,15 +65,17 @@ namespace EmployeeAPI.Services.CheckinServices
                 ///////////////////
                 var now = DateTime.Now;
                 Year ??= now.Year;
+                Day ??= now.Day;
+                Month ??= now.Month;
 
                 if (Month.HasValue)
-                    query = query.Where(c => c.CheckinMorning.Month == Month.Value);
+                    query = query.Where(c => c.CheckinTime.Month == Month.Value);
 
                 if (Day.HasValue)
-                    query = query.Where(c => c.CheckinMorning.Day == Day.Value);
+                    query = query.Where(c => c.CheckinTime.Day == Day.Value);
 
                 if (Year.HasValue)
-                    query = query.Where(c => c.CheckinMorning.Year == Year.Value);
+                    query = query.Where(c => c.CheckinTime.Year == Year.Value);
                 ////////////////////
 
                 if (!string.IsNullOrEmpty(Name))
@@ -90,16 +92,9 @@ namespace EmployeeAPI.Services.CheckinServices
                     .Select(c => new ResponseModel.CheckinResultDto
                     {
                         CheckinId = c.Id,
-                        CheckinMorning = c.CheckinMorning,
-                        CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
-                        CheckoutMorning = c.CheckoutMorning,
-                        CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
-
-                        CheckinAfternoon = c.CheckinAfternoon,
-                        CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
-                        CheckoutAfternoon = c.CheckoutAfternoon,
-                        CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
-
+                        CheckinTime = c.CheckinTime,
+                        CheckoutTime = c.CheckoutTime,
+                        LogStatus = c.LogStatus,
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
                     }).ToListAsync();
@@ -143,18 +138,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 return new ResponseModel.CheckinResultDto
                 {
                     CheckinId = checkin.Id,
-                    CheckinMorning = checkin.CheckinMorning,
-                    CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
-                    CheckoutMorning = checkin.CheckoutMorning,
-                    CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
-
-                    CheckinAfternoon = checkin.CheckinAfternoon,
-                    CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
-                    CheckoutAfternoon = checkin.CheckoutAfternoon,
-                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
-
+                    CheckinTime = checkin.CheckinTime,
+                    CheckoutTime = checkin.CheckoutTime,
                     Name = checkin.Users.Fullname,
-                    //SalaryPerDay = c.SalaryPerDay,
+                    SalaryPerDay = checkin.SalaryPerDay,
                 };
             }
             catch (Exception ex)
@@ -178,7 +165,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                else if (currentUser.DepartmentId == null && isManager)
+
+                if (isManager && currentUser.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
@@ -189,116 +177,55 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new UnauthorizedAccessException("Manager chỉ có thể checkin cho user cùng phòng ban");
 
                 if (isEmployee && targetUserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee ko thể checkin cho user khác");
+                    throw new UnauthorizedAccessException("Employee không thể checkin cho user khác");
 
-                var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                var startOfDay = vnTime.Date;
-                var endOfDay = vnTime.Date.AddDays(1).AddTicks(-1);
-                var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(startOfDay, vnTimeZone);
-                var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(endOfDay, vnTimeZone);
+                var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
-                var isMorning = currentTime < schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime);
-                var isAfternoon = currentTime >= schedule.StartTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime);
+                var startOfDay = now.Date;
+                var endOfDay = now.Date.AddDays(1).AddTicks(-1);
 
-                if (!isMorning && !isAfternoon)
-                    throw new ArgumentException("Hiện tại không trong khung giờ để check-in");
+                var (_, _, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
 
-                var existingCheckin = await _context.Checkins.FirstOrDefaultAsync(c => c.UserId == targetUserId &&
-                    ((c.CheckinMorning >= startOfDayUtc && c.CheckinMorning <= endOfDayUtc) ||
-                     (c.CheckinAfternoon >= startOfDayUtc && c.CheckinAfternoon <= endOfDayUtc)));
+                Enums.LogStatus logStatus;
 
-                if (existingCheckin != null)
+                if (currentTime < schedule.StartTimeMorning || currentTime > schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime) || (currentTime > schedule.EndTimeMorning && currentTime < schedule.StartTimeAfternoon))
                 {
-                    //if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) &&
-                    //    existingCheckin.CheckinAfternoonStatus == Enums.LogStatus.None)
-                    //{
-                    //    throw new ArgumentException("Bạn đã đi trễ, hãy checkin ca chiều");
-                    //}
-                    //else
-                    if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) ||
-                        (isAfternoon && existingCheckin.CheckinAfternoonStatus != Enums.LogStatus.None))
-                    {
-                        throw new ArgumentException("Đã check-in trong khung giờ này hôm nay");
-                    }
+                    throw new ArgumentException("Hiện tại không trong khung giờ cho phép để check-in");
                 }
 
-                var checkin = existingCheckin ?? new Checkin
+                if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
+                {
+                    logStatus = Enums.LogStatus.OnTime;
+                }
+                //else if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
+                //{
+                //    logStatus = Enums.LogStatus.Late;
+                //}
+                else
+                {
+                    //logStatus = Enums.LogStatus.Absent;
+                    logStatus = Enums.LogStatus.Late;
+                }
+
+                var existingCheckin = await _context.Checkins
+                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay);
+
+                if (existingCheckin != null)
+                    throw new ArgumentException("Đã check-in hôm nay");
+
+
+                var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
                     UserId = targetUserId,
-                    CheckinMorning = DateTime.MinValue,
-                    CheckoutMorning = DateTime.MinValue,
-                    CheckinAfternoon = DateTime.MinValue,
-                    CheckoutAfternoon = DateTime.MinValue,
-                    CheckinMorningStatus = Enums.LogStatus.None,
-                    CheckoutMorningStatus = Enums.LogStatus.None,
-                    CheckinAfternoonStatus = Enums.LogStatus.None,
-                    CheckoutAfternoonStatus = Enums.LogStatus.None,
+                    CheckinTime = now, 
+                    CheckoutTime = DateTime.MinValue,
+                    LogStatus = logStatus,
+                    SalaryPerDay = 0 
                 };
 
-                if (isMorning)
-                {
-                    checkin.CheckinMorning = nowUtc;
-
-                    if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
-                    {
-                        checkin.CheckinMorningStatus = (isHoliday || isSunday)
-                            ? Enums.LogStatus.OnHoliday
-                            : Enums.LogStatus.OnTime;
-                    }
-                    else if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
-                    {
-                        checkin.CheckinMorningStatus = (isHoliday || isSunday)
-                            ? Enums.LogStatus.LateOnHoliday
-                            : Enums.LogStatus.Late;
-                    }
-                    else
-                    {
-                        checkin.CheckinMorningStatus = Enums.LogStatus.Absent;
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
-                    }
-                }
-                else if (isAfternoon)
-                {
-                    checkin.CheckinAfternoon = nowUtc;
-
-                    if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime))
-                    {
-                        checkin.CheckinAfternoonStatus = (isHoliday || isSunday)
-                            ? Enums.LogStatus.OnHoliday
-                            : Enums.LogStatus.OnTime;
-                    }
-                    else if (currentTime <= schedule.StartTimeAfternoon.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
-                    {
-                        checkin.CheckinAfternoonStatus = (isHoliday || isSunday)
-                            ? Enums.LogStatus.LateOnHoliday
-                            : Enums.LogStatus.Late;
-                    }
-                    else
-                    {
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
-                    }
-
-                    if (existingCheckin == null)
-                    {
-                        checkin.CheckinMorning = nowUtc;
-                        checkin.CheckinMorningStatus = Enums.LogStatus.Absent;
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
-                    }
-                }
-
-                checkin.SalaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, 0);
-
-                if (existingCheckin == null)
-                {
-                    await _checkinRepository.CreateAsync(checkin);
-                }
-                else
-                {
-                    await _checkinRepository.UpdateAsync(checkin);
-                }
-
+                await _checkinRepository.CreateAsync(checkin);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
@@ -306,14 +233,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = checkin.Id,
                     Name = targetUser.Fullname,
-                    CheckinMorning = checkin.CheckinMorning,
-                    CheckoutMorning = checkin.CheckoutMorning,
-                    CheckinAfternoon = checkin.CheckinAfternoon,
-                    CheckoutAfternoon = checkin.CheckoutAfternoon,
-                    CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
-                    CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
-                    CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
-                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
+                    CheckinTime = checkin.CheckinTime,
+                    CheckoutTime = checkin.CheckoutTime,
+                    Status = checkin.LogStatus.ToString(),
+                    LogStatus = checkin.LogStatus,
                     SalaryPerDay = checkin.SalaryPerDay
                 };
             }
@@ -324,6 +247,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
+
         public async Task<CheckinResultDto> CheckoutAsync(Guid? userId, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -337,143 +261,62 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Không tìm thấy người dùng Hiện tại");
-                else if (currentUser.DepartmentId == null && isManager)
-                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
+                if (isManager && currentUser.DepartmentId == null)
+                    throw new ArgumentException("Manager chưa có phòng ban");
 
                 var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager chỉ có thể checkout cho user cùng phòng ban");
+                    throw new UnauthorizedAccessException("Manager chỉ checkout cho user cùng phòng ban");
 
                 if (isEmployee && targetUserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee không thể checkin cho user khác");
+                    throw new UnauthorizedAccessException("Employee chỉ checkout cho bản thân");
 
-                var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
-                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date, vnTimeZone);
-                var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date.AddDays(1).AddTicks(-1), vnTimeZone);
+                var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
 
-                var checkin = await _context.Checkins.FirstOrDefaultAsync(c => c.UserId == targetUserId &&
-                    ((c.CheckinMorning >= startOfDayUtc && c.CheckinMorning <= endOfDayUtc) ||
-                     (c.CheckinAfternoon >= startOfDayUtc && c.CheckinAfternoon <= endOfDayUtc)));
+                var startOfDay = vnTime.Date;
+                var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
+
+                var checkin = await _context.Checkins
+                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay);
 
                 if (checkin == null)
-                    throw new ArgumentException("Không thể tìm thấy bản ghi checkin ngày hôm nay. Vui lòng checkin nếu chưa làm");
+                    throw new ArgumentException("Không tìm thấy bản ghi checkin hôm nay");
 
-                bool isCheckoutMorning = currentTime >= schedule.StartTimeMorning && currentTime <= schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime);
-                bool isCheckoutAfternoonRange = currentTime >= schedule.StartTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
+                if (checkin.CheckoutTime != DateTime.MinValue)
+                    throw new ArgumentException("Đã checkout rồi");
 
-                var alreadyCheckedOut = (isCheckoutMorning && checkin.CheckoutMorningStatus != Enums.LogStatus.None) ||
-                                         (isCheckoutAfternoonRange && checkin.CheckoutAfternoonStatus != Enums.LogStatus.None);
+                checkin.CheckoutTime = vnTime; // lưu giờ VN
+                double overtimeHours = 0;
 
-                if (alreadyCheckedOut)
-                    throw new ArgumentException("Bạn đã checkout rồi");
+                var workEndTime = schedule.EndTimeAfternoon;
 
-                if (isCheckoutMorning)
+                if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime))
                 {
-                    checkin.CheckoutMorning = nowUtc;
-                    var workedDuration = checkin.CheckoutMorning - checkin.CheckinMorning;
-                    var totalDuration = schedule.EndTimeMorning - schedule.StartTimeMorning;
-                    var threshold1 = totalDuration.TotalMinutes * 0.75; // làm dc 3/4 giờ
-                    var threshold2 = totalDuration.TotalMinutes * 0.5; // làm dc 1/2 giờ
-
-                    //_logger.LogInformation("ACtual time work: {time}", workedDuration);
-                    //_logger.LogInformation("Work schedule: {time}", totalDuration);
-                    //_logger.LogInformation("threshold: {time}", threshold);
-
-                    if (workedDuration.TotalMinutes < threshold2) // làm dưới 50%
-                    {
-                        if (checkin.CheckinMorningStatus == Enums.LogStatus.OnTime || checkin.CheckinMorningStatus == Enums.LogStatus.OnHoliday)
-                        {
-                            checkin.CheckinMorningStatus = Enums.LogStatus.LeaveEarly;
-                        }
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
-                    }
-                    else if (workedDuration.TotalMinutes < threshold1) // làm dưới 75%
-                    {
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.Absent;
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
-                    }
-                    else // làm >= 75%
-                    {
-                        if (currentTime >= schedule.EndTimeMorning && currentTime <= schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime))
-                        {
-                            checkin.CheckoutMorningStatus = Enums.LogStatus.OnTime;
-                        }
-                        else // checkout trước giờ kết thúc
-                        {
-                            checkin.CheckoutMorningStatus = Enums.LogStatus.LeaveEarly;
-                        }
-
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.Absent;
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
-                    }
+                    checkin.LogStatus = Enums.LogStatus.Overtime;
+                    overtimeHours = (currentTime - workEndTime).TotalHours;
                 }
-                else if (isCheckoutAfternoonRange)
+                else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime))
                 {
-                    checkin.CheckoutAfternoon = nowUtc;
-                    if (checkin.CheckoutMorningStatus == Enums.LogStatus.None)
-                    {
-                        checkin.CheckoutMorningStatus = Enums.LogStatus.OnTime;
-                    }
-                    if (checkin.CheckinAfternoon == DateTime.MinValue)
-                    {
-                        var checkinAfternoonTime = vnTime.Date.Add(schedule.StartTimeAfternoon.ToTimeSpan());
-                        checkin.CheckinAfternoon = TimeZoneInfo.ConvertTimeToUtc(checkinAfternoonTime, vnTimeZone);
-                    }
-
-                    var workedDuration = checkin.CheckoutAfternoon - checkin.CheckinAfternoon;
-                    var totalDuration = schedule.EndTimeAfternoon - schedule.StartTimeAfternoon;
-                    var threshold75 = totalDuration.TotalMinutes * 0.75;
-                    var threshold50 = totalDuration.TotalMinutes * 0.5;
-
-                    if (workedDuration.TotalMinutes < threshold50)
-                    {
-                        // Làm < 50%: checkin = LeaveEarly, checkout = Absent
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.LeaveEarly;
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
-                    }
-                    else if (workedDuration.TotalMinutes < threshold75)
-                    {
-                        // Làm 50–75%: checkout = Absent
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Absent;
-                    }
-                        
-                    else if (currentTime < schedule.EndTimeAfternoon)
-                    {
-                        // // Làm >= 75% và trc giờ kết thúc ca 
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.LeaveEarly;
-                    }
-                    else if (currentTime >= schedule.EndTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
-                    {
-                        // Checkout đúng giờ 
-                        checkin.CheckinAfternoonStatus = Enums.LogStatus.OnTime;
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.OnTime;
-                    }
-                    else if (currentTime > schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime))
-                    {
-                        checkin.CheckoutAfternoonStatus = Enums.LogStatus.Overtime;
-                    }
+                    checkin.LogStatus = Enums.LogStatus.OnTime;
                 }
-                else
+                else 
                 {
-                    throw new InvalidOperationException("Không nằm trong thời gian để checkout");
+                    checkin.LogStatus = Enums.LogStatus.LeaveEarly;
                 }
-                var overtimeDuration = 1;
-                var checkouTime = vnTime.Hour;
-                var endTime = schedule.EndTimeAfternoon.Hour;
-                if (checkouTime > endTime)
-                {
-                    overtimeDuration = checkouTime - endTime;
-                }
-                double salaryPerDay = await CalculateSalaryPerDayAsync(targetUser.UserId, checkin.CheckinMorningStatus, checkin.CheckoutMorningStatus, checkin.CheckinAfternoonStatus, checkin.CheckoutAfternoonStatus, overtimeDuration);
-                checkin.SalaryPerDay = salaryPerDay;
+
+                var totalWorkedHours = (checkin.CheckoutTime - checkin.CheckinTime).TotalHours;
+
+                var lunchBreak = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
+                var normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreak);
+
+                if (normalWorkedHours < 0) normalWorkedHours = 0;
+
+                checkin.SalaryPerDay = await CalculateSalaryPerDayNew(targetUser, normalWorkedHours, overtimeHours, checkin.LogStatus);
+
                 await _checkinRepository.UpdateAsync(checkin);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -482,14 +325,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     CheckinId = checkin.Id,
                     Name = targetUser.Fullname,
-                    CheckinMorning = checkin.CheckinMorning,
-                    CheckoutMorning = checkin.CheckoutMorning,
-                    CheckinAfternoon = checkin.CheckinAfternoon,
-                    CheckoutAfternoon = checkin.CheckoutAfternoon,
-                    CheckinMorningStatus = checkin.CheckinMorningStatus.ToString(),
-                    CheckoutMorningStatus = checkin.CheckoutMorningStatus.ToString(),
-                    CheckinAfternoonStatus = checkin.CheckinAfternoonStatus.ToString(),
-                    CheckoutAfternoonStatus = checkin.CheckoutAfternoonStatus.ToString(),
+                    CheckinTime = checkin.CheckinTime,
+                    CheckoutTime = checkin.CheckoutTime,
+                    LogStatus = checkin.LogStatus,
+                    Status = checkin.LogStatus.ToString(),
                     SalaryPerDay = checkin.SalaryPerDay
                 };
             }
@@ -500,6 +339,23 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
+
+        //private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
+        //{
+        //    var nowUtc = DateTime.UtcNow;
+        //    var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        //    var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTimeZone);
+        //    var currentTime = TimeOnly.FromDateTime(vnTime);
+
+        //    var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+        //    if (schedule == null) throw new Exception("không thể tìm thấy thời gian làm việc");
+
+        //    var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
+        //    //var isHoliday = await _holidayRepository.IsHolidayAsync(DateOnly.FromDateTime(nowUtc));
+        //    var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
+
+        //    return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
+        //}
         private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
         {
             var nowUtc = DateTime.UtcNow;
@@ -508,60 +364,57 @@ namespace EmployeeAPI.Services.CheckinServices
             var currentTime = TimeOnly.FromDateTime(vnTime);
 
             var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-            if (schedule == null) throw new Exception("không thể tìm thấy thời gian làm việc");
+            if (schedule == null) throw new Exception("Không thể tìm thấy thời gian làm việc");
 
-            var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
-            //var isHoliday = await _holidayRepository.IsHolidayAsync(DateOnly.FromDateTime(nowUtc));
+            var isHoliday = await _holidayRepository.IsHolidayAsync(vnTime);
             var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
 
             return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
         }
-
         public async Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
-                if (existing == null) throw new ArgumentException("Không tìm thấy bản ghi checkin này");
+                if (existing == null)
+                    throw new ArgumentException("Không tìm thấy bản ghi checkin này");
 
                 var employee = await _userRepository.GetActiveUserIdAsync(existing.UserId);
-                if (employee == null) throw new ArgumentException("Không tìm thấy người dùng");
+                if (employee == null)
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
                 if (currentUserRoles.Contains("Manager"))
                 {
-                    if (currentUser.DepartmentId != employee.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
+                    if (currentUser.DepartmentId == null)
+                        throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+                    if (currentUser.DepartmentId != employee.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
                 }
 
-                var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
-                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-                var startOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date, vnTimeZone);
-                var endOfDayUtc = TimeZoneInfo.ConvertTimeToUtc(vnTime.Date.AddDays(1).AddTicks(-1), vnTimeZone);
-                var nowVn = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
+                var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
 
-                var currentTimeOnly = TimeOnly.FromDateTime(nowVn);
-                var overtimeThreshold = schedule.EndTimeAfternoon.AddMinutes(schedule.LateThresholdMinutes);
-
-
-                existing.CheckinMorningStatus = dto.CheckinMorningStatus;
-                existing.CheckoutMorningStatus = dto.CheckoutMorningStatus;
-                existing.CheckinAfternoonStatus = dto.CheckinAfternoonStatus;
-                existing.CheckoutAfternoonStatus = dto.CheckoutAfternoonStatus;
-
-                var overtimeDuration = 1;
-                var checkouTime = vnTime.Hour;
-                var endTime = schedule.EndTimeAfternoon.Hour;
-                if (checkouTime > endTime)
+                double overtimeHours = 0;
+                var endTimeAfternoon = schedule.EndTimeAfternoon; // TimeOnly
+                if (currentTime > endTimeAfternoon)
                 {
-                    overtimeDuration = checkouTime - endTime;
+                    overtimeHours = (currentTime - endTimeAfternoon).TotalHours;
                 }
-                //existing.SalaryPerDay = await CalculateSalaryPerDayAsync(employee, existing.CheckinMorningStatus, existing.CheckoutAfternoonStatus/*, OvertimeDuration*/);
-                double salaryPerDay = await CalculateSalaryPerDayAsync(employee.UserId, existing.CheckinMorningStatus, existing.CheckoutMorningStatus, existing.CheckinAfternoonStatus, existing.CheckoutAfternoonStatus, overtimeDuration);
+
+                double lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
+
+                double totalWorkedHours = (existing.CheckoutTime - existing.CheckinTime).TotalHours;
+                var normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreakHours);
+                if (normalWorkedHours < 0) normalWorkedHours = 0;
+
+                existing.LogStatus = dto.LogStatus;
+
+                double salaryPerDay = await CalculateSalaryPerDayNew(employee, normalWorkedHours, overtimeHours, dto.LogStatus);
                 existing.SalaryPerDay = salaryPerDay;
+
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -569,82 +422,48 @@ namespace EmployeeAPI.Services.CheckinServices
                 return new ResponseModel.CheckinResultDto
                 {
                     CheckinId = existing.Id,
-                    CheckinMorning = existing.CheckinMorning,
-                    CheckinAfternoonStatus = existing.CheckinAfternoonStatus.ToString(),
-                    CheckoutMorning = existing.CheckoutMorning,
-                    CheckinMorningStatus = existing.CheckinMorningStatus.ToString(),
-
-                    CheckinAfternoon = existing.CheckinAfternoon,
-                    CheckoutAfternoonStatus = existing.CheckoutAfternoonStatus.ToString(),
-                    CheckoutAfternoon = existing.CheckoutAfternoon,
-                    CheckoutMorningStatus = existing.CheckoutMorningStatus.ToString(),
-
                     Name = employee.Fullname,
+                    CheckinTime = existing.CheckinTime,
+                    CheckoutTime = existing.CheckoutTime,
+                    LogStatus = existing.LogStatus,
+                    Status = existing.LogStatus.ToString(),
                     SalaryPerDay = existing.SalaryPerDay
                 };
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                _logger.LogError(ex, "Error when updating checkin");
                 throw;
             }
         }
-        
-        public async Task<double> CalculateSalaryPerDayAsync(Guid userId, Enums.LogStatus? CheckinMorningStatus, Enums.LogStatus? CheckoutMorningStatus, Enums.LogStatus? CheckinAfternoonStatus, Enums.LogStatus? CheckoutAfternoonStatus, double overtimeDuration)
+
+        public async Task<double> CalculateSalaryPerDayNew(User user, double normalHours, double overtimeHours, Enums.LogStatus logStatus)
         {
-            var logStatus = await _logStatusConfigRepository.GetAllAsync();
-            var user = await _userRepository.GetActiveUserIdAsync(userId);
-            ScheduleTime schedule;
-            schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
+            var logStatusConfigs = await _logStatusConfigRepository.GetAllAsync();
+            double onTimeMultiplier = 1;
+            double overtimeMultiplier = 1;
 
-
-            double checkinMorningMultiply = 0;
-            double checkoutMorningMultiply = 0;
-            double checkinAfternoonMultiply = 0;
-            double checkoutAfternoonMultiply = 0;
-
-            foreach (var item in logStatus)
+            foreach (var item in logStatusConfigs)
             {
-                if (item.Id == (int)(CheckinMorningStatus ?? Enums.LogStatus.None))
-                {
-                    checkinMorningMultiply = item.SalaryMultiplier;
-                    _logger.LogInformation("CheckinMorningStatus: {logstatuscs}", CheckinMorningStatus);
-                }
-                if (item.Id == (int)(CheckoutMorningStatus ?? Enums.LogStatus.None))
-                {
-                    checkoutMorningMultiply = item.SalaryMultiplier;
-                    _logger.LogInformation("CheckoutMorningStatus: {logstatuscos}", CheckoutMorningStatus);
-                }
-                if (item.Id == (int)(CheckinAfternoonStatus ?? Enums.LogStatus.None))
-                {
-                    checkinAfternoonMultiply = item.SalaryMultiplier;
-                    _logger.LogInformation("CheckinAfternoonStatus: {logstatuscoc}", CheckinAfternoonStatus);
-                }
-                if (item.Id == (int)(CheckoutAfternoonStatus ?? Enums.LogStatus.None))
-                {
-                    checkoutAfternoonMultiply = item.SalaryMultiplier;
-                    _logger.LogInformation("CheckoutAfternoonStatus: {logstatuscc}", CheckoutAfternoonStatus);
-                }
+                if (item.Id == (int)Enums.LogStatus.OnTime) onTimeMultiplier = item.SalaryMultiplier;
+                if (item.Id == (int)Enums.LogStatus.Overtime) overtimeMultiplier = item.SalaryMultiplier;
+                if (item.Id == (int)logStatus) onTimeMultiplier = item.SalaryMultiplier; 
             }
 
-            double baseSalary = user.BasicSalary;
-            double quarterSalary = baseSalary / 4.0;
-            double salaryToday = 0;
+            double salary = 0;
 
-            if (CheckoutAfternoonStatus == Enums.LogStatus.Overtime)
+            if (logStatus == Enums.LogStatus.Overtime)
             {
-                salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply * overtimeDuration);
-                _logger.LogInformation("sang 1 {moneys} - {cs}", quarterSalary * checkinMorningMultiply, checkinMorningMultiply);
-                _logger.LogInformation("sang 2 {moneys} - {cos}", quarterSalary * checkoutMorningMultiply, checkoutMorningMultiply);
-                _logger.LogInformation("chieu 1 {moneys} - {cc}", quarterSalary * checkinAfternoonMultiply, checkinAfternoonMultiply);
-                _logger.LogInformation("chieu 2 {moneys} - {coc}", quarterSalary * checkoutAfternoonMultiply, checkoutAfternoonMultiply);
-                _logger.LogInformation("Over TIme: {OT}", overtimeDuration);
+                salary = (normalHours * user.SalaryPerHour * onTimeMultiplier) + (overtimeHours * user.SalaryPerHour * overtimeMultiplier);
             }
-            else salaryToday = (quarterSalary * checkinMorningMultiply) + (quarterSalary * checkoutMorningMultiply) + (quarterSalary * checkinAfternoonMultiply) + (quarterSalary * checkoutAfternoonMultiply);
-
-            return salaryToday;
+            else
+            {
+                salary = normalHours * user.SalaryPerHour * onTimeMultiplier;
+            }
+            salary = Math.Floor(salary);
+            return salary;
         }
-
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -717,6 +536,8 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageSize ??= 10;
                 var now = DateTime.Now;
                 Year ??= now.Year;
+                Day ??= now.Day;
+                Month ??= now.Month;
 
                 var user = await _userRepository.GetUserInfoAsync(staffId.Value);
 
@@ -724,13 +545,16 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new ArgumentException("Không thể tìm thấy user này");
 
                 var query = _context.Checkins.Where(p => !p.IsDeleted && p.UserId == staffId.Value);
-                query = query.Where(c => c.CheckinMorning.Year == Year.Value);
+                query = query.Where(c => c.CheckinTime.Year == Year.Value);
 
                 if (Month.HasValue)
-                    query = query.Where(c => c.CheckinMorning.Month == Month.Value);
+                    query = query.Where(c => c.CheckinTime.Month == Month.Value);
 
                 if (Day.HasValue)
-                    query = query.Where(c => c.CheckinMorning.Day == Day.Value);
+                    query = query.Where(c => c.CheckinTime.Day == Day.Value);
+
+                if (Year.HasValue)
+                    query = query.Where(c => c.CheckinTime.Year == Year.Value);
 
                 var totalCount = await query.CountAsync();
 
@@ -747,13 +571,12 @@ namespace EmployeeAPI.Services.CheckinServices
                     items.Add(new ResponseModel.CheckinDetailDto
                     {
                         Id = c.Id,
-                        CheckinMorningStatus = c.CheckinMorningStatus.ToString(),
-                        CheckoutMorningStatus = c.CheckoutMorningStatus.ToString(),
-                        CheckinAfternoonStatus = c.CheckinAfternoonStatus.ToString(),
-                        CheckoutAfternoonStatus = c.CheckoutAfternoonStatus.ToString(),
+                        CheckinTime = c.CheckinTime,
+                        CheckoutTime = c.CheckoutTime,
+                        LogStatus = c.LogStatus,
+                        Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
-                        TimeCheckin = c.CheckinMorning.Date
                     });
                 }
 

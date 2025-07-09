@@ -66,7 +66,7 @@ namespace EmployeeAPI.Services.UserService
 
                 if (isAdmin)
                 {
-                    if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
+                    if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
                     if (dto.Role.HasValue) existingUser.Role = (RoleType)dto.Role;
 
@@ -146,7 +146,7 @@ namespace EmployeeAPI.Services.UserService
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
                     PhoneNumber = existingUser.PhoneNumber,
-                    BasicSalary = existingUser.BasicSalary,
+                    SalaryPerHour = existingUser.SalaryPerHour,
                     DepartmentId = existingUser.DepartmentId,
                     DepartmentName = existingUser.Department?.Name,
                     PositionId = existingUser.PositionId,
@@ -257,7 +257,7 @@ namespace EmployeeAPI.Services.UserService
                         PositionName = f.Position != null ? f.Position.Name : string.Empty,
                         PositionId = f.Position != null ? f.Position.Id : null,
                         IsActive = f.IsActive,
-                        BasicSalary = f.BasicSalary,
+                        SalaryPerHour = f.SalaryPerHour,
                         ImageUrl = f.ImageUrl,
                     })
                     .ToListAsync();
@@ -307,7 +307,7 @@ namespace EmployeeAPI.Services.UserService
                 PhoneNumber = results.PhoneNumber,
                 DepartmentName = results.Department?.Name ?? null,
                 PositionName = results.Position?.Name ?? null,
-                BasicSalary = results.BasicSalary,
+                SalaryPerHour = results.SalaryPerHour,
                 ImageUrl = results.ImageUrl,
             };
         }

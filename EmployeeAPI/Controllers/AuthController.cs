@@ -199,7 +199,7 @@ namespace EmployeeAPI.Controllers
                 PositionName = userEntity.Position?.Name,
                 userEntity.DepartmentId,
                 DepartmentName = userEntity.Department?.Name,
-                userEntity.BasicSalary,
+                userEntity.SalaryPerHour,
                 userEntity.IsActive,
                 userEntity.IsDeleted,
                 userEntity.ImageUrl,

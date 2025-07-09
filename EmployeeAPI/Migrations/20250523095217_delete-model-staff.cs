@@ -221,7 +221,7 @@ namespace EmployeeAPI.Migrations
                     DepartmentId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     PositionId = table.Column<Guid>(type: "uniqueidentifier", nullable: false),
                     Address = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    BasicSalary = table.Column<double>(type: "float", nullable: false),
+                    SalaryPerHour = table.Column<double>(type: "float", nullable: false),
                     DateOfBirth = table.Column<DateOnly>(type: "date", nullable: false),
                     ImageUrl = table.Column<string>(type: "nvarchar(max)", nullable: false),
                     IsActive = table.Column<bool>(type: "bit", nullable: false),

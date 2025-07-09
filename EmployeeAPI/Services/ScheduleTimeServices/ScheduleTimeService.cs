@@ -23,7 +23,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                 EndTimeMorning = result.EndTimeMorning,
                 StartTimeAfternoon = result.StartTimeAfternoon,
                 EndTimeAfternoon = result.EndTimeAfternoon,
-                LateThresholdMinutes = result.LateThresholdMinutes,
+                //LateThresholdMinutes = result.LateThresholdMinutes,
                 LogAllowtime = result.LogAllowtime,
             };
         }
@@ -52,7 +52,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
                     existing.StartTimeMorning = newSchedule.StartTimeMorning;
                     existing.EndTimeMorning = newSchedule.EndTimeMorning;
-                    existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
+                    //existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
                     existing.StartTimeAfternoon = newSchedule.StartTimeAfternoon;
                     existing.EndTimeAfternoon = newSchedule.EndTimeAfternoon;
                     existing.LogAllowtime = newSchedule.LogAllowtime;

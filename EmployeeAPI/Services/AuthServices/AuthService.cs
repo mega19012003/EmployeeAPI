@@ -73,7 +73,7 @@ namespace EmployeeAPI.Services.AuthServices
                     Address = "",
                     ImageUrl = "",
                     PositionId = null,
-                    BasicSalary = 0,
+                    SalaryPerHour = 0,
                 };
 
                 // Nếu currentUser là Manager → luôn gán DepartmentId
