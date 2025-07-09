@@ -256,6 +256,7 @@ namespace EmployeeAPI.Services.UserService
                         DepartmentId = f.Department != null ? f.Department.Id : null,
                         PositionName = f.Position != null ? f.Position.Name : string.Empty,
                         PositionId = f.Position != null ? f.Position.Id : null,
+                        IsActive = f.IsActive,
                         BasicSalary = f.BasicSalary,
                         ImageUrl = f.ImageUrl,
                     })
