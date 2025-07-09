@@ -30,7 +30,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban
+        /// Lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban, employee lấy danh sách của bản thân
         /// </summary>
         [Authorize]
         [HttpGet]

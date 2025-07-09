@@ -19,7 +19,7 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
         /// <summary>
-        /// Xem danh sách ngày nghỉ lễ, do admin xử lý
+        /// Xem danh sách ngày nghỉ lễ
         ///</summary>
         [Authorize]
         [HttpGet]

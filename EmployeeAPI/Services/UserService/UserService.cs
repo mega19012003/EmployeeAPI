@@ -48,17 +48,12 @@ namespace EmployeeAPI.Services.UserService
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
-                if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
-                if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
 
                 if (dto.ImageUrl != null)
                 {
                     if (!string.IsNullOrEmpty(existingUser.ImageUrl))
                     {
                         var oldPublicId = _cloudImageService.ExtractPublicId(existingUser.ImageUrl);
-                        Console.WriteLine($"Old ImageUrl: {existingUser.ImageUrl}");
-                        Console.WriteLine($"Extracted publicId: {oldPublicId}");
-
                         if (!string.IsNullOrEmpty(oldPublicId))
                         {
                             await _cloudImageService.DeleteImageAsync(oldPublicId);
@@ -69,29 +64,12 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.ImageUrl = uploadedImageUrl;
                 }
 
-                if (isManager)
+                if (isAdmin)
                 {
-                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Current user not found");
-                    else if (currentUser?.DepartmentId == null)
-                        throw new ArgumentException("Manager does not have department, please contact admin to add department.");
-                    departmentId = currentUser.DepartmentId;
-                    if( existingUser.DepartmentId != departmentId)
-                        throw new ArgumentException("Manager can only update users in their own department");
-
-                    var department = await _departmentRepository.GetByIdAsync(departmentId.Value);
-                    if (department == null)
-                        throw new ArgumentException("Department not found");
-                    bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
-                    if (!isValidPosition)
-                        throw new ArgumentException("Position does not belong to your department");
-
-                    existingUser.PositionId = dto.PositionId;
-                }
-                else if (isAdmin)
-                {
+                    if (dto.BasicSalary.HasValue) existingUser.BasicSalary = dto.BasicSalary.Value;
+                    if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
                     if (dto.Role.HasValue) existingUser.Role = (RoleType)dto.Role;
+
                     if (dto.DepartmentId.HasValue)
                     {
                         existingUser.DepartmentId = dto.DepartmentId;
@@ -121,6 +99,32 @@ namespace EmployeeAPI.Services.UserService
                         bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                         if (!isValidPosition)
                             throw new ArgumentException("Position does not belong to this department");
+
+                        existingUser.PositionId = dto.PositionId;
+                    }
+                }
+                else if (isManager)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new ArgumentException("Current user not found");
+                    if (currentUser.DepartmentId == null)
+                        throw new ArgumentException("Manager does not have department, please contact admin to add department.");
+
+                    departmentId = currentUser.DepartmentId;
+
+                    if (existingUser.DepartmentId != departmentId)
+                        throw new ArgumentException("Manager can only update users in their own department");
+
+                    if (dto.PositionId.HasValue)
+                    {
+                        var department = await _departmentRepository.GetByIdAsync(departmentId.Value);
+                        if (department == null)
+                            throw new ArgumentException("Department not found");
+
+                        bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
+                        if (!isValidPosition)
+                            throw new ArgumentException("Position does not belong to your department");
 
                         existingUser.PositionId = dto.PositionId;
                     }

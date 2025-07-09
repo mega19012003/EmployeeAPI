@@ -25,7 +25,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy toàn bộ danh sách chấm công, manager chỉ dc phép lấy danh sách theo phòng ban của mình
+        /// Lấy toàn bộ danh sách chấm công, manager chỉ dc phép lấy danh sách theo phòng ban của mình, employee lấy danh sách của bản thân
         /// </summary>
         [Authorize]
         [HttpGet]
