@@ -314,11 +314,35 @@ namespace EmployeeAPI.Services.PayrollServices
                 _logger.LogInformation("Tien luong {money}", totalSalary);
             }
 
+            var morningHours = (schedule.EndTimeMorning - schedule.StartTimeMorning).TotalHours;
+            var afternoonHours = (schedule.EndTimeAfternoon - schedule.StartTimeAfternoon).TotalHours;
+            var fullDayHours = morningHours + afternoonHours;
+            var halfDayHours = fullDayHours / 2;
+
+            var lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
+
             var totalDayWorked = checkinsInMonth
-                .Where(p => (p.LogStatus != LogStatus.None))
-                .Select(c => c.CheckinTime.Date)
-                .Distinct()
-                .Count();
+            .Where(c =>
+            {
+                var totalHours = (c.CheckoutTime - c.CheckinTime).TotalHours;
+
+                double normalWorkedHours;
+                if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
+                    && c.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+                {
+                    normalWorkedHours = totalHours - lunchBreakHours;
+                }
+                else
+                {
+                    normalWorkedHours = totalHours;
+                }
+
+                return (c.LogStatus != LogStatus.None)
+                    && (normalWorkedHours >= halfDayHours);
+            })
+            .Select(c => c.CheckinTime.Date)
+            .Distinct()
+            .Count();
 
             if (existingPayroll != null)
             {
@@ -398,11 +422,37 @@ namespace EmployeeAPI.Services.PayrollServices
 
                     double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
 
+                    var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync(); 
+
+                    var morningHours = (schedule.EndTimeMorning - schedule.StartTimeMorning).TotalHours;
+                    var afternoonHours = (schedule.EndTimeAfternoon - schedule.StartTimeAfternoon).TotalHours;
+                    var fullDayHours = morningHours + afternoonHours;
+                    var halfDayHours = fullDayHours / 2;
+
+                    var lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
+
                     var totalDayWorked = checkinsInMonth
-                        .Where(p => (p.LogStatus != LogStatus.None))
-                        .Select(c => c.CheckinTime.Date)
-                        .Distinct()
-                        .Count();
+                    .Where(c =>
+                    {
+                        var totalHours = (c.CheckoutTime - c.CheckinTime).TotalHours;
+
+                        double normalWorkedHours;
+                        if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
+                            && c.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+                        {
+                            normalWorkedHours = totalHours - lunchBreakHours;
+                        }
+                        else
+                        {
+                            normalWorkedHours = totalHours;
+                        }
+
+                        return (c.LogStatus != LogStatus.None)
+                            && (normalWorkedHours >= halfDayHours);
+                    })
+                    .Select(c => c.CheckinTime.Date)
+                    .Distinct()
+                    .Count();
 
                     if (existingPayroll != null)
                     {
