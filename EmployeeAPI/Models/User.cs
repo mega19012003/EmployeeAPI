@@ -18,7 +18,7 @@ namespace EmployeeAPI.Models
         public string Fullname { get; set; }
         public RoleType Role { get; set; }
         [Phone(ErrorMessage = "Số điện thoại không hợp lệ")]
-        [MaxLength(10, ErrorMessage = "Số điện thoại không được dài quá 10 ký tự")]
+        [MaxLength(11, ErrorMessage = "Số điện thoại không được dài quá 11 ký tự")]
         public string? PhoneNumber { get; set; }
         [MaxLength(200, ErrorMessage = "Địa chỉ không được dài quá 200 ký tự")]
         public string? Address { get; set; }
