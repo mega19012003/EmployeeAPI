@@ -141,6 +141,7 @@ namespace EmployeeAPI.Services.UserService
                 return new ResponseModel.UserResultDto
                 {
                     UserId = existingUser.UserId,
+                    Username = existingUser.Username,
                     Fullname = existingUser.Fullname,
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
@@ -247,6 +248,7 @@ namespace EmployeeAPI.Services.UserService
                     {
                         UserId = f.UserId,
                         Fullname = f.Fullname,
+                        Username = f.Username,
                         RoleName = f.Role.ToString(),
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
