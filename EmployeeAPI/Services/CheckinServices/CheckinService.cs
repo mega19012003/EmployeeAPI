@@ -210,12 +210,13 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (existingCheckin != null)
                 {
-                    if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) &&
-                        existingCheckin.CheckinAfternoonStatus == Enums.LogStatus.None)
-                    {
-                        throw new ArgumentException("Bạn đã đi trễ, hãy checkin ca chiều");
-                    }
-                    else if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) ||
+                    //if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) &&
+                    //    existingCheckin.CheckinAfternoonStatus == Enums.LogStatus.None)
+                    //{
+                    //    throw new ArgumentException("Bạn đã đi trễ, hãy checkin ca chiều");
+                    //}
+                    //else
+                    if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) ||
                         (isAfternoon && existingCheckin.CheckinAfternoonStatus != Enums.LogStatus.None))
                     {
                         throw new ArgumentException("Đã check-in trong khung giờ này hôm nay");
