@@ -16,7 +16,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime CheckinTime { get; set; }
             public DateTime CheckoutTime { get; set; }
             public string Status { get; set; }
-            public Enums.LogStatus? LogStatus { get; set; }
+            public int? LogStatus { get; set; }
             public double SalaryPerDay { get; set; }
         }
 
@@ -47,7 +47,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public string Name { get; set; }
             public DateTime CheckinTime { get; set; }
             public DateTime CheckoutTime { get; set; }
-            public Enums.LogStatus? LogStatus { get; set; }
+            public int? LogStatus { get; set; }
             public string Status { get; set; }
             public double SalaryPerDay { get; set; }
         }

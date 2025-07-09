@@ -94,7 +94,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         CheckinId = c.Id,
                         CheckinTime = c.CheckinTime,
                         CheckoutTime = c.CheckoutTime,
-                        LogStatus = c.LogStatus,
+                        LogStatus = (int?)c.LogStatus,
                         Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
@@ -237,7 +237,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinTime = checkin.CheckinTime,
                     CheckoutTime = checkin.CheckoutTime,
                     Status = checkin.LogStatus.ToString(),
-                    LogStatus = checkin.LogStatus,
+                    LogStatus = (int?)checkin.LogStatus,
                     SalaryPerDay = checkin.SalaryPerDay
                 };
             }
@@ -337,7 +337,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     Name = targetUser.Fullname,
                     CheckinTime = checkin.CheckinTime,
                     CheckoutTime = checkin.CheckoutTime,
-                    LogStatus = checkin.LogStatus,
+                    LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
                     SalaryPerDay = checkin.SalaryPerDay
                 };
@@ -444,7 +444,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     Name = employee.Fullname,
                     CheckinTime = existing.CheckinTime,
                     CheckoutTime = existing.CheckoutTime,
-                    LogStatus = existing.LogStatus,
+                    LogStatus = (int?)existing.LogStatus,
                     Status = existing.LogStatus.ToString(),
                     SalaryPerDay = existing.SalaryPerDay
                 };
@@ -592,7 +592,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         Id = c.Id,
                         CheckinTime = c.CheckinTime,
                         CheckoutTime = c.CheckoutTime,
-                        LogStatus = c.LogStatus,
+                        LogStatus = (int?)c.LogStatus,
                         Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
                         SalaryPerDay = c.SalaryPerDay,
