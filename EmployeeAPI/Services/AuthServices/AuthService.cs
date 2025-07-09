@@ -41,18 +41,18 @@ namespace EmployeeAPI.Services.AuthServices
                 var currentUser = await _repository.GetUserByName(currentUsername);
 
                 if (currentUser == null)
-                    throw new ArgumentException("Current user not found");
+                    throw new ArgumentException("Không thể tìm thấy người dùng hiện tại");
 
                 if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
                     //throw new UnauthorizedAccessException("Manager can only register employee user");
-                    throw new ArgumentException("Manager can only register employee user");
+                    throw new ArgumentException("Manager chỉ có teh63 tạo user employee");
 
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
-                    throw new ArgumentException("User already exists");
+                    throw new ArgumentException("Username đã tồn tại");
 
                 if(!IsStrongPassword(dto.Password))
-                    throw new ArgumentException("Password must be at least 8 characters long, contain uppercase, lowercase, digit, and special character");
+                    throw new ArgumentException("Password phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
                 var departmentId = Guid.Empty;
                 if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId != null)
@@ -112,7 +112,7 @@ namespace EmployeeAPI.Services.AuthServices
         {
             var user = await _repository.GetByIdAsync(userId);
             if (user == null)
-                throw new ArgumentException("User not found");
+                throw new ArgumentException("Không tim thấy người dùng");
             return user;
         }
         public async Task<User> LoginAsync(string username, string password)
@@ -122,14 +122,14 @@ namespace EmployeeAPI.Services.AuthServices
                 var user = await _repository.LoginAsync(username, password);
 
                 if (user.IsDeleted)
-                    throw new ArgumentException("User Account has been deleted");
+                    throw new ArgumentException("Người dùng này đã bị xóa");
 
                 else if (user == null)
-                    throw new ArgumentException("Username not found");
+                    throw new ArgumentException("Không tìm thấy username");
 
                 else if (HashPassword.Verify(user.Password, password) == false)
                 //else if (user.Password != HashPassword.ComputeHash(password))
-                    throw new ArgumentException("Password is incorrect");
+                    throw new ArgumentException("Sai password");
 
                 user.RefreshToken = GenerateRefreshToken();
                 user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7); 
@@ -148,7 +148,7 @@ namespace EmployeeAPI.Services.AuthServices
         {
             var user = await _repository.GetByIdAsync(userId);
             if (user == null)
-                throw new ArgumentException("User not found");
+                throw new ArgumentException("Không tìm thấy người dùng");
 
             user.TokenVersion++;
             user.RefreshToken = string.Empty;
@@ -164,17 +164,17 @@ namespace EmployeeAPI.Services.AuthServices
             {
                 var user = await _repository.GetByIdAsync(userId);
                 if (user == null)
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (!HashPassword.Verify(user.Password, oldPassword))
                 //if (user.Password != HashPassword.ComputeHash(oldPassword))
-                    throw new ArgumentException("Old Password is incorrect");
+                    throw new ArgumentException("Password cũ không chính xác");
 
                 if (newPassword != confirmPassword)
-                    throw new ArgumentException("New password and confirm password do not match");
+                    throw new ArgumentException("Password mới và xác nhận password mới nhập ko chính xác");
 
                 if(!IsStrongPassword(newPassword))
-                    throw new ArgumentException("New password must be at least 8 characters long, contain uppercase, lowercase, digit, and special character");
+                    throw new ArgumentException("Password mới phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
                 user.Password = HashPassword.Hash(newPassword);
                 //user.Password = HashPassword.ComputeHash(newPassword);
@@ -198,16 +198,16 @@ namespace EmployeeAPI.Services.AuthServices
                 var currentUsername = claim.Identity?.Name;
                 var currentUser = await _repository.GetUserByName(currentUsername);
                 if (currentUser == null)
-                    throw new ArgumentException("Current user not found");
+                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
 
                 var user = await _repository.GetByIdAsync(userId);
                 if (user == null)
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (currentUser.Role == RoleType.Manager &&
                     user.DepartmentId != currentUser.DepartmentId)
                 {
-                    throw new ArgumentException("Manager can only reset password for users in the same department.");
+                    throw new ArgumentException("Manager chỉ có thể reset password cho user cùng phòng ban");
                 }
 
                // var generatedPassword = PasswordGenerator.Generate(8);
@@ -216,7 +216,7 @@ namespace EmployeeAPI.Services.AuthServices
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
 
-                return $"Reset password success. Pass là username";
+                return $"Reset password thành công. Password mới là username";
             }
             catch (Exception ex)
             {

@@ -176,7 +176,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _checkinService.DeleteAsync(checkinId, currentUserId, currentUserRoles);
             //var result = await _checkinService.DeleteAsync(id);
-            if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Cannot find User", result, 200));
+            if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("Không tìm thấy user", result, 200));
 
             return Ok(ApiResponse<string>.ReturnResult("Delete Checkin Success", result, 200));
         }

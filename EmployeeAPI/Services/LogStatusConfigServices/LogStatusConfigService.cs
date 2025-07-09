@@ -23,7 +23,7 @@ namespace EmployeeAPI.Services.LogStatusConfigservices
         {
             var result = await _repository.GetByIdAsync(id);
             if (result == null)
-                throw new ArgumentException("Config not found");
+                throw new ArgumentException("Cấu hình log status không tìm thấy");
             return new LogStatusConfig
             {
                 Id = result.Id,
@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.LogStatusConfigservices
             {
                 var existing = await _repository.GetByIdAsync(updatedConfig.Id);
                 if (existing == null)
-                    throw new ArgumentException("Config not found");
+                    throw new ArgumentException("Cấu hình log status không tìm thấy");
 
                 existing.SalaryMultiplier = updatedConfig.SalaryMultiplier;
                 existing.Name = updatedConfig.Name;

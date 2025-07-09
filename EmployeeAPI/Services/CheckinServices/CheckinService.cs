@@ -53,7 +53,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
-                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     var currentDepartmentId = currentUser.DepartmentId;
                     query = query.Where(c => c.Users.DepartmentId == currentDepartmentId);
@@ -123,7 +123,7 @@ namespace EmployeeAPI.Services.CheckinServices
             try
             {
                 var checkin = await _checkinRepository.GetByIdAsync(id);
-                if (checkin == null) throw new ArgumentException("Checkin information not found");
+                if (checkin == null) throw new ArgumentException("Không tìm thấy thông tin checkin");
 
                 var manager = currentUserRoles.Contains("Manager");
                 var employee = currentUserRoles.Contains("Employee");
@@ -131,13 +131,13 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (manager)
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null) throw new ArgumentException("Current user not found");
-                    else if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
-                    if (checkin.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkin from other department");
+                    if (currentUser == null) throw new ArgumentException("Không tìm thấy người dùng hiện tại");
+                    else if (currentUser.DepartmentId == null) throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+                    if (checkin.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể truy cập checkin của user cùng phòng ban");
                 }
                 else if (employee)
                 {
-                    if (checkin.UserId != currentUserId) throw new UnauthorizedAccessException("Employee can only access their own checkin");
+                    if (checkin.UserId != currentUserId) throw new UnauthorizedAccessException("Employee chỉ có thể xem checkin của mình");
                 }
 
                 return new ResponseModel.CheckinResultDto
@@ -177,19 +177,19 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Current user not found");
+                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
                 else if (currentUser.DepartmentId == null && isManager)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager can only check-in for users in the same department");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể checkin cho user cùng phòng ban");
 
                 if (isEmployee && targetUserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee cannot check-in for others");
+                    throw new UnauthorizedAccessException("Employee ko thể checkin cho user khác");
 
                 var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -213,7 +213,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) &&
                         existingCheckin.CheckinAfternoonStatus == Enums.LogStatus.None)
                     {
-                        throw new ArgumentException("Đã đi trễ, hãy checkin ca chiều");
+                        throw new ArgumentException("Bạn đã đi trễ, hãy checkin ca chiều");
                     }
                     else if ((isMorning && existingCheckin.CheckinMorningStatus != Enums.LogStatus.None) ||
                         (isAfternoon && existingCheckin.CheckinAfternoonStatus != Enums.LogStatus.None))
@@ -336,19 +336,19 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Current user not found");
+                    throw new ArgumentException("Không tìm thấy người dùng Hiện tại");
                 else if (currentUser.DepartmentId == null && isManager)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager can only check-out for users in the same department");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể checkout cho user cùng phòng ban");
 
                 if (isEmployee && targetUserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee cannot check-out for others");
+                    throw new UnauthorizedAccessException("Employee không thể checkin cho user khác");
 
                 var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
@@ -360,7 +360,7 @@ namespace EmployeeAPI.Services.CheckinServices
                      (c.CheckinAfternoon >= startOfDayUtc && c.CheckinAfternoon <= endOfDayUtc)));
 
                 if (checkin == null)
-                    throw new ArgumentException("Check-in record not found for today");
+                    throw new ArgumentException("Không thể tìm thấy bản ghi checkin ngày hôm nay. Vui lòng checkin nếu chưa làm");
 
                 bool isCheckoutMorning = currentTime >= schedule.StartTimeMorning && currentTime <= schedule.EndTimeMorning.AddMinutes(schedule.LogAllowtime);
                 bool isCheckoutAfternoonRange = currentTime >= schedule.StartTimeAfternoon && currentTime <= schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime).AddMinutes(schedule.LateThresholdMinutes);
@@ -369,7 +369,7 @@ namespace EmployeeAPI.Services.CheckinServices
                                          (isCheckoutAfternoonRange && checkin.CheckoutAfternoonStatus != Enums.LogStatus.None);
 
                 if (alreadyCheckedOut)
-                    throw new ArgumentException("Already checked out");
+                    throw new ArgumentException("Bạn đã checkout rồi");
 
                 if (isCheckoutMorning)
                 {
@@ -462,7 +462,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 else
                 {
-                    throw new InvalidOperationException("Not within valid checkout time range");
+                    throw new InvalidOperationException("Không nằm trong thời gian để checkout");
                 }
                 var overtimeDuration = 1;
                 var checkouTime = vnTime.Hour;
@@ -507,7 +507,7 @@ namespace EmployeeAPI.Services.CheckinServices
             var currentTime = TimeOnly.FromDateTime(vnTime);
 
             var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-            if (schedule == null) throw new Exception("Schedule not found");
+            if (schedule == null) throw new Exception("không thể tìm thấy thời gian làm việc");
 
             var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
             //var isHoliday = await _holidayRepository.IsHolidayAsync(DateOnly.FromDateTime(nowUtc));
@@ -522,18 +522,18 @@ namespace EmployeeAPI.Services.CheckinServices
             try
             {
                 var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
-                if (existing == null) throw new ArgumentException("Checkin not found");
+                if (existing == null) throw new ArgumentException("Không tìm thấy bản ghi checkin này");
 
                 var employee = await _userRepository.GetActiveUserIdAsync(existing.UserId);
-                if (employee == null) throw new ArgumentException("User not found");
+                if (employee == null) throw new ArgumentException("Không tìm thấy người dùng");
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
                 if (currentUserRoles.Contains("Manager"))
                 {
-                    if (currentUser.DepartmentId != employee.DepartmentId) throw new UnauthorizedAccessException("Manager cannot update checkin made by employeee from other department");
+                    if (currentUser.DepartmentId != employee.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
 
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
                 }
 
                 var (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
@@ -651,10 +651,10 @@ namespace EmployeeAPI.Services.CheckinServices
             try
             {
                 var existing = await _checkinRepository.GetByIdAsync(id);
-                if (existing == null) throw new ArgumentException("Cannot find checkin");
+                if (existing == null) throw new ArgumentException("không thể tìm thấy bản ghi checkin này");
 
                 var employee = await _userRepository.GetUserInfoAsync(existing.UserId);
-                if (employee == null) throw new ArgumentException("Cannot find employee for this checkin");
+                if (employee == null) throw new ArgumentException("Không tìm thấy user trong bản ghi checkin");
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
@@ -663,9 +663,9 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 else if (currentUserRoles.Contains("Manager"))
                 {
-                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
-                    if (currentUser.DepartmentId != employee.DepartmentId) throw new UnauthorizedAccessException("Manager cannot delete checkin from other department");
+                    if (currentUser.DepartmentId != employee.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể xóa checkin của user cùng phòng ban");
                 }
                 else
                 {
@@ -697,19 +697,19 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager does not belong to any department");
+                    if (currentUser.DepartmentId == null) throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
-                    if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Please input userid");
+                    if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
 
                     var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
-                    if (findUser == null) throw new ArgumentException("Cannot find user id");
+                    if (findUser == null) throw new ArgumentException("Không thể tìm thấy user này");
 
-                    if (findUser.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
+                    if (findUser.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể xem danh sách checkin từ user cùng phòng ban");
 
                 }
                 else if (currentUserRoles.Contains("Administrator"))
                 {
-                    if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Please input user id");
+                    if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
                 }
 
                 pageIndex ??= 1;
@@ -720,7 +720,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 var user = await _userRepository.GetUserInfoAsync(staffId.Value);
 
                 if (user == null)
-                    throw new ArgumentException("Cannot find user id");
+                    throw new ArgumentException("Không thể tìm thấy user này");
 
                 var query = _context.Checkins.Where(p => !p.IsDeleted && p.UserId == staffId.Value);
                 query = query.Where(c => c.CheckinMorning.Year == Year.Value);

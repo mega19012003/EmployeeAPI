@@ -50,7 +50,7 @@ namespace EmployeeAPI.Services.AllowedIpServices
         {
             var result = await _allowedIPRepository.GetByIdAsync(id);
             if (result == null)
-                throw new ArgumentException("IP not found");
+                throw new ArgumentException("Không tìm thấy IP");
 
             return new AllowedIP
             {
@@ -62,7 +62,7 @@ namespace EmployeeAPI.Services.AllowedIpServices
         public async Task<AllowedIP> AddAsync(string ip)
         {
             if (await _allowedIPRepository.ExistsAsync(ip))
-                throw new ArgumentException("IP already existed");
+                throw new ArgumentException("IP này đã tồn tại");
 
             // Kiểm tra IP cụ thể
             bool isSpecificIP = IPAddress.TryParse(ip, out var _);
@@ -106,7 +106,7 @@ namespace EmployeeAPI.Services.AllowedIpServices
             await _allowedIPRepository.DeleteAsync(id);
             await _context.SaveChangesAsync();
 
-            return "IP " + result.IPAddress + " deleted";
+            return "Đã xóa IP " + result.IPAddress;
         }
 
         public async Task<bool> IsIPAllowedAsync(string ip)

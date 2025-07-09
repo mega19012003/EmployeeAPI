@@ -118,7 +118,7 @@ namespace EmployeeAPI.Controllers
             if (userIdClaim == null)
                 return Unauthorized(new ApiResponse<string>
                 {
-                    Message = "User not found in token",
+                    Message = "Không tìm thấy người dùng in token",
                     StatusCode = 401
                 });
 
@@ -181,7 +181,7 @@ namespace EmployeeAPI.Controllers
             {
                 return Unauthorized(new ApiResponse<string>
                 {
-                    Message = "User not found",
+                    Message = "Không tìm thấy người dùng",
                     Data = null,
                     StatusCode = 401,
                 });

@@ -35,10 +35,10 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 if (currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
                 //query = query.Where(d => d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
                 query = query.Where(d => d.AssignedById == currentUserId);
             }
@@ -106,25 +106,25 @@ namespace EmployeeAPI.Services.DutyServices
             var duty = await _dutyRepository.GetDutyByIdAsync(id);
 
             if (duty == null)
-                throw new ArgumentException("Cannot find duty");
+                throw new ArgumentException("Không thể tìm thấy công việc này");
 
             if (currentUserRoles.Contains("Manager"))
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 if (currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 if (duty.AssignedById != currentUserId)
-                    throw new UnauthorizedAccessException("Manager can only access duties they assigned");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể truy cập công việc do mình tạo ra");
             }
             else if (currentUserRoles.Contains("Employee"))
             {
                 var isAssignedToUser = duty.DutyDetails.Any(dd => dd.UserId == currentUserId);
                 if (!isAssignedToUser)
-                    throw new UnauthorizedAccessException("employee cannot access duties from other department");
+                    throw new UnauthorizedAccessException("Nhân viên không thể truy cập công việc của người khác");
             }
 
             return new ResponseModel.DutyResultDto
@@ -150,7 +150,7 @@ namespace EmployeeAPI.Services.DutyServices
             var dutyDetail = await _dutyRepository.GetDutyDetailByIdAsync(dutyDetailId);
 
             if (dutyDetail == null)
-                throw new ArgumentException("Cannot find duty detail");
+                throw new ArgumentException("Không thể tìm thấy công việc này detail");
 
             var isAdmin = currentUserRoles.Contains("Admin");
             var isManager = currentUserRoles.Contains("Manager");
@@ -162,12 +162,12 @@ namespace EmployeeAPI.Services.DutyServices
                 bool isSelf = dutyDetail.UserId == currentUserId;
 
                 if (!isAssignedByMe && !isSelf)
-                    throw new UnauthorizedAccessException("Manager can only access duty details they assigned or are assigned to");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể truy cập công việc do mình tạo ra");
             }
             else if (isEmployee)
             {
                 if (dutyDetail.UserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee can only access their own duty details");
+                    throw new UnauthorizedAccessException("Nhân viên chỉ có thể truy cập công việc của bản thân");
             }
 
             return new ResponseModel.DutyDetailResultDto
@@ -187,7 +187,7 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
                 var assignedUsers = await _context.Users
@@ -200,28 +200,28 @@ namespace EmployeeAPI.Services.DutyServices
                     .FirstOrDefaultAsync();
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager does not belong to any department");
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     if (assignedUsers.Any(u => u.Role != RoleType.Employee))
-                        throw new ArgumentException("Only employees can be assigned to a duty");
+                        throw new ArgumentException("Chỉ nhân viên được phép gán vào 1 công việc");
 
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
-                        throw new ArgumentException("Manager can only assign employee from the same department");
+                        throw new ArgumentException("Manager chỉ được chọn nhân viện cùng phòng ban để thực hiện công việc");
 
                     if (conflict != Guid.Empty)
-                        throw new InvalidOperationException("One or more employees are already assigned to an uncompleted duty.");
+                        throw new InvalidOperationException("Một hoặc nhiều nhân việc đang được gán cho công việc khác chưa hoàn thành");
                 }
 
                 if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                    throw new ArgumentException("Start date cannot be earlier than today");
+                    throw new ArgumentException("Ngày bắt đầu không được trược ngày hiện tại");
 
                 if(dto.StartDate > dto.EndDate)
-                    throw new ArgumentException("Start date cannot be later than end date");
+                    throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
 
                 var duty = new Duty
                 {
@@ -273,10 +273,10 @@ namespace EmployeeAPI.Services.DutyServices
             try
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (currentUser == null) throw new ArgumentException("Cannot find current user");
+                if (currentUser == null) throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var duty = await _dutyRepository.GetDutyByIdAsync(DutyId);
-                if (duty == null) throw new Exception("Duty not found");
+                if (duty == null) throw new Exception("Không tìm thấy công việc");
 
                 //var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
                 var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
@@ -290,21 +290,21 @@ namespace EmployeeAPI.Services.DutyServices
                    .FirstOrDefaultAsync();
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (duty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only modify duties they assigned");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
 
                     if (assignedUsers.Any(u => u.Role != RoleType.Employee))
-                        throw new Exception("Only employees can be assigned to a duty");
+                        throw new Exception("Chỉ nhân viên được phép gán vào 1 công việc");
 
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
-                        throw new Exception("Manager can only assign employee from the same department");
+                        throw new Exception("Manager chỉ được chọn nhân viên cùng phòng ban để thực hiện công việc");
 
                     if (conflict != Guid.Empty)
-                        throw new InvalidOperationException("One or more employees are already assigned to an uncompleted duty.");
+                        throw new InvalidOperationException("Một hoặc nhiều nhân việc đang được gán cho công việc khác chưa hoàn thành");
                 }
 
                 var existingUserIds = duty.DutyDetails.Select(dd => dd.UserId).ToHashSet();
@@ -363,22 +363,22 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var existingDuty = await _dutyRepository.GetDutyByIdAsync(dto.Id);
                 if (existingDuty == null)
-                    throw new ArgumentException("Duty not found");
+                    throw new ArgumentException("Không tìm thấy công việc");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (existingDuty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
                 }
 
                 //if (dto.StartDate.Date < DateTime.UtcNow.Date)
-                //    throw new ArgumentException("Start date cannot be earlier than today");
+                //    throw new ArgumentException("Ngày bắt đầu không được trược ngày hiện tại");
                 if (dto.StartDate > dto.EndDate)
-                    throw new ArgumentException("Start date cannot be earlier than end date");
+                    throw new ArgumentException("ngày bắt đầu ko được để sau ngày kết thúc");
 
                 existingDuty.Name = dto.Name;
                 existingDuty.StartDate = dto.StartDate;
@@ -421,27 +421,27 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var existingDutyDetail = await _dutyRepository.GetDutyDetailByIdAsync(dto.DutyDetailId);
 
                 if (existingDutyDetail == null)
-                    throw new ArgumentException("Duty detail not found");
+                    throw new ArgumentException("Không tìm thấy chi tiết công việc");
 
                 var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
                 if (userToAssign == null)
-                    throw new ArgumentException("User not found");
+                    throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     /*if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager does not belong to any department");*/
+                        throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");*/
 
                     if (existingDutyDetail.Duty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only update duties assigned by themselves");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
 
                     if (userToAssign.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager can only assign users from the same department");
+                        throw new UnauthorizedAccessException("Manager chỉ được chọn nhân viên cùng phòng ban để thực hiện công việc");
                 }
 
                 existingDutyDetail.UserId = dto.userId;
@@ -473,7 +473,7 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var detail = await _dutyRepository.GetDutyDetailByIdAsync(dutyDetailId);
                 if (detail == null)
-                    throw new ArgumentException("Duty detail not found");
+                    throw new ArgumentException("Không tìm thấy chi tiết công việc");
 
                 var isEmployee = currentUserRoles.Contains("Employee");
                 var isManager = currentUserRoles.Contains("Manager");
@@ -483,12 +483,12 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (detail.Duty.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
                     {
-                        throw new ArgumentException("Your're too late to complete your task");
+                        throw new ArgumentException("Bạn đã quá trễ để hoàn thành công việc");
                     }
                     else
                     {
                         if (detail.UserId != currentUserId)
-                            throw new UnauthorizedAccessException("Employee can only complete their own duty details.");
+                            throw new UnauthorizedAccessException("EMployee chỉ có thể đánh dấu hoàn thành cho công việc của bản thân");
                     }
                 }
 
@@ -496,10 +496,10 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     var currentUser = await _context.Users.FindAsync(currentUserId);
                     if (detail.Duty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only modify duties they assigned.");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
 
                     if (detail.Users.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager can only complete duty details of users in the same department.");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể đánh dấu hoàn thành cho công việc cho user cùng phòng ban");
                 }
 
                 detail.IsCompleted = true;
@@ -508,7 +508,7 @@ namespace EmployeeAPI.Services.DutyServices
                 await UpdateDutyCompletionStatusAsync(detail.DutyId);
                 await transaction.CommitAsync();
 
-                return "Duty detail " + detail.Description + " completed";
+                return "Đã hoàn thành công việc " + detail.Description;
             }
             catch (Exception ex)
             {
@@ -521,7 +521,7 @@ namespace EmployeeAPI.Services.DutyServices
         {
             var duty = await _dutyRepository.GetDutyByIdAsync(dutyId);
             if (duty == null)
-                throw new ArgumentException("Duty not found");
+                throw new ArgumentException("Không tìm thấy công việc");
 
             bool allCompleted = duty.DutyDetails
                 .Where(d => !d.IsDeleted)
@@ -543,18 +543,18 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var entity = await _dutyRepository.GetDutyByIdAsync(dutyId);
                 if (entity == null)
-                    throw new ArgumentException("Cannot find duty " + dutyId);
+                    throw new ArgumentException("Không thể tìm thấy công việc này " + dutyId);
 
                 var isManager = currentUserRoles.Contains("Manager");
 
                 if (isManager)
                 {
                     if (entity.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only delete duties they assigned");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể xóa công việc do mình tạo ra");
                 }
 
                 entity.IsDeleted = true;
@@ -582,19 +582,19 @@ namespace EmployeeAPI.Services.DutyServices
             {
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var entity = await _dutyRepository.GetDutyDetailByIdAsync(dutyDetailId);
 
                 if (entity == null)
-                    throw new ArgumentException("Cannot find duty detail " + dutyDetailId);
+                    throw new ArgumentException("Không thể tìm thấy công việc này detail " + dutyDetailId);
 
                 var isManager = currentUserRoles.Contains("Manager");
 
                 if (isManager)
                 {
                     if (entity.Duty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager can only delete duty details of duties they assigned");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể xóa chi tiết công việc do mình tạo ra");
                 }
 
                 entity.IsDeleted = true;
@@ -602,7 +602,7 @@ namespace EmployeeAPI.Services.DutyServices
                 await _context.SaveChangesAsync();
                 await UpdateDutyCompletionStatusAsync(entity.DutyId);
                 await transaction.CommitAsync();
-                return "Delete duty detail " + entity.DutyDetailId + " success";
+                return "Đã xóa chi tiết công việc " + entity.DutyDetailId;
             }
             catch (Exception ex)
             {

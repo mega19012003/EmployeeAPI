@@ -55,7 +55,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> GetById(Guid departmentId)
         {
             var result = await _departmentService.GetByIdAsync(departmentId);
-            if (result == null) return NotFound(ApiResponse<string>.ReturnResult("Department not found", null, 404));
+            if (result == null) return NotFound(ApiResponse<string>.ReturnResult("Không tìm thấy phòng ban", null, 404));
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Get department by Id success", result, 200));
         }
 

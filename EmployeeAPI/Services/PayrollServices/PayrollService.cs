@@ -47,10 +47,10 @@ namespace EmployeeAPI.Services.PayrollServices
             {
                 var manager = await _context.Users.FindAsync(currentUserId);
                 if (manager == null)
-                    throw new ArgumentException("Manager not found");
+                    throw new ArgumentException("Không thể tìm thấy người dùng hiện tại");
 
                 if (manager.DepartmentId == null)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 var departmentId = manager.DepartmentId;
 
@@ -113,7 +113,7 @@ namespace EmployeeAPI.Services.PayrollServices
         {
             var payroll = await _payrollRepository.GetPayrollById(id);
             if (payroll == null)
-                throw new ArgumentException("Cannot find payroll");
+                throw new ArgumentException("Không tìm thấy bảng lương");
 
             var manager = currentUserRoles.Contains("Manager");
             var employee = currentUserRoles.Contains("Employee");
@@ -122,14 +122,14 @@ namespace EmployeeAPI.Services.PayrollServices
             {
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
                 if (payroll.Users.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager cannot access payroll of an User from other department");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể truy cập bảng lương của user cùng phòng ban");
             }
             else if (employee)
             {
                 if (payroll.UserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee can only access their own payroll");
+                    throw new UnauthorizedAccessException("Nhân viện chỉ có thể truy cập bảng lương của mình");
             }
 
             return new ResponseModel.PayrollResultDto
@@ -149,23 +149,23 @@ namespace EmployeeAPI.Services.PayrollServices
             {
                 var existing = await _payrollRepository.GetPayrollById(id);
                 if (existing == null)
-                    throw new ArgumentException("Cannot find checkin");
+                    throw new ArgumentException("Không thể tìm thấy bảng lương");
 
                 var employee = await _userRepository.GetUserInfoAsync(existing.UserId);
                 if (employee == null)
-                    throw new ArgumentException("Cannot find employee for this checkin");
+                    throw new ArgumentException("Không thể tìm thấy user cho bảng lương này");
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (currentUser.DepartmentId != employee.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager cannot delete payroll of an User from other department");
+                        throw new UnauthorizedAccessException("Manager chỉ có thể xóa bảng lương của user cùng phòng ban");
 
                     if (currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager does not belong to any department");
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
                 }
 
                 var result = await _payrollRepository.SoftDeletePayroll(id);
@@ -198,16 +198,16 @@ namespace EmployeeAPI.Services.PayrollServices
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                     if (currentUser == null)
-                        throw new ArgumentException("User not found");
+                        throw new ArgumentException("Không tìm thấy người dùng");
 
                     if (currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager does not belong to any department");
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
 
                     // Kiểm tra user được lấy có tồn tại không
                     var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
                     if (findUser == null)
-                        throw new ArgumentException("Cannot find user");
+                        throw new ArgumentException("Không tìm thấy user");
 
                     if (findUser.DepartmentId != currentUser.DepartmentId)
                         throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
@@ -229,7 +229,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
                 var user = await _userRepository.GetUserInfoAsync(staffId.Value);
                 if (user == null)
-                    throw new ArgumentException("Cannot find user");
+                    throw new ArgumentException("Không tìm thấy user");
 
                 var query = _context.Payrolls
                     .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
@@ -270,7 +270,7 @@ namespace EmployeeAPI.Services.PayrollServices
         {
             var staff = await _userRepository.GetActiveUserIdAsync(staffId);
             if (staff == null)
-                throw new ArgumentException("Cannot find User");
+                throw new ArgumentException("Không tìm thấy user");
 
             if (currentUserRoles.Contains("Manager"))
             {
@@ -279,13 +279,13 @@ namespace EmployeeAPI.Services.PayrollServices
                     .FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 if (currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 if (staff.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("You can only calculate payrolls for User in your department");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể tạo bảng lương của user cùng phòng ban");
             }
 
             int month = DateTime.Now.Month;
@@ -305,7 +305,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
             var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
             if (schedule == null)
-                throw new ArgumentException("Schedule not found");
+                throw new ArgumentException("Không tìm thấy thời gian làm việc");
 
             double totalSalary = 0;
             foreach (var checkin in checkinsInMonth)
@@ -458,7 +458,7 @@ namespace EmployeeAPI.Services.PayrollServices
         //    var staff = await _userRepository.GetActiveUserIdAsync(staffId);
 
         //    if (staff == null)
-        //        throw new ArgumentException("Cannot find User");
+        //        throw new ArgumentException("Không tìm thấy user");
 
         //    if (currentUserRoles.Contains("Manager"))
         //    {
@@ -467,10 +467,10 @@ namespace EmployeeAPI.Services.PayrollServices
         //            .FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
         //        if (currentUser == null)
-        //            throw new ArgumentException("Cannot find current user");
+        //            throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
         //        if (currentUser.DepartmentId == null)
-        //            throw new ArgumentException("Manager does not belong to any department");
+        //            throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
         //        if (staff.DepartmentId != currentUser.DepartmentId)
         //            throw new UnauthorizedAccessException("You can only calculate payrolls for User in your department");

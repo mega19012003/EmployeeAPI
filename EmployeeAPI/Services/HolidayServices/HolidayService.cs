@@ -69,7 +69,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 var holiday = await _holidayRepository.GetByIdAsync(id);
                 if (holiday == null)
                 {
-                    throw new ArgumentException("Holiday not found");
+                    throw new ArgumentException("Không tìm thấy ngày lễ");
                 }
 
                 return new ResponseModel.HolidayResultDto
@@ -100,7 +100,7 @@ namespace EmployeeAPI.Services.HolidayServices
 
                 if(dto.startDate > dto.endDate)
                 {
-                    throw new ArgumentException("Start date cannot be after end date");
+                    throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
                 }
 
                 var model = new Models.Holiday
@@ -138,11 +138,11 @@ namespace EmployeeAPI.Services.HolidayServices
             {
                 var result = await _holidayRepository.GetByIdAsync(dto.HolidayId);
                 if (result == null)
-                    throw new ArgumentException("Cannot find holiday");
+                    throw new ArgumentException("Không thể tìm thấy ngày lễ");
 
                 if(dto.startDate > dto.endDate)
                 {
-                    throw new ArgumentException("Start date cannot be after end date");
+                    throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
                 }
 
                 result.name = dto.Name;
@@ -176,12 +176,12 @@ namespace EmployeeAPI.Services.HolidayServices
             {
                 var result = await _holidayRepository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find holiday id");
+                    throw new ArgumentException("Không thể tìm thấy ngày lễ");
                 result.IsDeleted = true;
                 await _holidayRepository.SoftDeleteAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return "Delete holiday" + result.name + " success";
+                return "Đã xóa ngày lễ" + result.name;
             }
             catch (Exception ex)
             {

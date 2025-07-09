@@ -64,7 +64,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             {
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find department");
+                    throw new ArgumentException("Không thể tìm thấy phòng ban này");
                 return new ResponseModel.DepartmentResultDto
                 {
                     DepartmentId = result.Id,
@@ -84,7 +84,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             try
             {
                 if (string.IsNullOrEmpty(name))
-                    throw new ArgumentException("Department name cannot be null or empty");
+                    throw new ArgumentException("Tên phòng ban không được phép rỗng");
 
                 var model = new Department
                 {
@@ -116,7 +116,7 @@ namespace EmployeeAPI.Services.DepartmentServices
             try {
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find department");
+                    throw new ArgumentException("Không thể tìm thấy phòng ban này");
 
                 result.Name = newName;
 
@@ -145,14 +145,14 @@ namespace EmployeeAPI.Services.DepartmentServices
             {
                 var result = await _repository.GetByIdAsync(id);
                 if (result == null)
-                    throw new ArgumentException("Cannot find department");
+                    throw new ArgumentException("Không thể tìm thấy phòng ban này");
 
                 result.isDeleted = true;
                 await _repository.SoftDeleteAsync(result.Id);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return "Department " + result.Name + " deleted";
+                return "Đã xóa phòng ban " + result.Name;
             }
             catch (Exception ex)
             {
@@ -171,7 +171,7 @@ namespace EmployeeAPI.Services.DepartmentServices
 
                 var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
                 if (currentUser == null)
-                    throw new ArgumentException("Cannot find current user");
+                    throw new ArgumentException("Không thể tìm thấy user này");
 
                 var isAdmin = currentUserRoles.Contains("Administrator");
                 var isManager = currentUserRoles.Contains("Manager");
@@ -183,19 +183,19 @@ namespace EmployeeAPI.Services.DepartmentServices
 
                     var dept = await _repository.GetByIdAsync(departmentId.Value);
                     if (dept == null)
-                       throw new ArgumentException("Cannot find department");
+                       throw new ArgumentException("Không thể tìm thấy phòng ban này");
 
                 }
                 else if (isManager)
                 {
                     if (!currentUser.DepartmentId.HasValue)
-                        throw new ArgumentException("Manager does not belong to any department");
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     filterDepartmentId = currentUser.DepartmentId;
                 }
                 else
                 {
-                    throw new UnauthorizedAccessException("You do not have permission to view this data");
+                    throw new UnauthorizedAccessException("Access denied");
                 }
 
                 var query = _context.Departments
@@ -243,7 +243,7 @@ namespace EmployeeAPI.Services.DepartmentServices
 
             var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
             if (currentUser == null)
-                throw new ArgumentException("Cannot find current user");
+                throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
             var isAdmin = currentUserRoles.Contains("Administrator");
             var isManager = currentUserRoles.Contains("Manager");
@@ -255,19 +255,19 @@ namespace EmployeeAPI.Services.DepartmentServices
 
                 var dept = await _repository.GetByIdAsync(departmentId.Value);
                 if (dept == null)
-                    throw new ArgumentException("Cannot find department");
+                    throw new ArgumentException("Không thể tìm thấy phòng ban này");
 
             }
             else if (isManager)
             {
                 if (!currentUser.DepartmentId.HasValue)
-                    throw new ArgumentException("Manager does not belong to any department");
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 filterDepartmentId = currentUser.DepartmentId;
             }
             else
             {
-                throw new UnauthorizedAccessException("You do not have permission to view this data");
+                throw new UnauthorizedAccessException("Access Denied");
             }
 
             var query = await _repository.GetPositionsByDepartmentAsync(filterDepartmentId);
