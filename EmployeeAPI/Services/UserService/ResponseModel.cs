@@ -21,7 +21,7 @@ namespace EmployeeAPI.Services.UserService
             public Guid? PositionId { get; set; }
             public double? BasicSalary { get; set; }
             public string ImageUrl { get; set; }
-            public bool IsActive { get; set; } = true;
+            public bool IsActive { get; set; } 
         }
         public class AdminUpdateDto 
         {

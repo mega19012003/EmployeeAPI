@@ -28,8 +28,8 @@ namespace EmployeeAPI.Models
         public Position Position { get; set; }
         [Range(0, double.MaxValue, ErrorMessage = "Lương cơ bản phải >= 0")]
         public double BasicSalary { get; set; }
-        public bool IsActive { get; set; } = true;
-        public bool IsDeleted { get; set; } = false;
+        public bool IsActive { get; set; }
+        public bool IsDeleted { get; set; } 
         public string? ImageUrl { get; set; }
         // 1. Người giao việc (manager)
         public ICollection<Duty> AssignedDuties { get; set; } = new List<Duty>();
