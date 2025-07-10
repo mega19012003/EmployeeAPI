@@ -43,11 +43,11 @@ namespace EmployeeAPI.Services.UserService
 
                 var isAdmin = currentUserRole.Contains("Administrator");
                 var isManager = currentUserRole.Contains("Manager");
-                Guid? departmentId = null;
+                Guid? departmentId = Guid.Empty;
 
                 if(existingUser.DepartmentId.HasValue)
                 {
-                    departmentId = existingUser.DepartmentId.Value;
+                    departmentId = existingUser.DepartmentId;
                 }
 
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
