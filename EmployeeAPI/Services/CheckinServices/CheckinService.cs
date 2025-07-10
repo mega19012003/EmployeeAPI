@@ -64,9 +64,20 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 ///////////////////
                 var now = DateTime.Now;
-                Year ??= now.Year;
-                Day ??= now.Day;
-                Month ??= now.Month;
+                if (Year == null)
+                    Year = now.Year;
+                else if (Year == 0)
+                    Year = null; 
+
+                if (Month == null)
+                    Month = now.Month;
+                else if (Month == 0)
+                    Month = null; 
+
+                if (Day == null)
+                    Day = now.Day;
+                else if (Day == 0)
+                    Day = null;
 
                 if (Month.HasValue)
                     query = query.Where(c => c.CheckinTime.Month == Month.Value);
@@ -566,9 +577,20 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
                 var now = DateTime.Now;
-                Year ??= now.Year;
-                Day ??= now.Day;
-                Month ??= now.Month;
+                if (Year == null)
+                    Year = now.Year;
+                //else if (Year == 0)
+                //    Year = null;
+
+                if (Month == null)
+                    Month = now.Month;
+                else if (Month == 0)
+                    Month = null;
+
+                if (Day == null)
+                    Day = now.Day;
+                else if (Day == 0)
+                    Day = null;
 
                 var user = await _userRepository.GetUserInfoAsync(staffId.Value);
 

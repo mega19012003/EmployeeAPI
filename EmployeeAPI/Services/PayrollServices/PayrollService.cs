@@ -66,7 +66,21 @@ namespace EmployeeAPI.Services.PayrollServices
 
             ///////////////////
             var now = DateTime.Now;
-            Year ??= now.Year;
+            ////var now = DateTime.Now;
+            if (Year == null)
+                Year = now.Year;
+            //else if (Year == 0)
+            //    Year = null;
+
+            if (Month == null)
+                Month = now.Month;
+            else if (Month == 0)
+                Month = null;
+
+            //if (Day == null)
+            //    Day = now.Day;
+            //else if (Day == 0)
+            //    Day = null;
 
             if (Month.HasValue)
                 query = query.Where(c => c.CreatedDate.Month == Month.Value);
