@@ -309,12 +309,24 @@ namespace EmployeeAPI.Services.CheckinServices
                     checkin.LogStatus = Enums.LogStatus.LeaveEarly;
                 }
 
-                var totalWorkedHours = (checkin.CheckoutTime - checkin.CheckinTime).TotalHours;
+                DateTime adjustedCheckinTime;
+                if (checkin.CheckinTime.TimeOfDay >= schedule.StartTimeMorning.ToTimeSpan()
+                    && checkin.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
+                {
+                    adjustedCheckinTime = checkin.CheckinTime.Date + schedule.StartTimeMorning.ToTimeSpan();
+                }
+                else
+                {
+                    adjustedCheckinTime = checkin.CheckinTime;
+                }
+
+                var totalWorkedHours = (checkin.CheckoutTime - adjustedCheckinTime).TotalHours;
 
                 var lunchBreak = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
 
                 double normalWorkedHours;
-                if (checkin.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan() && checkin.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+                if (adjustedCheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
+                    && checkin.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
                 {
                     normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreak);
                 }
