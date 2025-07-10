@@ -72,13 +72,13 @@ namespace EmployeeAPI.Services.UserService
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
                     if (dto.Role.HasValue) existingUser.Role = (RoleType)dto.Role;
 
+                    if (existingUser.DepartmentId.HasValue)
+                    {
+                        departmentId = existingUser.DepartmentId;
+                    }
+
                     if (dto.DepartmentId.HasValue)
                     {
-                        if (existingUser.DepartmentId.HasValue)
-                        {
-                            departmentId = existingUser.DepartmentId;
-                        }
-
                         if (dto.PositionId.HasValue)
                         {
                             var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
@@ -110,6 +110,9 @@ namespace EmployeeAPI.Services.UserService
                 }
                 else if (isManager)
                 {
+                    if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
+                    if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
+
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser == null)
                         throw new ArgumentException("Không tìm thấy người dùng hiện tại");
