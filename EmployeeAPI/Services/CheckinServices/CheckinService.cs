@@ -306,18 +306,20 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var workEndTime = schedule.EndTimeAfternoon;
 
-                if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime))
+                if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime)) //làm tăng ca
                 {
                     checkin.LogStatus = Enums.LogStatus.Overtime;
                     overtimeHours = (currentTime - workEndTime).TotalHours;
                 }
-                else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime) && checkin.LogStatus == Enums.LogStatus.OnTime)
+                else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime) && checkin.LogStatus == Enums.LogStatus.OnTime) //đúng giờ
                 {
                     checkin.LogStatus = Enums.LogStatus.OnTime;
                 }
                 else 
                 {
-                    checkin.LogStatus = Enums.LogStatus.LeaveEarly;
+                    if (checkin.LogStatus == Enums.LogStatus.Late) //trễ và về sớm
+                        checkin.LogStatus = Enums.LogStatus.LateAndLeaveEarly;
+                    else checkin.LogStatus = Enums.LogStatus.LeaveEarly; //trễ
                 }
 
                 DateTime adjustedCheckinTime;

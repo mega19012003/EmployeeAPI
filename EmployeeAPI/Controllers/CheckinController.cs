@@ -133,13 +133,6 @@ namespace EmployeeAPI.Controllers
         /// - OnTime = 1 (Đi đúng giờ)
         /// - Late = 2 (Đi trễ)
         /// - LateOnHoliday = 3 (Đi trễ vào ngày nghỉ lệ)
-        /// - OnHoliday = 5 (Làm vào ngày nghỉ)
-        /// - Absent = 7 (Nghỉ không phép)
-        /// - LeaveWithPermission = 8 (Nghỉ có phép)
-        /// - Others = 9 (Khác)
-        /// -
-        /// - CheckOut Status enum values:
-        /// - None = 0 (Chưa checkin/checkout)
         /// - LeaveEarly = 4 (Về sớm)
         /// - OnHoliday = 5 (Làm vào ngày nghỉ)
         /// - Overtime = 6 (Làm thêm giờ)

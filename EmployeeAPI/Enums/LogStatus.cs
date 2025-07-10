@@ -10,7 +10,7 @@
         OnHoliday = 5,
         Overtime = 6,
         Absent = 7,
-        LeaveWithPermission = 8,
+        LateAndLeaveEarly = 8,
         Others = 9,
     }
 }

@@ -33,8 +33,8 @@ namespace EmployeeAPI.Models
                 new LogStatusConfig { Id = 5, Name = "OnHoliday", SalaryMultiplier = 2.0, Note = "Làm vào ngày nghỉ" },
                 new LogStatusConfig { Id = 6, Name = "Overtime", SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
                 new LogStatusConfig { Id = 7, Name = "Absent", SalaryMultiplier = 0, Note = "Nghỉ không phép" },
-                new LogStatusConfig { Id = 8, Name = "LeaveWithPermission", SalaryMultiplier = 0.9, Note = "Nghỉ có phép" },
-                new LogStatusConfig { Id = 9, Name = "Others", SalaryMultiplier = 1.0, Note = "Khác" }
+                new LogStatusConfig { Id = 8, Name = "LateAndLeaveEarly", SalaryMultiplier = 0.3, Note = "Đi trễ và về sớm" },
+                new LogStatusConfig { Id = 9, Name = "Others", SalaryMultiplier = 0.5, Note = "Khác" }
                 //new CheckinMorningStatusConfig { Id = 0, Name = "OnTime", SalaryMultiplier = 1.0, Note = "Đi đúng giờ" },
                 //new CheckinMorningStatusConfig { Id = 1, Name = "Late", SalaryMultiplier = 0.7, Note = "Đi trễ" },
                 //new CheckinMorningStatusConfig { Id = 2, Name = "Overtime", SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
