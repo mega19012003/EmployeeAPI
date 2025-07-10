@@ -45,6 +45,11 @@ namespace EmployeeAPI.Services.UserService
                 var isManager = currentUserRole.Contains("Manager");
                 Guid? departmentId = null;
 
+                if(existingUser.DepartmentId.HasValue)
+                {
+                    departmentId = existingUser.DepartmentId.Value;
+                }
+
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
