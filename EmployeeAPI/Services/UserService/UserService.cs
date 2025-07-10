@@ -45,8 +45,6 @@ namespace EmployeeAPI.Services.UserService
                 var isManager = currentUserRole.Contains("Manager");
                 Guid? departmentId = Guid.Empty;
 
-
-
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
@@ -310,11 +308,14 @@ namespace EmployeeAPI.Services.UserService
             {
                 UserId = results.UserId,
                 Fullname = results.Fullname,
+                Username = results.Username,
                 RoleName = results.Role.ToString(),
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
                 DepartmentName = results.Department?.Name ?? null,
+                DepartmentId = results.Department?.Id ?? null,
                 PositionName = results.Position?.Name ?? null,
+                PositionId = results.Position?.Id ?? null,
                 SalaryPerHour = results.SalaryPerHour,
                 ImageUrl = results.ImageUrl,
             };
