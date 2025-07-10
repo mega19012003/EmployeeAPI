@@ -45,7 +45,7 @@ namespace EmployeeAPI.Services.AuthServices
 
                 if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
                     //throw new UnauthorizedAccessException("Manager can only register employee user");
-                    throw new ArgumentException("Manager chỉ có teh63 tạo user employee");
+                    throw new ArgumentException("Manager chỉ có thể tạo user employee");
 
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
@@ -123,12 +123,13 @@ namespace EmployeeAPI.Services.AuthServices
 
                 if (user.IsDeleted)
                     throw new ArgumentException("Người dùng này đã bị xóa");
-
+                else if (!user.IsActive)
+                    throw new ArgumentException("Người dùng này đã bị khóa");
                 else if (user == null)
                     throw new ArgumentException("Không tìm thấy username");
 
                 else if (HashPassword.Verify(user.Password, password) == false)
-                //else if (user.Password != HashPassword.ComputeHash(password))
+                    //else if (user.Password != HashPassword.ComputeHash(password))
                     throw new ArgumentException("Sai password");
 
                 user.RefreshToken = GenerateRefreshToken();
