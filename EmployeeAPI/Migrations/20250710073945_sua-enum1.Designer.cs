@@ -4,6 +4,7 @@ using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250710073945_sua-enum1")]
+    partial class suaenum1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -245,7 +248,7 @@ namespace EmployeeAPI.Migrations
                             Id = 6,
                             Name = "LateAndOvertime",
                             Note = "Đi trễ và làm thêm giờ",
-                            SalaryMultiplier = 0.69999999999999996
+                            SalaryMultiplier = 1.0
                         },
                         new
                         {
@@ -287,7 +290,7 @@ namespace EmployeeAPI.Migrations
                             Id = 12,
                             Name = "OnHolidayLateAndOvertime",
                             Note = "Đi trễ và làm thêm giờ vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
+                            SalaryMultiplier = 2.0
                         },
                         new
                         {

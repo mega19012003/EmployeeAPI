@@ -1,6 +1,7 @@
-﻿using System;
-using EmployeeAPI.Helpers;
+﻿using EmployeeAPI.Helpers;
 using Microsoft.EntityFrameworkCore;
+using System;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace EmployeeAPI.Models
 {
     public class AppDbContext : DbContext
@@ -25,22 +26,36 @@ namespace EmployeeAPI.Models
         {
 
             modelBuilder.Entity<LogStatusConfig>().HasData(
-                new LogStatusConfig { Id = 0, Name = "None", SalaryMultiplier = 0.0, Note = "Chưa checkin/checkout" },
-                new LogStatusConfig { Id = 1, Name = "OnTime", SalaryMultiplier = 1.0, Note = "Đi đúng giờ" },
-                new LogStatusConfig { Id = 2, Name = "Late", SalaryMultiplier = 0.7, Note = "Đi trễ" },
-                new LogStatusConfig { Id = 3, Name = "LateOnHoliday", SalaryMultiplier = 1.5, Note = "Đi trễ vào ngày nghỉ lệ" },
-                new LogStatusConfig { Id = 4, Name = "LeaveEarly", SalaryMultiplier = 0.7, Note = "Về sớm" },
-                new LogStatusConfig { Id = 5, Name = "OnHoliday", SalaryMultiplier = 2.0, Note = "Làm vào ngày nghỉ" },
-                new LogStatusConfig { Id = 6, Name = "Overtime", SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
-                new LogStatusConfig { Id = 7, Name = "Absent", SalaryMultiplier = 0, Note = "Nghỉ không phép" },
-                new LogStatusConfig { Id = 8, Name = "LateAndLeaveEarly", SalaryMultiplier = 0.3, Note = "Đi trễ và về sớm" },
-                new LogStatusConfig { Id = 9, Name = "Others", SalaryMultiplier = 0.5, Note = "Khác" }
-                //new CheckinMorningStatusConfig { Id = 0, Name = "OnTime", SalaryMultiplier = 1.0, Note = "Đi đúng giờ" },
-                //new CheckinMorningStatusConfig { Id = 1, Name = "Late", SalaryMultiplier = 0.7, Note = "Đi trễ" },
-                //new CheckinMorningStatusConfig { Id = 2, Name = "Overtime", SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
-                //new CheckinMorningStatusConfig { Id = 3, Name = "Absent", SalaryMultiplier = 0.5, Note = "Nghỉ không phép" },
-                //new CheckinMorningStatusConfig { Id = 4, Name = "LeaveWithPermission", SalaryMultiplier = 0.9, Note = "Nghỉ có phép" },
-                //new CheckinMorningStatusConfig { Id = 5, Name = "Others", SalaryMultiplier = 1.0, Note = "Khác" }
+                new LogStatusConfig { Id = 0,  Name = "None",                       SalaryMultiplier = 0.0, Note = "Chưa checkin/checkout" },
+                new LogStatusConfig { Id = 1,  Name = "OnTime",                     SalaryMultiplier = 1.0, Note = "Đi đúng giờ" },
+                new LogStatusConfig { Id = 2,  Name = "Late",                       SalaryMultiplier = 0.7, Note = "Đi trễ" },
+                new LogStatusConfig { Id = 3,  Name = "LeaveEarly",                 SalaryMultiplier = 0.7, Note = "Về sớm" },
+                new LogStatusConfig { Id = 4,  Name = "LateAndLeaveEarly",          SalaryMultiplier = 0.5, Note = "Đi trễ và về sớm" },
+                new LogStatusConfig { Id = 5,  Name = "Overtime",                   SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
+                new LogStatusConfig { Id = 6,  Name = "LateAndOvertime",            SalaryMultiplier = 0.7, Note = "Đi trễ và làm thêm giờ" },
+                new LogStatusConfig { Id = 7,  Name = "Absent",                     SalaryMultiplier = 0.0, Note = "Vắng" },
+                new LogStatusConfig { Id = 8,  Name = "OnHoliday",                  SalaryMultiplier = 2.0, Note = "Làm vào ngày nghỉ" },
+                new LogStatusConfig { Id = 9,  Name = "OnHolidayLate",              SalaryMultiplier = 1.5, Note = "Đi trễ vào ngày nghỉ" },
+                new LogStatusConfig { Id = 10, Name = "OnHolidayLeaveEarly",        SalaryMultiplier = 1.5, Note = "Về sớm vào ngày nghỉ" },
+                new LogStatusConfig { Id = 11, Name = "OnHolidayOvertime",          SalaryMultiplier = 3.0, Note = "Làm thêm giờ vào ngày nghỉ" },
+                new LogStatusConfig { Id = 12, Name = "OnHolidayLateAndOvertime",   SalaryMultiplier = 1.5, Note = "Đi trễ và làm thêm giờ vào ngày nghỉ" },
+                new LogStatusConfig { Id = 13, Name = "OnHolidayLateAndLeaveEarly", SalaryMultiplier = 2.0, Note = "Đi trễ và về sớm vào ngày nghỉ" },
+                new LogStatusConfig { Id = 14, Name = "Others",                     SalaryMultiplier = 0.5, Note = "Khác" }
+                //None = 0,
+                //OnTime = 1,
+                //Late = 2,
+                //LeaveEarly = 3,
+                //LateAndLeaveEarly = 4,
+                //Overtime = 5,
+                //LateAndOvertime = 6,
+                //Absent = 7,
+                //OnHoliday = 8,
+                //OnHolidayLate = 9,
+                //OnHolidayLeaveEarly = 10,
+                //OnHolidayOvertime = 11,
+                //OnHolidayLateAndOvertime = 12,
+                //OnHolidayLateAndLeaveEarly = 13,
+                //Others = 14,
             );
 
             //modelBuilder.Entity<Checkin>().HasData(

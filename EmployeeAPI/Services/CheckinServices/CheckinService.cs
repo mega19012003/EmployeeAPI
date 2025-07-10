@@ -197,27 +197,38 @@ namespace EmployeeAPI.Services.CheckinServices
                 var startOfDay = now.Date;
                 var endOfDay = now.Date.AddDays(1).AddTicks(-1);
 
-                var (_, _, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
+                var (_, _, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
 
                 Enums.LogStatus logStatus;
 
-                if (currentTime < schedule.StartTimeMorning || currentTime > schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime) || (currentTime > schedule.EndTimeMorning && currentTime < schedule.StartTimeAfternoon))
+                if (isHoliday || isSunday)
                 {
-                    throw new ArgumentException("Hiện tại không trong khung giờ cho phép để check-in");
+                    if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
+                    {
+                        logStatus = Enums.LogStatus.OnHoliday;
+                    }
+                    else
+                    {
+                        logStatus = Enums.LogStatus.OnHolidayLate;
+                    }
                 }
-
-                if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
-                {
-                    logStatus = Enums.LogStatus.OnTime;
-                }
-                //else if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime + schedule.LateThresholdMinutes))
-                //{
-                //    logStatus = Enums.LogStatus.Late;
-                //}
                 else
                 {
-                    //logStatus = Enums.LogStatus.Absent;
-                    logStatus = Enums.LogStatus.Late;
+                    if (currentTime < schedule.StartTimeMorning ||
+                        currentTime > schedule.EndTimeAfternoon.AddMinutes(schedule.LogAllowtime) ||
+                        (currentTime > schedule.EndTimeMorning && currentTime < schedule.StartTimeAfternoon))
+                    {
+                        throw new ArgumentException("Hiện tại không trong khung giờ cho phép để check-in");
+                    }
+
+                    if (currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime))
+                    {
+                        logStatus = Enums.LogStatus.OnTime;
+                    }
+                    else
+                    {
+                        logStatus = Enums.LogStatus.Late;
+                    }
                 }
 
                 var existingCheckin = await _context.Checkins
@@ -287,7 +298,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (isEmployee && targetUserId != currentUserId)
                     throw new UnauthorizedAccessException("Employee chỉ checkout cho bản thân");
 
-                var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
+                var (_, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
 
                 var startOfDay = vnTime.Date;
                 var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
@@ -306,21 +317,94 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var workEndTime = schedule.EndTimeAfternoon;
 
-                if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime)) //làm tăng ca
+                //if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime)) //làm tăng ca
+                //{
+                //    checkin.LogStatus = Enums.LogStatus.Overtime;
+                //    overtimeHours = (currentTime - workEndTime).TotalHours;
+                //}
+                //else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime) && checkin.LogStatus == Enums.LogStatus.OnTime) //đúng giờ
+                //{
+                //    checkin.LogStatus = Enums.LogStatus.OnTime;
+                //}
+                //else 
+                //{
+                //    if (checkin.LogStatus == Enums.LogStatus.Late) //trễ và về sớm
+                //        checkin.LogStatus = Enums.LogStatus.LateAndLeaveEarly;
+                //    else checkin.LogStatus = Enums.LogStatus.LeaveEarly; //trễ
+                //}
+                if (isHoliday || isSunday)
                 {
-                    checkin.LogStatus = Enums.LogStatus.Overtime;
-                    overtimeHours = (currentTime - workEndTime).TotalHours;
+                    // Ngày nghỉ / Chủ nhật
+                    if (checkin.LogStatus == Enums.LogStatus.OnHoliday)
+                    {
+                        if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime))
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnHolidayOvertime;
+                            overtimeHours = (currentTime - workEndTime).TotalHours;
+                        }
+                        else if (currentTime < workEndTime)
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnHolidayLeaveEarly;
+                        }
+                        else
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnHoliday;
+                        }
+                    }
+                    else if (checkin.LogStatus == Enums.LogStatus.OnHolidayLate)
+                    {
+                        if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime))
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnHolidayLateAndOvertime;
+                            overtimeHours = (currentTime - workEndTime).TotalHours;
+                        }
+                        else if (currentTime < workEndTime)
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnHolidayLateAndLeaveEarly;
+                        }
+                        else
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnHolidayLate;
+                        }
+                    }
                 }
-                else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime) && checkin.LogStatus == Enums.LogStatus.OnTime) //đúng giờ
+                else
                 {
-                    checkin.LogStatus = Enums.LogStatus.OnTime;
+                    // Ngày thường
+                    if (checkin.LogStatus == Enums.LogStatus.OnTime)
+                    {
+                        if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime))
+                        {
+                            checkin.LogStatus = Enums.LogStatus.Overtime;
+                            overtimeHours = (currentTime - workEndTime).TotalHours;
+                        }
+                        else if (currentTime < workEndTime)
+                        {
+                            checkin.LogStatus = Enums.LogStatus.LeaveEarly;
+                        }
+                        else
+                        {
+                            checkin.LogStatus = Enums.LogStatus.OnTime;
+                        }
+                    }
+                    else if (checkin.LogStatus == Enums.LogStatus.Late)
+                    {
+                        if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime))
+                        {
+                            checkin.LogStatus = Enums.LogStatus.LateAndOvertime;
+                            overtimeHours = (currentTime - workEndTime).TotalHours;
+                        }
+                        else if (currentTime < workEndTime)
+                        {
+                            checkin.LogStatus = Enums.LogStatus.LateAndLeaveEarly;
+                        }
+                        else
+                        {
+                            checkin.LogStatus = Enums.LogStatus.Late;
+                        }
+                    }
                 }
-                else 
-                {
-                    if (checkin.LogStatus == Enums.LogStatus.Late) //trễ và về sớm
-                        checkin.LogStatus = Enums.LogStatus.LateAndLeaveEarly;
-                    else checkin.LogStatus = Enums.LogStatus.LeaveEarly; //trễ
-                }
+
 
                 DateTime adjustedCheckinTime;
                 if (checkin.CheckinTime.TimeOfDay >= schedule.StartTimeMorning.ToTimeSpan()
