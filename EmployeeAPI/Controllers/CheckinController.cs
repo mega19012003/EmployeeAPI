@@ -130,15 +130,20 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         /// <remarks>
         /// - None = 0 (Chưa checkin/checkout)
-        /// - OnTime = 1 (Đi đúng giờ)
+        /// - OnTime = 1 (Đúng giờ)
         /// - Late = 2 (Đi trễ)
-        /// - LateOnHoliday = 3 (Đi trễ vào ngày nghỉ lệ)
-        /// - LeaveEarly = 4 (Về sớm)
-        /// - OnHoliday = 5 (Làm vào ngày nghỉ)
-        /// - Overtime = 6 (Làm thêm giờ)
-        /// - Absent = 7 (Nghỉ không phép)
-        /// - LateAndLeaveEarly = 8 (Đi trễ và về sớm)
-        /// - Others = 9 (Khác)
+        /// - LeaveEarly = 3 (Về sớm)
+        /// - LateAndLeaveEarly = 4 (Đi trễ và về sớm)
+        /// - Overtime = 5 (Làm thêm giờ)
+        /// - LateAndOvertime = 6 (Đi trễ và làm thêm giờ)
+        /// - Absent = 7 (Vắng)
+        /// - OnHoliday = 8 (Làm vào ngày nghỉ)
+        /// - OnHolidayLate = 9 (Đi trễ vào ngày nghỉ)
+        /// - OnHolidayLeaveEarly = 10 (Về sớm vào ngày nghỉ)
+        /// - OnHolidayOvertime = 11 (Làm thêm giờ vào ngày nghỉ)
+        /// - OnHolidayLateAndOvertime = 12 (Đi trễ và làm thêm giờ vào ngày nghỉ)
+        /// - OnHolidayLateAndLeaveEarly = 13 (Đi trễ và về sớm vào ngày lễ)
+        /// - Others = 14 (khác)
         /// </remarks>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPut]
