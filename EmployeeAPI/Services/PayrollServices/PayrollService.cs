@@ -338,7 +338,14 @@ namespace EmployeeAPI.Services.PayrollServices
             var totalDayWorked = checkinsInMonth
             .Where(c =>
             {
-                var totalHours = (c.CheckoutTime - c.CheckinTime).TotalHours;
+                var adjustedCheckinTime = c.CheckinTime;
+
+                if (c.CheckinTime.TimeOfDay < schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
+                {
+                    adjustedCheckinTime = adjustedCheckinTime.AddHours(schedule.StartTimeMorning.Hour - c.CheckinTime.Hour);
+                }
+
+                var totalHours = (adjustedCheckinTime - c.CheckinTime).TotalHours;
 
                 double normalWorkedHours;
                 if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
@@ -395,120 +402,126 @@ namespace EmployeeAPI.Services.PayrollServices
             };
         }
 
-        public async Task<List<ResponseModel.PayrollResultDto>> CalculatePayrollForAllUsersAsync(Guid currentUserId, IList<string> currentUserRoles)
-        {
-            int month = DateTime.Now.Month;
-            int year = DateTime.Now.Year;
+        //public async Task<List<ResponseModel.PayrollResultDto>> CalculatePayrollForAllUsersAsync(Guid currentUserId, IList<string> currentUserRoles)
+        //{
+        //    int month = DateTime.Now.Month;
+        //    int year = DateTime.Now.Year;
 
-            var allUsers = await _context.Users
-                .Where(u => !u.IsDeleted)  
-                .ToListAsync();
+        //    var allUsers = await _context.Users
+        //        .Where(u => !u.IsDeleted)  
+        //        .ToListAsync();
 
-            //var allEmployees = allUsers
-            //    .Where(u => u.UserRoles.Any(r => r.Role.Name == "Employee"))
-            //    .ToList();
+        //    //var allEmployees = allUsers
+        //    //    .Where(u => u.UserRoles.Any(r => r.Role.Name == "Employee"))
+        //    //    .ToList();
 
-            var payrollResults = new List<ResponseModel.PayrollResultDto>();
+        //    var payrollResults = new List<ResponseModel.PayrollResultDto>();
 
-            foreach (var staff in allUsers)
-            {
-                try
-                {
-                    if (currentUserRoles.Contains("Manager"))
-                    {
-                        var currentUser = await _context.Users
-                            .FirstOrDefaultAsync(u => u.UserId == currentUserId);
+        //    foreach (var staff in allUsers)
+        //    {
+        //        try
+        //        {
+        //            if (currentUserRoles.Contains("Manager"))
+        //            {
+        //                var currentUser = await _context.Users
+        //                    .FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
-                        if (currentUser?.DepartmentId == null) continue;
+        //                if (currentUser?.DepartmentId == null) continue;
 
-                        if (staff.DepartmentId != currentUser.DepartmentId) continue;
-                    }
+        //                if (staff.DepartmentId != currentUser.DepartmentId) continue;
+        //            }
 
-                    var existingPayroll = await _context.Payrolls
-                        .FirstOrDefaultAsync(p => p.UserId == staff.UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year);
+        //            var existingPayroll = await _context.Payrolls
+        //                .FirstOrDefaultAsync(p => p.UserId == staff.UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year);
 
-                    var checkinsInMonth = await _context.Checkins
-                        .Where(c => c.UserId == staff.UserId
-                            && c.CheckinTime.Year == year
-                            && c.CheckinTime.Month == month
-                            && !c.IsDeleted)
-                        .ToListAsync();
+        //            var checkinsInMonth = await _context.Checkins
+        //                .Where(c => c.UserId == staff.UserId
+        //                    && c.CheckinTime.Year == year
+        //                    && c.CheckinTime.Month == month
+        //                    && !c.IsDeleted)
+        //                .ToListAsync();
 
-                    double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
+        //            double totalSalary = checkinsInMonth.Sum(c => c.SalaryPerDay);
 
-                    var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync(); 
+        //            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync(); 
 
-                    var morningHours = (schedule.EndTimeMorning - schedule.StartTimeMorning).TotalHours;
-                    var afternoonHours = (schedule.EndTimeAfternoon - schedule.StartTimeAfternoon).TotalHours;
-                    var fullDayHours = morningHours + afternoonHours;
-                    var halfDayHours = fullDayHours / 2;
+        //            var morningHours = (schedule.EndTimeMorning - schedule.StartTimeMorning).TotalHours;
+        //            var afternoonHours = (schedule.EndTimeAfternoon - schedule.StartTimeAfternoon).TotalHours;
+        //            var fullDayHours = morningHours + afternoonHours;
+        //            var halfDayHours = fullDayHours / 2;
 
-                    var lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
+        //            var lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
 
-                    var totalDayWorked = checkinsInMonth
-                    .Where(c =>
-                    {
-                        var totalHours = (c.CheckoutTime - c.CheckinTime).TotalHours;
+        //            var totalDayWorked = checkinsInMonth
+        //            .Where(c =>
+        //            {
+        //                var adjustedCheckinTime = c.CheckinTime;
+        //                if (c.CheckinTime.TimeOfDay < schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
+        //                {
+        //                    adjustedCheckinTime = adjustedCheckinTime.AddHours(schedule.StartTimeMorning.Hour - c.CheckinTime.Hour);
+        //                }
 
-                        double normalWorkedHours;
-                        if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
-                            && c.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
-                        {
-                            normalWorkedHours = totalHours - lunchBreakHours;
-                        }
-                        else
-                        {
-                            normalWorkedHours = totalHours;
-                        }
+        //                var totalHours = (adjustedCheckinTime - c.CheckinTime).TotalHours;
 
-                        return (c.LogStatus != LogStatus.None)
-                            && (normalWorkedHours >= halfDayHours);
-                    })
-                    .Select(c => c.CheckinTime.Date)
-                    .Distinct()
-                    .Count();
+        //                double normalWorkedHours;
+        //                if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
+        //                    && c.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+        //                {
+        //                    normalWorkedHours = totalHours - lunchBreakHours;
+        //                }
+        //                else
+        //                {
+        //                    normalWorkedHours = totalHours;
+        //                }
 
-                    if (existingPayroll != null)
-                    {
-                        existingPayroll.Salary = totalSalary;
-                        existingPayroll.DaysWorked = totalDayWorked;
-                        existingPayroll.Note = $"Updated payroll for {month}/{year}";
-                        _context.Payrolls.Update(existingPayroll);
-                    }
-                    else
-                    {
-                        existingPayroll = new Payroll
-                        {
-                            Id = Guid.NewGuid(),
-                            UserId = staff.UserId,
-                            Salary = totalSalary,
-                            DaysWorked = totalDayWorked,
-                            CreatedDate = DateTime.Now,
-                            Note = $"Payroll for month {month}/{year}"
-                        };
-                        await _payrollRepository.CreatePayrollAsync(existingPayroll);
-                    }
+        //                return (c.LogStatus != LogStatus.None)
+        //                    && (normalWorkedHours >= halfDayHours);
+        //            })
+        //            .Select(c => c.CheckinTime.Date)
+        //            .Distinct()
+        //            .Count();
 
-                    payrollResults.Add(new ResponseModel.PayrollResultDto
-                    {
-                        Id = existingPayroll.Id,
-                        Name = staff.Fullname,
-                        DaysWorked = totalDayWorked,
-                        Salary = totalSalary,
-                        CreatedDate = existingPayroll.CreatedDate,
-                        Note = existingPayroll.Note
-                    });
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error calculating payroll for user {UserId}", staff.UserId);
-                    continue;
-                }
-            }
+        //            if (existingPayroll != null)
+        //            {
+        //                existingPayroll.Salary = totalSalary;
+        //                existingPayroll.DaysWorked = totalDayWorked;
+        //                existingPayroll.Note = $"Updated payroll for {month}/{year}";
+        //                _context.Payrolls.Update(existingPayroll);
+        //            }
+        //            else
+        //            {
+        //                existingPayroll = new Payroll
+        //                {
+        //                    Id = Guid.NewGuid(),
+        //                    UserId = staff.UserId,
+        //                    Salary = totalSalary,
+        //                    DaysWorked = totalDayWorked,
+        //                    CreatedDate = DateTime.Now,
+        //                    Note = $"Payroll for month {month}/{year}"
+        //                };
+        //                await _payrollRepository.CreatePayrollAsync(existingPayroll);
+        //            }
 
-            await _context.SaveChangesAsync();
-            return payrollResults;
-        }
+        //            payrollResults.Add(new ResponseModel.PayrollResultDto
+        //            {
+        //                Id = existingPayroll.Id,
+        //                Name = staff.Fullname,
+        //                DaysWorked = totalDayWorked,
+        //                Salary = totalSalary,
+        //                CreatedDate = existingPayroll.CreatedDate,
+        //                Note = existingPayroll.Note
+        //            });
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            _logger.LogError(ex, "Error calculating payroll for user {UserId}", staff.UserId);
+        //            continue;
+        //        }
+        //    }
+
+        //    await _context.SaveChangesAsync();
+        //    return payrollResults;
+        //}
 
 
         //public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)

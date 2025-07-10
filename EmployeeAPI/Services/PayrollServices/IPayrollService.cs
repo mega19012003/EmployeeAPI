@@ -15,7 +15,7 @@ namespace EmployeeAPI.Services.PayrollServices
         //Task<PaidPayroll> CalculatePayrollAsync(Guid staffId);
         //Task<PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles);
-        Task<List<ResponseModel.PayrollResultDto>> CalculatePayrollForAllUsersAsync(Guid currentUserId, IList<string> currentUserRoles);
+        //Task<List<ResponseModel.PayrollResultDto>> CalculatePayrollForAllUsersAsync(Guid currentUserId, IList<string> currentUserRoles);
         Task<PagedResult<ResponseModel.PayrollResultDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentRoles, int? pageIndex, int? pageSize);
     }
 }

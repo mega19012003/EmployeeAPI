@@ -80,21 +80,21 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        /// <summary>
-        /// Tình chấm công cho toàn bộ nhân viên, do admin/manager xử lý
-        /// </summary>
-        [Authorize(Roles = "Administrator,Manager")]
-        [HttpPost("calculateAll")]
-        public async Task<IActionResult> CalculateAllUserPayroll()
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+        ///// <summary>
+        ///// Tình chấm công cho toàn bộ nhân viên, do admin/manager xử lý
+        ///// </summary>
+        //[Authorize(Roles = "Administrator,Manager")]
+        //[HttpPost("calculateAll")]
+        //public async Task<IActionResult> CalculateAllUserPayroll()
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var pagedResult = await _payrollService.CalculatePayrollForAllUsersAsync(currentUserId, currentRoles);
-            return Ok(ApiResponse<List<ResponseModel.PayrollResultDto>>.ReturnResult("Calculate payroll success", pagedResult, 200));
-        }
+        //    var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+        //    var pagedResult = await _payrollService.CalculatePayrollForAllUsersAsync(currentUserId, currentRoles);
+        //    return Ok(ApiResponse<List<ResponseModel.PayrollResultDto>>.ReturnResult("Calculate payroll success", pagedResult, 200));
+        //}
 
         /// <summary>
         /// Xóa chấm công, do admin/manager xử lý

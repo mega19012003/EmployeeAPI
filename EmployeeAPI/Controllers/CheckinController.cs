@@ -118,7 +118,7 @@ namespace EmployeeAPI.Controllers
             var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
             if (!isAllowed)
             {
-                return StatusCode(403, new { Message = $"IP address {ip} is not allowed to check out.", Data = ip });
+                return StatusCode(403, new { Message = $"IP Không hợp lệ để checkin", Data = $"IP ({ip}) không nằm trong khoảng cho phép để checkin", StatusCode = 403 });
             }
 
             var result = await _checkinService.CheckoutAsync(dto.userId, currentUserId, currentUserRoles);
@@ -126,7 +126,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên, nghỉ có phép hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
+        /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
         /// </summary>
         /// <remarks>
         /// - None = 0 (Chưa checkin/checkout)
@@ -137,7 +137,7 @@ namespace EmployeeAPI.Controllers
         /// - OnHoliday = 5 (Làm vào ngày nghỉ)
         /// - Overtime = 6 (Làm thêm giờ)
         /// - Absent = 7 (Nghỉ không phép)
-        /// - LeaveWithPermission = 8 (Nghỉ có phép)
+        /// - LateAndLeaveEarly = 8 (Đi trễ và về sớm)
         /// - Others = 9 (Khác)
         /// </remarks>
         [Authorize(Roles = "Administrator,Manager")]
