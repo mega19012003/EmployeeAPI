@@ -481,10 +481,12 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (isEmployee)
                 {
-                    if (detail.Duty.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                    if (detail.Duty.EndDate < DateOnly.FromDateTime(DateTime.UtcNow) && detail.IsCompleted == false)
                     {
                         throw new ArgumentException("Bạn đã quá trễ để hoàn thành công việc");
                     }
+                    else if(detail.IsCompleted)
+                        throw new ArgumentException("Công việc đã được đánh dấu hoàn thành trước đó");
                     else
                     {
                         if (detail.UserId != currentUserId)
