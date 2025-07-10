@@ -338,14 +338,24 @@ namespace EmployeeAPI.Services.PayrollServices
             var totalDayWorked = checkinsInMonth
             .Where(c =>
             {
-                var adjustedCheckinTime = c.CheckinTime;
+                DateTime adjustedCheckinTime;
 
-                if (c.CheckinTime.TimeOfDay < schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
+                //if (c.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
+                //{
+                //    adjustedCheckinTime = schedule.StartTimeMorning;
+                //}
+                if (c.CheckinTime.TimeOfDay >= schedule.StartTimeMorning.ToTimeSpan()
+                 && c.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
                 {
-                    adjustedCheckinTime = adjustedCheckinTime.AddHours(schedule.StartTimeMorning.Hour - c.CheckinTime.Hour);
+                    adjustedCheckinTime = c.CheckinTime.Date + schedule.StartTimeMorning.ToTimeSpan();
+                }
+                else
+                {
+                    adjustedCheckinTime = c.CheckinTime;
                 }
 
-                var totalHours = (adjustedCheckinTime - c.CheckinTime).TotalHours;
+                //var totalHours = (adjustedCheckinTime - c.CheckinTime).TotalHours;
+                var totalHours = (c.CheckoutTime - adjustedCheckinTime).TotalHours;
 
                 double normalWorkedHours;
                 if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()

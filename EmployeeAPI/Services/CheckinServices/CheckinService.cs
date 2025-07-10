@@ -459,22 +459,6 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        //private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
-        //{
-        //    var nowUtc = DateTime.UtcNow;
-        //    var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        //    var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTimeZone);
-        //    var currentTime = TimeOnly.FromDateTime(vnTime);
-
-        //    var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-        //    if (schedule == null) throw new Exception("không thể tìm thấy thời gian làm việc");
-
-        //    var isHoliday = await _holidayRepository.IsHolidayAsync(nowUtc);
-        //    //var isHoliday = await _holidayRepository.IsHolidayAsync(DateOnly.FromDateTime(nowUtc));
-        //    var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
-
-        //    return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
-        //}
         private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
         {
             var nowUtc = DateTime.UtcNow;
