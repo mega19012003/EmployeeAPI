@@ -1,4 +1,5 @@
 ﻿using EmployeeAPI.Models;
+using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Claims;
 using static EmployeeAPI.Services.Dashboards.ResponseModel;
@@ -8,10 +9,11 @@ namespace EmployeeAPI.Services.Dashboards
     public class DashboardService : IDashboardService
     {
         private readonly AppDbContext _context;
-
-        public DashboardService(AppDbContext context)
+        private readonly IUserRepository _userRepository;
+        public DashboardService(AppDbContext context, IUserRepository userRepository)
         {
             _context = context;
+            _userRepository = userRepository;
         }
 
         public async Task<DashboardOverviewDto> GetOverviewAsync(ClaimsPrincipal user)
@@ -25,6 +27,14 @@ namespace EmployeeAPI.Services.Dashboards
 
             bool isAdmin = role == "Administrator";
             bool isManager = role == "Manager";
+
+
+            var userIdStr = user.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(userIdStr, out var userId))
+                throw new ArgumentException("Không tìm thấy UserId hợp lệ trong claim");
+            var currentUser = await _userRepository.GetActiveUserIdAsync(userId);
+            if (isManager && currentUser.DepartmentId == null)
+                throw new ArgumentException("Manager chưa có phòng ban");
 
             // Lấy danh sách nhân viên
             var employeesQuery = _context.Users.AsQueryable();
