@@ -41,7 +41,7 @@ namespace EmployeeAPI.Services.Dashboards
             var employeesQuery = _context.Users.AsQueryable();
             if (isManager && departmentId.HasValue)
             {
-                employeesQuery = employeesQuery.Where(u => u.DepartmentId == departmentId.Value);
+                employeesQuery = employeesQuery.Where(u => u.DepartmentId == departmentId.Value && !u.IsDeleted);
             }
             var totalEmployees = await employeesQuery.CountAsync();
             var activeEmployees = await employeesQuery.CountAsync(u => u.IsActive);
