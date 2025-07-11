@@ -182,6 +182,9 @@ namespace EmployeeAPI.Services.UserService
                 if (existingUser == null)
                     throw new ArgumentException("Không tìm thấy user");
 
+                if (Id == currentUserId)
+                    throw new ArgumentException("Không thể xóa chính mình.");
+
                 var isAdmin = currentUserRoles.Contains("Administrator");
                 var isManager = currentUserRoles.Contains("Manager");
 
