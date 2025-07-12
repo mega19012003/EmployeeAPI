@@ -32,7 +32,7 @@ namespace EmployeeAPI.Services.UserService
             _logger = logger;
         }
 
-        public async Task<ResponseModel.UserResultDto> UpdateStaffAsync(ResponseModel.AdminUpdateDto dto, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<ResponseModel.UserResultDto> UpdateStaffAsync(ResponseModel.UpdateDto dto, Guid currentUserId, IList<string> currentUserRole)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -42,7 +42,10 @@ namespace EmployeeAPI.Services.UserService
                     throw new ArgumentException("Không tìm thấy user");
 
                 var isAdmin = currentUserRole.Contains("Administrator");
+                var isSystemAdmin = currentUserRole.Contains("SystemAdmin");
                 var isManager = currentUserRole.Contains("Manager");
+                var isEmployee = currentUserRole.Contains("Employee");
+
                 Guid? departmentId = Guid.Empty;
 
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
@@ -64,8 +67,14 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.ImageUrl = uploadedImageUrl;
                 }
 
-                if (isAdmin)
+                if (isAdmin || isSystemAdmin)
                 {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null)
+                        throw new Exception("Không tìm thấy người dùng hiện tại");
+                    if (isAdmin && currentUser.CompanyId == null)
+                        throw new Exception("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
+
                     if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
                     if (dto.Role.HasValue) existingUser.Role = (RoleType)dto.Role;
@@ -116,6 +125,8 @@ namespace EmployeeAPI.Services.UserService
                         throw new ArgumentException("Không tìm thấy người dùng hiện tại");
                     if (currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+                    if (currentUser.CompanyId.HasValue)
+
 
                     departmentId = currentUser.DepartmentId;
 
@@ -157,6 +168,8 @@ namespace EmployeeAPI.Services.UserService
                     DepartmentName = existingUser.Department?.Name,
                     PositionId = existingUser.PositionId,
                     PositionName = existingUser.Position?.Name,
+                    CompanyId = existingUser.CompanyId,
+                    CompanyName = existingUser.Company?.Name,
                     ImageUrl = existingUser.ImageUrl,
                     IsActive = existingUser.IsActive
                 };
@@ -186,15 +199,21 @@ namespace EmployeeAPI.Services.UserService
                     throw new ArgumentException("Không thể xóa chính mình.");
 
                 var isAdmin = currentUserRoles.Contains("Administrator");
+                var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
                 var isManager = currentUserRoles.Contains("Manager");
 
-                if (isManager && !isAdmin)
+
+                if (isManager)
                 {
                     if (!currentUser.DepartmentId.HasValue)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     if (existingUser.DepartmentId != currentUser.DepartmentId)
                         throw new ArgumentException("Manager không thể xóa user kahc1 phòng ban");
+                }
+                else if (isAdmin) {
+                    if (!currentUser.DepartmentId.HasValue)
+                        throw new ArgumentException("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
                 }
 
                 existingUser.IsDeleted = true;
@@ -213,13 +232,14 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
             {
                 var query = _userRepository.GetAll();
 
                 var isAdmin = currentUserRoles.Contains("Administrator");
+                var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
                 var isManager = currentUserRoles.Contains("Manager");
 
                 if (isManager)
@@ -261,10 +281,12 @@ namespace EmployeeAPI.Services.UserService
                         RoleName = f.Role.ToString(),
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
-                        DepartmentName = f.Department != null ? f.Department.Name : string.Empty,
-                        DepartmentId = f.Department != null ? f.Department.Id : null,
-                        PositionName = f.Position != null ? f.Position.Name : string.Empty,
-                        PositionId = f.Position != null ? f.Position.Id : null,
+                        DepartmentName = f.Department.Name ?? string.Empty,
+                        DepartmentId = f.Department.Id,
+                        PositionName = f.Position.Name ?? string.Empty,
+                        PositionId = f.PositionId,
+                        CompanyName = f.Company.Name ?? string.Empty,
+                        CompanyId = f.CompanyId,
                         IsActive = f.IsActive,
                         SalaryPerHour = f.SalaryPerHour,
                         ImageUrl = f.ImageUrl,
@@ -315,10 +337,12 @@ namespace EmployeeAPI.Services.UserService
                 RoleName = results.Role.ToString(),
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
-                DepartmentName = results.Department?.Name ?? null,
-                DepartmentId = results.Department?.Id ?? null,
-                PositionName = results.Position?.Name ?? null,
-                PositionId = results.Position?.Id ?? null,
+                DepartmentName = results.Department.Name ?? string.Empty,
+                DepartmentId = results.Department.Id,
+                PositionName = results.Position.Name ?? string.Empty,
+                PositionId = results.PositionId,
+                CompanyName = results.Company.Name ?? string.Empty,
+                CompanyId = results.CompanyId,
                 SalaryPerHour = results.SalaryPerHour,
                 ImageUrl = results.ImageUrl,
             };

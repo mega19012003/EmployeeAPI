@@ -1,6 +1,4 @@
-﻿
-
-using System.ComponentModel.DataAnnotations.Schema;
+﻿using System.ComponentModel.DataAnnotations.Schema;
 using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
 
@@ -15,7 +13,7 @@ namespace EmployeeAPI.Models
         public DateTime CreatedDate { get; set; } 
         public string Note { get; set; }
         public bool IsDeleted { get; set; } = false;
-        public int DaysWorked { get; set; } //ngày công
-
+        public int DaysWorked { get; set; } 
+        public bool isPaied { get; set; }
     }
 }

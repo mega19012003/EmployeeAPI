@@ -37,7 +37,7 @@ namespace EmployeeAPI.Controllers
         /// - 2 = Manager
         /// - 3 = Employee
         /// </remarks> 
-        [Authorize(Roles = "Administrator,Manager")]
+        [Authorize(Roles = "SystemAdmin, Administrator, Manager")]
         [HttpPost("register")]
         public async Task<IActionResult> Register([FromBody] ResponseModel.RegisterDto dto)
         {
@@ -118,7 +118,7 @@ namespace EmployeeAPI.Controllers
             if (userIdClaim == null)
                 return Unauthorized(new ApiResponse<string>
                 {
-                    Message = "Không tìm thấy người dùng in token",
+                    Message = "Không tìm thấy người dùng trong token",
                     StatusCode = 401
                 });
 
@@ -199,14 +199,12 @@ namespace EmployeeAPI.Controllers
                 PositionName = userEntity.Position?.Name,
                 userEntity.DepartmentId,
                 DepartmentName = userEntity.Department?.Name,
+                userEntity.CompanyId,
+                CompanyName = userEntity.Company?.Name,
                 userEntity.SalaryPerHour,
                 userEntity.IsActive,
                 userEntity.IsDeleted,
                 userEntity.ImageUrl,
-                /*userEntity.CreatedAt,
-                userEntity.CreatedBy,
-                userEntity.UpdatedAt,
-                userEntity.UpdatedBy,*/
             };
             return Ok(new ApiResponse<object>
             {

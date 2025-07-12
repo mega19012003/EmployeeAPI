@@ -19,11 +19,13 @@ namespace EmployeeAPI.Services.UserService
             public Guid? DepartmentId { get; set; }
             public string PositionName { get; set; }
             public Guid? PositionId { get; set; }
+            public string CompanyName { get; set; }
+            public Guid? CompanyId { get; set; }
             public double? SalaryPerHour { get; set; }
             public string ImageUrl { get; set; }
             public bool IsActive { get; set; } 
         }
-        public class AdminUpdateDto 
+        public class UpdateDto 
         {
             [Required]
             public Guid UserId { get; set; }
@@ -33,6 +35,7 @@ namespace EmployeeAPI.Services.UserService
             public string? Address { get; set; }
             public Guid? DepartmentId { get; set; }
             public Guid? PositionId { get; set; }
+            public Guid? CompanyId { get; set; }
             //[Required]
             public double? SalaryPerHour { get; set; }
             public IFormFile? ImageUrl { get; set; }

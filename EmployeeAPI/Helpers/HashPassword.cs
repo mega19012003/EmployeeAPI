@@ -43,7 +43,6 @@ namespace EmployeeAPI.Helpers
                 if (hashBytes[i + 16] != hash[i])
                     return false;
             }
-
             return true;
         }
     }

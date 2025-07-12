@@ -4,6 +4,7 @@ using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250711040037_initia2")]
+    partial class initia2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -88,7 +91,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Companies");
+                    b.ToTable("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
@@ -224,6 +227,113 @@ namespace EmployeeAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LogStatusConfigs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 0,
+                            Name = "None",
+                            Note = "Chưa checkin/checkout",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Name = "OnTime",
+                            Note = "Đi đúng giờ",
+                            SalaryMultiplier = 1.0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Late",
+                            Note = "Đi trễ",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "LeaveEarly",
+                            Note = "Về sớm",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "LateAndLeaveEarly",
+                            Note = "Đi trễ và về sớm",
+                            SalaryMultiplier = 0.5
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Overtime",
+                            Note = "Làm thêm giờ",
+                            SalaryMultiplier = 1.3
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "LateAndOvertime",
+                            Note = "Đi trễ và làm thêm giờ",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Absent",
+                            Note = "Vắng",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "OnHoliday",
+                            Note = "Làm vào ngày nghỉ",
+                            SalaryMultiplier = 2.0
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "OnHolidayLate",
+                            Note = "Đi trễ vào ngày nghỉ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "OnHolidayLeaveEarly",
+                            Note = "Về sớm vào ngày nghỉ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "OnHolidayOvertime",
+                            Note = "Làm thêm giờ vào ngày nghỉ",
+                            SalaryMultiplier = 3.0
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "OnHolidayLateAndOvertime",
+                            Note = "Đi trễ và làm thêm giờ vào ngày nghỉ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Name = "OnHolidayLateAndLeaveEarly",
+                            Note = "Đi trễ và về sớm vào ngày nghỉ",
+                            SalaryMultiplier = 2.0
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Name = "Others",
+                            Note = "Khác",
+                            SalaryMultiplier = 0.5
+                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -250,9 +360,6 @@ namespace EmployeeAPI.Migrations
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
-
-                    b.Property<bool>("isPaied")
-                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -370,9 +477,6 @@ namespace EmployeeAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<bool>("isResetPass")
-                        .HasColumnType("bit");
 
                     b.HasKey("UserId");
 

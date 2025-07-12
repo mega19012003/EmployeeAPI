@@ -42,26 +42,22 @@ namespace EmployeeAPI.Services.AuthServices
 
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy người dùng hiện tại");
-
-                if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
-                    //throw new UnauthorizedAccessException("Manager can only register employee user");
+                else if (currentUser.Role == RoleType.SystemAdmin && (dto.Role != RoleType.SystemAdmin && dto.Role != RoleType.Administrator))
+                    throw new ArgumentException("Quản trị hệ thống chỉ được phép tạo tài khoản quản trị hoặc admin của công ty");
+                else if (currentUser.Role == RoleType.Administrator && (dto.Role != RoleType.Employee || dto.Role != RoleType.Manager))
+                    throw new ArgumentException("Admin chỉ được phép tạo tài khoản manager hoặc employee");
+                else if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
                     throw new ArgumentException("Manager chỉ có thể tạo user employee");
 
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
                     throw new ArgumentException("Username đã tồn tại");
-
-                if(!IsStrongPassword(dto.Password))
+                else if(!IsStrongPassword(dto.Password))
                     throw new ArgumentException("Password phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
                 var departmentId = Guid.Empty;
-                if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId != null)
-                {
-                    departmentId = currentUser.DepartmentId.Value;
-                }
-
-                //var generatedPassword = PasswordGenerator.Generate(8);
-
+                var companyId = Guid.Empty;
+                
                 var entity = new User
                 {
                     UserId = Guid.NewGuid(),
@@ -76,14 +72,18 @@ namespace EmployeeAPI.Services.AuthServices
                     SalaryPerHour = 0,
                 };
 
-                // Nếu currentUser là Manager → luôn gán DepartmentId
-                if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId.HasValue)
+                if (currentUser.Role == RoleType.Administrator && currentUser.CompanyId != null)
+                    //companyId = currentUser.CompanyId.Value;
+                    entity.CompanyId = currentUser.CompanyId;
+                else if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId != null && currentUser.CompanyId != null)
                 {
+                    //companyId = currentUser.DepartmentId.Value;
+                    //departmentId = currentUser.DepartmentId.Value;
                     entity.DepartmentId = currentUser.DepartmentId;
+                    entity.CompanyId = currentUser.CompanyId;
                 }
                 else
                 {
-                    // Admin: để null hoặc có thể gán dto.DepartmentId nếu bạn muốn
                     entity.DepartmentId = null;
                 }
 
@@ -96,7 +96,6 @@ namespace EmployeeAPI.Services.AuthServices
                     userId = entity.UserId,
                     Username = entity.Username,
                     Fullname = entity.Fullname,
-                    //Password = entity.Password, 
                     RoleName = entity.Role.ToString(),
                 };
             }
@@ -124,12 +123,11 @@ namespace EmployeeAPI.Services.AuthServices
                 if (user.IsDeleted)
                     throw new ArgumentException("Người dùng này đã bị xóa");
                 else if (!user.IsActive)
-                    throw new ArgumentException("Người dùng này đã bị khóa");
+                    throw new ArgumentException("Người dùng này đã bị khóa. Liên hệ với Admin để mở lại");
                 else if (user == null)
                     throw new ArgumentException("Không tìm thấy username");
 
                 else if (HashPassword.Verify(user.Password, password) == false)
-                    //else if (user.Password != HashPassword.ComputeHash(password))
                     throw new ArgumentException("Sai password");
 
                 user.RefreshToken = GenerateRefreshToken();
@@ -168,7 +166,6 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("Không tìm thấy người dùng");
 
                 if (!HashPassword.Verify(user.Password, oldPassword))
-                //if (user.Password != HashPassword.ComputeHash(oldPassword))
                     throw new ArgumentException("Password cũ không chính xác");
 
                 if (newPassword != confirmPassword)
@@ -178,7 +175,6 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("Password mới phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
                 user.Password = HashPassword.Hash(newPassword);
-                //user.Password = HashPassword.ComputeHash(newPassword);
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
                 return "Change password success";
@@ -211,9 +207,8 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("Manager chỉ có thể reset password cho user cùng phòng ban");
                 }
 
-               // var generatedPassword = PasswordGenerator.Generate(8);
                 user.Password = HashPassword.Hash(user.Username);
-                //user.Password = HashPassword.ComputeHash(generatedPassword);
+                
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
 
@@ -248,10 +243,8 @@ namespace EmployeeAPI.Services.AuthServices
             if (user == null || user.RefreshToken != refreshToken || user.RefreshTokenExpiryTime <= DateTime.UtcNow)
                 throw new SecurityTokenException("Invalid refresh token");
 
-            // Tạo token mới
             var jwt = GenerateAccessToken(user);
 
-            // tạo refresh token mới
             user.RefreshToken = GenerateRefreshToken();
             user.RefreshTokenExpiryTime = DateTime.UtcNow.AddDays(7);
             await _repository.UpdateUserAsync(user);

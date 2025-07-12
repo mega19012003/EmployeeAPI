@@ -34,6 +34,8 @@ using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using EmployeeAPI.Services.Dashboards;
+using EmployeeAPI.Repositories.Companies;
+using EmployeeAPI.Services.CompanyServices;
 
 var builder = WebApplication.CreateBuilder(args);
 var CustomCors = "_customCors";
@@ -76,6 +78,7 @@ builder.Services.AddScoped<IScheduleTimeRepository, EFScheduleTimeRepository>();
 builder.Services.AddScoped<ILogStatusConfigRepository, EFLogStatusConfigRepository>();
 builder.Services.AddScoped<IAllowedIPRepository, EFAllowedIPRepository>();
 builder.Services.AddScoped<IHolidayRepository, EFHolidayRepository>();
+builder.Services.AddScoped<ICompanyRepository, EFCompanyRepository>();
 
 builder.Services.AddScoped<IPositionService, PositionService>();
 builder.Services.AddScoped<IDepartmentService, DepartmentService>();
@@ -90,6 +93,7 @@ builder.Services.AddScoped<IAllowedIPService, AllowedIPService>();
 builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<ICloudImageService, CloudImageService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<ICompanyService, CompanyService>();
 
 builder.Services.AddSwaggerGen(c =>
 {

@@ -4,6 +4,7 @@ using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250711083226_them-user1")]
+    partial class themuser1
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -224,6 +227,113 @@ namespace EmployeeAPI.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("LogStatusConfigs");
+
+                    b.HasData(
+                        new
+                        {
+                            Id = 0,
+                            Name = "None",
+                            Note = "Chưa checkin/checkout",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 1,
+                            Name = "OnTime",
+                            Note = "Đi đúng giờ",
+                            SalaryMultiplier = 1.0
+                        },
+                        new
+                        {
+                            Id = 2,
+                            Name = "Late",
+                            Note = "Đi trễ",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 3,
+                            Name = "LeaveEarly",
+                            Note = "Về sớm",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 4,
+                            Name = "LateAndLeaveEarly",
+                            Note = "Đi trễ và về sớm",
+                            SalaryMultiplier = 0.5
+                        },
+                        new
+                        {
+                            Id = 5,
+                            Name = "Overtime",
+                            Note = "Làm thêm giờ",
+                            SalaryMultiplier = 1.3
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Name = "LateAndOvertime",
+                            Note = "Đi trễ và làm thêm giờ",
+                            SalaryMultiplier = 0.69999999999999996
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Name = "Absent",
+                            Note = "Vắng",
+                            SalaryMultiplier = 0.0
+                        },
+                        new
+                        {
+                            Id = 8,
+                            Name = "OnHoliday",
+                            Note = "Làm vào ngày nghỉ",
+                            SalaryMultiplier = 2.0
+                        },
+                        new
+                        {
+                            Id = 9,
+                            Name = "OnHolidayLate",
+                            Note = "Đi trễ vào ngày nghỉ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 10,
+                            Name = "OnHolidayLeaveEarly",
+                            Note = "Về sớm vào ngày nghỉ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 11,
+                            Name = "OnHolidayOvertime",
+                            Note = "Làm thêm giờ vào ngày nghỉ",
+                            SalaryMultiplier = 3.0
+                        },
+                        new
+                        {
+                            Id = 12,
+                            Name = "OnHolidayLateAndOvertime",
+                            Note = "Đi trễ và làm thêm giờ vào ngày nghỉ",
+                            SalaryMultiplier = 1.5
+                        },
+                        new
+                        {
+                            Id = 13,
+                            Name = "OnHolidayLateAndLeaveEarly",
+                            Note = "Đi trễ và về sớm vào ngày nghỉ",
+                            SalaryMultiplier = 2.0
+                        },
+                        new
+                        {
+                            Id = 14,
+                            Name = "Others",
+                            Note = "Khác",
+                            SalaryMultiplier = 0.5
+                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -371,9 +481,6 @@ namespace EmployeeAPI.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
-                    b.Property<bool>("isResetPass")
-                        .HasColumnType("bit");
-
                     b.HasKey("UserId");
 
                     b.HasIndex("CompanyId");
@@ -386,6 +493,168 @@ namespace EmployeeAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+
+                    b.HasData(
+                        new
+                        {
+                            UserId = new Guid("3a4b6258-57e5-4546-9936-7e27819cc99a"),
+                            Address = "Hà Nội",
+                            Fullname = "Nguyễn Văn Quang",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "2M4cZPgJz4S/r/0ise+ZEsLbG+0rJOk7pa3atrYT5dYdk5VI",
+                            PhoneNumber = "0901000001",
+                            RefreshToken = "",
+                            Role = 2,
+                            SalaryPerHour = 20000.0,
+                            TokenVersion = 0,
+                            Username = "Manager01"
+                        },
+                        new
+                        {
+                            UserId = new Guid("a509804b-ef63-47a7-9f1f-e337ac5a4b82"),
+                            Address = "TP. HCM",
+                            Fullname = "Lê Thị Hoa",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "galU3sT18iHqRAejHayj0lAr+XzWZpJnrAEdUt2cNX2ngwb/",
+                            PhoneNumber = "0901000002",
+                            RefreshToken = "",
+                            Role = 2,
+                            SalaryPerHour = 20000.0,
+                            TokenVersion = 0,
+                            Username = "Manager02"
+                        },
+                        new
+                        {
+                            UserId = new Guid("90a98ccf-01e0-432a-864a-2da205e7c5b8"),
+                            Address = "Hà Nội",
+                            Fullname = "Nguyễn Phúc Hậu",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "oCJw90bPLNTKS1CRVTkqyqU/WP01OtNTUdQ3DPH1Uy6FzDp+",
+                            PhoneNumber = "0901000009",
+                            RefreshToken = "",
+                            Role = 2,
+                            SalaryPerHour = 18000.0,
+                            TokenVersion = 0,
+                            Username = "Manager03"
+                        },
+                        new
+                        {
+                            UserId = new Guid("f376f976-b43b-42f3-bea7-f6af056eafe5"),
+                            Address = "Hà Nội",
+                            Fullname = "Lê Bảo Nhân",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "7JfCpFaFnEbntclqbdAqd52szrMoMPXjlozs7I0jzutDYS5n",
+                            PhoneNumber = "0901000010",
+                            RefreshToken = "",
+                            Role = 2,
+                            SalaryPerHour = 15000.0,
+                            TokenVersion = 0,
+                            Username = "Manager04"
+                        },
+                        new
+                        {
+                            UserId = new Guid("007a1d7f-3e94-4ec0-b354-63e0f261c5ab"),
+                            Address = "Ninh Bình",
+                            Fullname = "Trần Minh Quân",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "DWzSEvPzW4rKl5ASQp/IcIsux3N0KxyAi0GLxRcRtxPPskwh",
+                            PhoneNumber = "0901000008",
+                            RefreshToken = "",
+                            Role = 3,
+                            SalaryPerHour = 10000.0,
+                            TokenVersion = 0,
+                            Username = "User01"
+                        },
+                        new
+                        {
+                            UserId = new Guid("70c84524-a69b-4dbb-9c71-0dbd1942d37b"),
+                            Address = "Hải Phòng",
+                            Fullname = "Phạm Văn An",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "IxiXi8Fpv2wiwx9D9cKCM5ReOLz7UOMm4VXUGG2C4M7Cp1sx",
+                            PhoneNumber = "0901000003",
+                            RefreshToken = "",
+                            Role = 3,
+                            SalaryPerHour = 12000.0,
+                            TokenVersion = 0,
+                            Username = "User02"
+                        },
+                        new
+                        {
+                            UserId = new Guid("abcbb50e-b2e0-43e8-bb2d-6412f2de907f"),
+                            Address = "Đà Nẵng",
+                            Fullname = "Nguyễn Phúc Bảo",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "kdp8xepkILJt0uDifjjYGZy9jnodv+XythfxP5IpV0x5IouZ",
+                            PhoneNumber = "0901000004",
+                            RefreshToken = "",
+                            Role = 3,
+                            SalaryPerHour = 15000.0,
+                            TokenVersion = 0,
+                            Username = "User03"
+                        },
+                        new
+                        {
+                            UserId = new Guid("cdfd8e5d-f2c9-4d4c-b8ab-14a93cea2bcb"),
+                            Address = "Huế",
+                            Fullname = "Trần Minh Đức",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "0NwSXC3p6tY/Z8o4kZ08tOiQEOWL91s3v1tVyt20sWE6zYFD",
+                            PhoneNumber = "0901000005",
+                            RefreshToken = "",
+                            Role = 3,
+                            SalaryPerHour = 8000.0,
+                            TokenVersion = 0,
+                            Username = "User04"
+                        },
+                        new
+                        {
+                            UserId = new Guid("c1b01895-4757-4915-96bf-6a98fe6954d4"),
+                            Address = "Cần Thơ",
+                            Fullname = "Lê Văn Dũng",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "Bspo99xXGUIa3tkbgDdjQP9V16lTBPu+fZ6kIWmewPHpJaIm",
+                            PhoneNumber = "0901000006",
+                            RefreshToken = "",
+                            Role = 3,
+                            SalaryPerHour = 5000.0,
+                            TokenVersion = 0,
+                            Username = "User05"
+                        },
+                        new
+                        {
+                            UserId = new Guid("4a521fd7-76c2-46c1-b6d9-37b3d0342799"),
+                            Address = "Bình Dương",
+                            Fullname = "Vũ Thị Ngọc Bích",
+                            ImageUrl = "",
+                            IsActive = true,
+                            IsDeleted = false,
+                            Password = "17gvyAdeza2LaXKCQTgnwGxV8WN1t153nyXNoKrKfo+6ri6L",
+                            PhoneNumber = "0901000007",
+                            RefreshToken = "",
+                            Role = 3,
+                            SalaryPerHour = 12000.0,
+                            TokenVersion = 0,
+                            Username = "User06"
+                        });
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>

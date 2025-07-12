@@ -14,6 +14,7 @@ namespace EmployeeAPI.Models
         [MaxLength(20, ErrorMessage = "Username không được dài quá 20 ký tự")]
         public string Username { get; set; }
         public string Password { get; set; }
+        public bool isResetPass { get; set; }
         [MaxLength(100, ErrorMessage = "Họ tên không được dài quá 100 ký tự")]
         public string Fullname { get; set; }
         public RoleType Role { get; set; }
@@ -22,15 +23,25 @@ namespace EmployeeAPI.Models
         public string? PhoneNumber { get; set; }
         [MaxLength(200, ErrorMessage = "Địa chỉ không được dài quá 200 ký tự")]
         public string? Address { get; set; }
+        [Range(0, double.MaxValue, ErrorMessage = "Lương cơ bản phải >= 0")]
+        public double SalaryPerHour { get; set; }
+        public bool IsActive { get; set; }
+        public bool IsDeleted { get; set; }
+        public string? ImageUrl { get; set; }
+
+        /// /////////////////////////////////////////////////
+        /// /////////////////////////////////////////////////
+
         public Guid? DepartmentId { get; set; }
         public Department Department { get; set; }
         public Guid? PositionId { get; set; }
         public Position Position { get; set; }
-        [Range(0, double.MaxValue, ErrorMessage = "Lương cơ bản phải >= 0")]
-        public double SalaryPerHour { get; set; }
-        public bool IsActive { get; set; }
-        public bool IsDeleted { get; set; } 
-        public string? ImageUrl { get; set; }
+        public Guid? CompanyId { get; set; }
+        public Company Company { get; set; }
+
+        /// /////////////////////////////////////////////////
+        /// /////////////////////////////////////////////////
+
         // 1. Người giao việc (manager)
         public ICollection<Duty> AssignedDuties { get; set; } = new List<Duty>();
 
