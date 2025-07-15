@@ -6,6 +6,7 @@ using EmployeeAPI.Services.LogStatusConfigServices;
 using EmployeeAPI.Services.UserService;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.LogStatusConfigServices.ResponseModel;
 
 namespace EmployeeAPI.Services.LogStatusConfigServices
 {
@@ -39,9 +40,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
 
                 if (!isSystemAdmin)
                 {
-                    var currentUser = await _context.Users
-                        .AsNoTracking()
-                        .FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    var currentUser = await _userRepo.GetActiveUserIdAsync(currentUserId);
 
                     if (currentUser == null || currentUser.CompanyId == null)
                         throw new ArgumentException("Người dùng hiện tại chưa thuộc công ty nào. Vui lòng liên hệ admin để cập nhật công ty.");
@@ -118,7 +117,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
             };
         }
 
-        public async Task<LogStatusConfig> UpdateConfigAsync(LogStatusConfig updatedConfig)
+        public async Task<LogStatusDto> UpdateConfigAsync(LogStatusConfig updatedConfig)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -135,7 +134,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                return new LogStatusConfig
+                return new LogStatusDto
                 {
                     Id = existing.Id,
                     Name = existing.Name,

@@ -21,7 +21,7 @@ namespace EmployeeAPI.Repositories.ScheduleTimes
 
         public async Task<ScheduleTime?> GetTemplateAsync()
         {
-            return await _context.ScheduleTimes.FirstOrDefaultAsync(x => x.IsSystemDefault);
+            return await _context.ScheduleTimes.FirstOrDefaultAsync(x => !x.IsSystemDefault);
         }
 
         public IQueryable<ScheduleTime> GetAll()

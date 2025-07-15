@@ -17,7 +17,6 @@ namespace EmployeeAPI.Models
         public string? Note { get; set; }
 
         public Guid? CompanyId { get; set; }
-        public string? CompanyName { get; set; }
         public bool IsSystemDefault { get; set; } // true=template, false=instance của công ty
         public Company Company { get; set; }
     }

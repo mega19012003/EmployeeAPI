@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.ComponentModel.Design;
 using System.Security.Claims;
+using static EmployeeAPI.Services.LogStatusConfigServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -65,7 +66,7 @@ namespace EmployeeAPI.Controllers
         public async Task<IActionResult> Update([FromBody] LogStatusConfig updated)
         {
             var result = await _service.UpdateConfigAsync(updated);
-            return Ok(ApiResponse<LogStatusConfig>.ReturnResult("Update config success", result, 200));
+            return Ok(ApiResponse<LogStatusDto>.ReturnResult("Update config success", result, 200));
         }
     }
 }

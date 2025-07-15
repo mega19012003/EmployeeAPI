@@ -134,7 +134,7 @@ namespace EmployeeAPI.Services.CompanyServices
                     SalaryMultiplier = x.SalaryMultiplier,
                     Note = x.Note,
                     CompanyId = newCompany.Id,
-                    CompanyName = newCompany.Name,
+                    //CompanyName = newCompany.Name,
                     IsSystemDefault = false
                 }).ToList();
 
