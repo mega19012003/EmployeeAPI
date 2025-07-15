@@ -16,7 +16,7 @@ namespace EmployeeAPI.Repositories.ScheduleTimes
         {
             return _context.ScheduleTimes
                 .AsNoTracking()
-                .Include(c => c.Company);
+                .Include(c => c.Company).Where(c => !c.IsSystemDefault);
         }
 
         public async Task<ScheduleTime?> GetTemplateAsync()
@@ -28,7 +28,7 @@ namespace EmployeeAPI.Repositories.ScheduleTimes
         {
             return _context.ScheduleTimes
                 .AsNoTracking()
-                .Include(c => c.Company);
+                .Include(c => c.Company).Where(c => !c.IsSystemDefault);
         }
 
         public async Task<ScheduleTime?> GetScheduleTime(Guid id)

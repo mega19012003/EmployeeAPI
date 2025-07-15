@@ -39,6 +39,9 @@ namespace EmployeeAPI.Controllers
             //var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
             var pagedResult = await _scheduleTimeService.GetAllAsync(companyId, pageIndex, pageSize/*, currentUserId, currentUserRoles*/);
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<ScheduleDto>>.ReturnResult("No result", pagedResult, 200));
+
             return Ok(ApiResponse<PagedResult<ScheduleDto>>.ReturnResult("Get Schedule time Success", pagedResult, 200));
         }
 
