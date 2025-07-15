@@ -87,13 +87,14 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = d.StartDate,
                     EndDate = d.EndDate,
                     AssignedBy = d.AssignedBy.Fullname,
+                    CompanyName = d.Company.Name,
                     DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = dd.DutyDetailId,
                         UserId = dd.UserId,
                         Description = dd.Description,
                         Name = dd.Users.Fullname,
-                        IsCompleted = dd.IsCompleted
+                        IsCompleted = dd.IsCompleted,
                     }).ToList()
                 })
                 .AsNoTracking()
@@ -148,6 +149,7 @@ namespace EmployeeAPI.Services.DutyServices
                 StartDate = duty.StartDate,
                 EndDate = duty.EndDate,
                 AssignedBy = duty.AssignedBy?.Fullname,
+                CompanyName = duty.Company.Name,
                 DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                 {
                     DutyDetailId = d.DutyDetailId,
@@ -223,6 +225,21 @@ namespace EmployeeAPI.Services.DutyServices
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new ArgumentException("Không tìm thấy người dùng");
 
+                if (currentUserRoles.Contains("Administrator"))
+                {
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
+
+                    if (assignedUsers.Any(u => u.Role != RoleType.Employee))
+                        throw new ArgumentException("Chỉ nhân viên được phép gán vào 1 công việc");
+
+                    if (assignedUsers.Any(u => u.CompanyId != currentUser.CompanyId))
+                        throw new ArgumentException("Admin chỉ được chọn nhân viên cùng công ty để thực hiện công việc");
+
+                    if (conflict != Guid.Empty)
+                        throw new InvalidOperationException("Một hoặc nhiều nhân việc đang được gán cho công việc khác chưa hoàn thành");
+                }
+
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (currentUser.DepartmentId == null)
@@ -251,6 +268,7 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = dto.StartDate,
                     EndDate = dto.EndDate,
                     AssignedById = currentUserId,
+                    CompanyId = (Guid)currentUser.CompanyId,
                     DutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                     {
                         UserId = d.userId,
@@ -270,6 +288,7 @@ namespace EmployeeAPI.Services.DutyServices
                     IsCompleted = duty.IsCompleted,
                     StartDate = duty.StartDate,
                     AssignedBy = duty.AssignedBy?.Fullname,
+                    CompanyName = duty.Company.Name,
                     DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = d.DutyDetailId,
@@ -277,7 +296,6 @@ namespace EmployeeAPI.Services.DutyServices
                         Description = d.Description,
                         Name = d.Users?.Fullname,
                         IsCompleted = d.IsCompleted
-
                     }).ToList()
                 };
             }
@@ -313,7 +331,21 @@ namespace EmployeeAPI.Services.DutyServices
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new ArgumentException("Không tìm thấy người dùng");
 
-                if (currentUserRoles.Contains("Manager"))
+                if (currentUserRoles.Contains("Administrator"))
+                {
+                    if (duty.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ có thể chỉnh sửa công việc có trong công ty của mình");
+
+                    if (assignedUsers.Any(u => u.Role != RoleType.Employee))
+                        throw new Exception("Chỉ nhân viên được phép gán vào 1 công việc");
+
+                    if (assignedUsers.Any(u => u.CompanyId != currentUser.CompanyId))
+                        throw new ArgumentException("Admin chỉ được chọn nhân viên cùng công ty để thực hiện công việc");
+
+                    if (conflict != Guid.Empty)
+                        throw new InvalidOperationException("Một hoặc nhiều nhân việc đang được gán cho công việc khác chưa hoàn thành");
+                }
+                else if (currentUserRoles.Contains("Manager"))
                 {
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
@@ -358,6 +390,7 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = result.Name ?? null,
                     StartDate = result.StartDate,
                     AssignedBy = result.AssignedBy?.Fullname,
+                    CompanyName = result.Company.Name,
                     DutyDetails = result.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = d.DutyDetailId,
@@ -390,10 +423,15 @@ namespace EmployeeAPI.Services.DutyServices
                 if (existingDuty == null)
                     throw new ArgumentException("Không tìm thấy công việc");
 
-                if (currentUserRoles.Contains("Manager"))
+                if (currentUserRoles.Contains("Administrator"))
+                {
+                    if (existingDuty.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Admin chỉ có thể chỉnh sửa công việc trong công ty của mình ");
+                }
+                else if (currentUserRoles.Contains("Manager"))
                 {
                     if (existingDuty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
+                        throw new ArgumentException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
                 }
 
                 //if (dto.StartDate.Date < DateTime.UtcNow.Date)
@@ -453,7 +491,17 @@ namespace EmployeeAPI.Services.DutyServices
                 if (userToAssign == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
-                if (currentUserRoles.Contains("Manager"))
+                if (currentUserRoles.Contains("Admin"))
+                {
+                    /*if (currentUser.DepartmentId == null)
+                        throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");*/
+                    //if (existingDutyDetail.Duty.AssignedById != currentUserId)
+                    //    throw new UnauthorizedAccessException("Admin chỉ có thể chỉnh sửa công việc do họ tạo ra");
+
+                    if (userToAssign.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ được chọn nhân viên cùng công ty để thực hiện công việc");
+                }
+                else if (currentUserRoles.Contains("Manager"))
                 {
                     /*if (currentUser.DepartmentId == null)
                         throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");*/
@@ -516,7 +564,16 @@ namespace EmployeeAPI.Services.DutyServices
                     }
                 }
 
-                if (isManager)
+                if (isAdmin)
+                {
+                    var currentUser = await _context.Users.FindAsync(currentUserId);
+                    //if (detail.Duty.AssignedById != currentUserId)
+                    //    throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
+
+                    if (detail.Users.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ có thể đánh dấu hoàn thành cho công việc cho user cùng công ty");
+                }
+                else if (isManager)
                 {
                     var currentUser = await _context.Users.FindAsync(currentUserId);
                     if (detail.Duty.AssignedById != currentUserId)
@@ -577,6 +634,11 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (isManager)
                 {
+                    if (currentUser.CompanyId != entity.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ có thể xóa công việc trong công ty của mình");
+                }
+                else if (isManager)
+                {
                     if (entity.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa công việc do mình tạo ra");
                 }
@@ -614,8 +676,14 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new ArgumentException("Không thể tìm thấy công việc này detail " + dutyDetailId);
 
                 var isManager = currentUserRoles.Contains("Manager");
+                var isAdmin = currentUserRoles.Contains("Administrator");
 
-                if (isManager)
+                if (isAdmin)
+                {
+                    if (currentUser.CompanyId != entity.Duty.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ được xóa chi tiết công việc trong công ty của mình");
+                }
+                else if (isManager)
                 {
                     if (entity.Duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa chi tiết công việc do mình tạo ra");

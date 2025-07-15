@@ -16,6 +16,7 @@ namespace EmployeeAPI.Services.DutyServices
             public string AssignedBy { get; set; }
             public bool IsCompleted { get; set; }
             public List<DutyDetailResultDto> DutyDetails { get; set; } = new List<DutyDetailResultDto>();
+            public string CompanyName { get; set; }
         }
         public class DutyDetailResultDto
         {
