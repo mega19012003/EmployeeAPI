@@ -19,7 +19,7 @@ namespace EmployeeAPI.Models
         public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
 
         public Company Company { get; set; }
-        public Guid CompanyId { get; set; }
+        public Guid? CompanyId { get; set; }
         //public string note { get; set; } = string.Empty;
     }
 }

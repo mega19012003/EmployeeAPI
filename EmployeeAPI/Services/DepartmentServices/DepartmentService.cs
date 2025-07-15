@@ -32,7 +32,7 @@ namespace EmployeeAPI.Services.DepartmentServices
 
                 var isAdmin = currentUserRoles.Contains("Administrator");
 
-                if (!isAdmin)
+                if (isAdmin)
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
