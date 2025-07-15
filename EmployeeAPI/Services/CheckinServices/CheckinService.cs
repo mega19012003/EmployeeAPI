@@ -200,6 +200,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
+
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
@@ -218,7 +219,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 var startOfDay = now.Date;
                 var endOfDay = now.Date.AddDays(1).AddTicks(-1);
 
-                var (_, _, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
+                var (_, _, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync((Guid)currentUser.CompanyId);
 
                 Enums.LogStatus logStatus;
 
@@ -322,7 +323,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 else if (isEmployee && targetUserId != currentUserId)
                     throw new ArgumentException("Employee không thể checkout cho user khác");
 
-                var (_, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
+                var (_, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync((Guid)currentUser.CompanyId);
 
                 var startOfDay = vnTime.Date;
                 var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
@@ -480,15 +481,15 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync()
+        private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync(Guid companyId)
         {
             var nowUtc = DateTime.UtcNow;
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var vnTime = TimeZoneInfo.ConvertTimeFromUtc(nowUtc, vnTimeZone);
             var currentTime = TimeOnly.FromDateTime(vnTime);
 
-            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync();
-            if (schedule == null) throw new Exception("Không thể tìm thấy thời gian làm việc");
+            var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync(s => s.CompanyId == companyId);
+            if (schedule == null) throw new Exception("Không tìm thấy cấu hình giờ làm việc cho công ty");
 
             var isHoliday = await _holidayRepository.IsHolidayAsync(vnTime);
             var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
@@ -527,7 +528,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         throw new ArgumentException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
                 }
 
-                var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
+                var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync((Guid)existing.Users.CompanyId);
 
                 double overtimeHours = 0;
                 var endTimeAfternoon = schedule.EndTimeAfternoon; // TimeOnly
@@ -582,33 +583,36 @@ namespace EmployeeAPI.Services.CheckinServices
         public async Task<double> CalculateSalaryPerDayNew(User user, double normalHours, double overtimeHours, Enums.LogStatus logStatus)
         {
 
-            //if (user.CompanyId == null)
-            //    throw new ArgumentException("Người dùng chưa có công ty");
+            if (user.CompanyId == null)
+                throw new ArgumentException("Người dùng chưa có công ty");
 
             var logStatusConfigs = await _logStatusConfigRepository.GetAllAsync(user.CompanyId.Value);
 
-            double onTimeMultiplier = 1;
-            double overtimeMultiplier = 1;
+            if (logStatusConfigs == null || !logStatusConfigs.Any())
+                throw new Exception("Không tìm thấy cấu hình hệ số lương cho công ty này");
 
-            foreach (var item in logStatusConfigs)
-            {
-                if (item.enumId == (int)Enums.LogStatus.OnTime) onTimeMultiplier = item.SalaryMultiplier;
-                if (item.enumId == (int)Enums.LogStatus.Overtime) overtimeMultiplier = item.SalaryMultiplier;
-                if (item.enumId == (int)logStatus) onTimeMultiplier = item.SalaryMultiplier;
-            }
+            var currentStatusConfig = logStatusConfigs.FirstOrDefault(c => c.enumId == (int)logStatus);
+            var overtimeConfig = logStatusConfigs.FirstOrDefault(c => c.enumId == (int)Enums.LogStatus.Overtime);
+            var onTimeConfig = logStatusConfigs.FirstOrDefault(c => c.enumId == (int)Enums.LogStatus.OnTime);
+
+            double currentMultiplier = currentStatusConfig?.SalaryMultiplier ?? 1;
+            double overtimeMultiplier = overtimeConfig?.SalaryMultiplier ?? 1;
+            double onTimeMultiplier = onTimeConfig?.SalaryMultiplier ?? 1;
 
             double salary = 0;
 
             if (logStatus == Enums.LogStatus.Overtime)
             {
-                salary = (normalHours * user.SalaryPerHour * onTimeMultiplier) + (overtimeHours * user.SalaryPerHour * overtimeMultiplier);
+                // Khi status là Overtime → tính giờ thường + giờ tăng ca
+                salary = (normalHours * user.SalaryPerHour * onTimeMultiplier)
+                       + (overtimeHours * user.SalaryPerHour * overtimeMultiplier);
             }
             else
             {
-                salary = normalHours * user.SalaryPerHour * onTimeMultiplier;
+                salary = normalHours * user.SalaryPerHour * currentMultiplier;
             }
-            salary = Math.Floor(salary);
-            return salary;
+
+            return Math.Floor(salary);
         }
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
