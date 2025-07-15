@@ -159,7 +159,6 @@ namespace EmployeeAPI.Services.CompanyServices
                     };
 
                     await _context.ScheduleTimes.AddAsync(companySchedule);
-                    //await _context.SaveChangesAsync();
                 }
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
