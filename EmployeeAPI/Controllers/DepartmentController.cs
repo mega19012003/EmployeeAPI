@@ -1,18 +1,20 @@
-﻿using EmployeeAPI.Base;
+﻿using CloudinaryDotNet;
+using EmployeeAPI.Attributes;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
-using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Auth;
+using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Services.DepartmentServices;
+using EmployeeAPI.Services.UserService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
 using System.Security.Claims;
-using EmployeeAPI.Services.UserService;
-using ResponseModel = EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.DepartmentServices.ResponseModel;
 using static EmployeeAPI.Services.UserService.ResponseModel;
-using EmployeeAPI.Attributes;
+using ResponseModel = EmployeeAPI.Services.DepartmentServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -59,7 +61,12 @@ namespace EmployeeAPI.Controllers
         [HttpGet("{departmentId}")]
         public async Task<IActionResult> GetById(Guid departmentId)
         {
-            var result = await _departmentService.GetByIdAsync(departmentId);
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _departmentService.GetByIdAsync(departmentId, currentUserId, currentUserRoles);
             if (result == null) return NotFound(ApiResponse<string>.ReturnResult("Không tìm thấy phòng ban", null, 404));
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Get department by Id success", result, 200));
         }
