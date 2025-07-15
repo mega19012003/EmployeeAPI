@@ -30,9 +30,16 @@ namespace EmployeeAPI.Services.AllowedIpServices
             pageSize ??= 10;
 
             var query = _allowedIPRepository.GetAll();
-          
 
-            if (!currentUserRoles.Contains("SystemAdmin")) 
+
+            if (currentUserRoles.Contains("SystemAdmin"))
+            {
+                if (companyId.HasValue)
+                {
+                    query = query.Where(x => x.CompanyId == companyId.Value);
+                }
+            }
+            else
             {
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser.CompanyId == null)
@@ -42,10 +49,6 @@ namespace EmployeeAPI.Services.AllowedIpServices
 
                 var userCompanyId = currentUser.CompanyId.Value;
                 query = query.Where(x => x.CompanyId == userCompanyId);
-            }
-            else if (companyId.HasValue)
-            {
-                query = query.Where(x => x.CompanyId == companyId.Value);
             }
 
             var totalCount = await query.CountAsync();

@@ -33,14 +33,10 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
                 var query = _scheduleRepository.GetAll();
 
-                //if (!currentUserRoles.Contains("SystemAdmin"))
-                //{
-                //    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
-                //    if (currentUser?.CompanyId == null)
-                //        throw new ArgumentException("User chưa có công ty.");
-
-                //    query = query.Where(c => c.CompanyId == currentUser.CompanyId);
-                //}
+                if (companyId.HasValue)
+                {
+                    query = query.Where(p => p.CompanyId == companyId);
+                }
 
                 var totalCount = await query.CountAsync();
 

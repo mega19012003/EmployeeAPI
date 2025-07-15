@@ -27,7 +27,6 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
 
         public async Task<PagedResult<ResponseModel.LogStatusDto>> GetAllConfigsAsync(string? name, Guid? companyId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
-            //return await _repository.GetAllAsync(companyId);
             try
             {
                 pageIndex ??= 1;

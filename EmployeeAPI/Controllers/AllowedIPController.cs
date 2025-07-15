@@ -26,7 +26,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? Search, Guid companyId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, Guid? companyId, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
