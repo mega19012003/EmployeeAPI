@@ -49,7 +49,16 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var query = _checkinRepository.GetAll();
 
-                if (currentUserRoles.Contains("Manager"))
+                if (currentUserRoles.Contains("Administrator"))
+                {
+                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Administrator chưa có công ty.");
+
+                    // Lọc theo công ty của user checkin
+                    query = query.Where(c => c.Users.CompanyId == currentUser.CompanyId);
+                }
+                else if (currentUserRoles.Contains("Manager"))
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
@@ -125,6 +134,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
+
         public async Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
@@ -132,19 +142,27 @@ namespace EmployeeAPI.Services.CheckinServices
                 var checkin = await _checkinRepository.GetByIdAsync(id);
                 if (checkin == null) throw new ArgumentException("Không tìm thấy thông tin checkin");
 
+                var isAdmin = currentUserRoles.Contains("Administrator");
                 var manager = currentUserRoles.Contains("Manager");
                 var employee = currentUserRoles.Contains("Employee");
 
-                if (manager)
+                if (isAdmin)
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null) throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                    else if (currentUser.DepartmentId == null) throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-                    if (checkin.Users.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể truy cập checkin của user cùng phòng ban");
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Administrator chưa có công ty.");
+                    else if (checkin.Users.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Administrator chỉ có thể xem checkin của user trong công ty của mình.");
+                }
+                else if (manager)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser.DepartmentId == null) throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+                    else if (checkin.Users.DepartmentId != currentUser.DepartmentId) throw new ArgumentException("Manager chỉ có thể truy cập checkin của user cùng phòng ban");
                 }
                 else if (employee)
                 {
-                    if (checkin.UserId != currentUserId) throw new UnauthorizedAccessException("Employee chỉ có thể xem checkin của mình");
+                    if (checkin.UserId != currentUserId) throw new ArgumentException("Employee chỉ có thể xem checkin của mình");
                 }
 
                 return new ResponseModel.CheckinResultDto
@@ -175,21 +193,24 @@ namespace EmployeeAPI.Services.CheckinServices
                 Guid targetUserId = userId ?? currentUserId;
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                if (currentUser == null)
-                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
 
-                if (isManager && currentUser.DepartmentId == null)
+                if (isAdmin && currentUser.CompanyId == null)
+                    throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
+                else if (isManager && currentUser.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
-                var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
+                    var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
-                if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager chỉ có thể checkin cho user cùng phòng ban");
+                if(isAdmin && targetUser.CompanyId != currentUser.CompanyId)
+                    throw new ArgumentException("Admin chỉ có thể checkin cho user cùng công ty");
 
-                if (isEmployee && targetUserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee không thể checkin cho user khác");
+                else if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
+                    throw new ArgumentException("Manager chỉ có thể checkin cho user cùng phòng ban");
+
+                else if (isEmployee && targetUserId != currentUserId)
+                    throw new ArgumentException("Employee không thể checkin cho user khác");
 
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
@@ -283,20 +304,23 @@ namespace EmployeeAPI.Services.CheckinServices
                 Guid targetUserId = userId ?? currentUserId;
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                if (currentUser == null)
-                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                if (isManager && currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager chưa có phòng ban");
+                if (isAdmin && currentUser.CompanyId == null)
+                    throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
+                else if (isManager && currentUser.DepartmentId == null)
+                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
-                if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager chỉ checkout cho user cùng phòng ban");
+                if (isAdmin && targetUser.CompanyId != currentUser.CompanyId)
+                    throw new ArgumentException("Admin chỉ có thể checkout cho user cùng công ty");
 
-                if (isEmployee && targetUserId != currentUserId)
-                    throw new UnauthorizedAccessException("Employee chỉ checkout cho bản thân");
+                else if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
+                    throw new ArgumentException("Manager chỉ có thể checkout cho user cùng phòng ban");
+
+                else if (isEmployee && targetUserId != currentUserId)
+                    throw new ArgumentException("Employee không thể checkout cho user khác");
 
                 var (_, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync();
 
@@ -405,7 +429,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     }
                 }
 
-
                 DateTime adjustedCheckinTime;
                 if (checkin.CheckinTime.TimeOfDay >= schedule.StartTimeMorning.ToTimeSpan()
                     && checkin.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
@@ -418,10 +441,9 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
 
                 var totalWorkedHours = (checkin.CheckoutTime - adjustedCheckinTime).TotalHours;
-
                 var lunchBreak = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
-
                 double normalWorkedHours;
+
                 if (adjustedCheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
                     && checkin.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
                 {
@@ -433,7 +455,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
 
                 if (normalWorkedHours < 0) normalWorkedHours = 0;
-
                 checkin.SalaryPerDay = await CalculateSalaryPerDayNew(targetUser, normalWorkedHours, overtimeHours, checkin.LogStatus);
 
                 await _checkinRepository.UpdateAsync(checkin);
@@ -489,13 +510,21 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
+                if(currentUserRoles.Contains("Administrator"))
+                {
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
+
+                    if (currentUser.DepartmentId != employee.DepartmentId)
+                        throw new ArgumentException("Admin chỉ có thể cập nhật checkin cho user cùng công ty");
+                }
                 if (currentUserRoles.Contains("Manager"))
                 {
                     if (currentUser.DepartmentId == null)
-                        throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     if (currentUser.DepartmentId != employee.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
+                        throw new ArgumentException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
                 }
 
                 var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync();
@@ -552,15 +581,20 @@ namespace EmployeeAPI.Services.CheckinServices
 
         public async Task<double> CalculateSalaryPerDayNew(User user, double normalHours, double overtimeHours, Enums.LogStatus logStatus)
         {
-            var logStatusConfigs = await _logStatusConfigRepository.GetAllAsync();
+
+            //if (user.CompanyId == null)
+            //    throw new ArgumentException("Người dùng chưa có công ty");
+
+            var logStatusConfigs = await _logStatusConfigRepository.GetAllAsync(user.CompanyId.Value);
+
             double onTimeMultiplier = 1;
             double overtimeMultiplier = 1;
 
             foreach (var item in logStatusConfigs)
             {
-                if (item.Id == (int)Enums.LogStatus.OnTime) onTimeMultiplier = item.SalaryMultiplier;
-                if (item.Id == (int)Enums.LogStatus.Overtime) overtimeMultiplier = item.SalaryMultiplier;
-                if (item.Id == (int)logStatus) onTimeMultiplier = item.SalaryMultiplier; 
+                if (item.enumId == (int)Enums.LogStatus.OnTime) onTimeMultiplier = item.SalaryMultiplier;
+                if (item.enumId == (int)Enums.LogStatus.Overtime) overtimeMultiplier = item.SalaryMultiplier;
+                if (item.enumId == (int)logStatus) onTimeMultiplier = item.SalaryMultiplier;
             }
 
             double salary = 0;
@@ -592,6 +626,9 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
+                    if (currentUser.CompanyId == null) throw new ArgumentException("Manager chưa có công ty. Vui lòng liên hệ system Admin để cập nhật công ty");
+
+                    if (currentUser.CompanyId != employee.CompanyId) throw new UnauthorizedAccessException("Admin chỉ có thể xóa checkin của user cùng công ty");
                 }
                 else if (currentUserRoles.Contains("Manager"))
                 {
@@ -617,105 +654,105 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.CheckinDetailDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
-        {
-            try
-            {
-                if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
-                {
-                    staffId = currentUserId;
-                }
-                else if (currentUserRoles.Contains("Manager"))
-                {
-                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+        //public async Task<PagedResult<ResponseModel.CheckinDetailDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        //{
+        //    try
+        //    {
+        //        if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
+        //        {
+        //            staffId = currentUserId;
+        //        }
+        //        else if (currentUserRoles.Contains("Manager"))
+        //        {
+        //            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
 
-                    if (currentUser.DepartmentId == null) throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+        //            if (currentUser.DepartmentId == null) throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
-                    if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
+        //            if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
 
-                    var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
-                    if (findUser == null) throw new ArgumentException("Không thể tìm thấy user này");
+        //            var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
+        //            if (findUser == null) throw new ArgumentException("Không thể tìm thấy user này");
 
-                    if (findUser.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể xem danh sách checkin từ user cùng phòng ban");
+        //            if (findUser.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể xem danh sách checkin từ user cùng phòng ban");
 
-                }
-                else if (currentUserRoles.Contains("Administrator"))
-                {
-                    if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
-                }
+        //        }
+        //        else if (currentUserRoles.Contains("Administrator"))
+        //        {
+        //            if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
+        //        }
 
-                pageIndex ??= 1;
-                pageSize ??= 10;
-                var now = DateTime.Now;
-                if (Year == null)
-                    Year = now.Year;
-                //else if (Year == 0)
-                //    Year = null;
+        //        pageIndex ??= 1;
+        //        pageSize ??= 10;
+        //        var now = DateTime.Now;
+        //        if (Year == null)
+        //            Year = now.Year;
+        //        //else if (Year == 0)
+        //        //    Year = null;
 
-                if (Month == null)
-                    Month = now.Month;
-                else if (Month == 0)
-                    Month = null;
+        //        if (Month == null)
+        //            Month = now.Month;
+        //        else if (Month == 0)
+        //            Month = null;
 
-                if (Day == null)
-                    Day = now.Day;
-                else if (Day == 0)
-                    Day = null;
+        //        if (Day == null)
+        //            Day = now.Day;
+        //        else if (Day == 0)
+        //            Day = null;
 
-                var user = await _userRepository.GetUserInfoAsync(staffId.Value);
+        //        var user = await _userRepository.GetUserInfoAsync(staffId.Value);
 
-                if (user == null)
-                    throw new ArgumentException("Không thể tìm thấy user này");
+        //        if (user == null)
+        //            throw new ArgumentException("Không thể tìm thấy user này");
 
-                var query = _context.Checkins.Where(p => !p.IsDeleted && p.UserId == staffId.Value);
-                query = query.Where(c => c.CheckinTime.Year == Year.Value);
+        //        var query = _context.Checkins.Where(p => !p.IsDeleted && p.UserId == staffId.Value);
+        //        query = query.Where(c => c.CheckinTime.Year == Year.Value);
 
-                if (Month.HasValue)
-                    query = query.Where(c => c.CheckinTime.Month == Month.Value);
+        //        if (Month.HasValue)
+        //            query = query.Where(c => c.CheckinTime.Month == Month.Value);
 
-                if (Day.HasValue)
-                    query = query.Where(c => c.CheckinTime.Day == Day.Value);
+        //        if (Day.HasValue)
+        //            query = query.Where(c => c.CheckinTime.Day == Day.Value);
 
-                if (Year.HasValue)
-                    query = query.Where(c => c.CheckinTime.Year == Year.Value);
+        //        if (Year.HasValue)
+        //            query = query.Where(c => c.CheckinTime.Year == Year.Value);
 
-                var totalCount = await query.CountAsync();
+        //        var totalCount = await query.CountAsync();
 
-                var itemsRaw = await query
-                    .Skip((pageIndex.Value - 1) * pageSize.Value)
-                    .Take(pageSize.Value)
-                    .Include(c => c.Users) 
-                    .ToListAsync();
+        //        var itemsRaw = await query
+        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
+        //            .Take(pageSize.Value)
+        //            .Include(c => c.Users) 
+        //            .ToListAsync();
 
-                var items = new List<ResponseModel.CheckinDetailDto>();
+        //        var items = new List<ResponseModel.CheckinDetailDto>();
 
-                foreach (var c in itemsRaw)
-                {
-                    items.Add(new ResponseModel.CheckinDetailDto
-                    {
-                        Id = c.Id,
-                        CheckinTime = c.CheckinTime,
-                        CheckoutTime = c.CheckoutTime,
-                        LogStatus = (int?)c.LogStatus,
-                        Status = c.LogStatus.ToString(),
-                        Name = c.Users.Fullname,
-                        SalaryPerDay = c.SalaryPerDay,
-                    });
-                }
+        //        foreach (var c in itemsRaw)
+        //        {
+        //            items.Add(new ResponseModel.CheckinDetailDto
+        //            {
+        //                Id = c.Id,
+        //                CheckinTime = c.CheckinTime,
+        //                CheckoutTime = c.CheckoutTime,
+        //                LogStatus = (int?)c.LogStatus,
+        //                Status = c.LogStatus.ToString(),
+        //                Name = c.Users.Fullname,
+        //                SalaryPerDay = c.SalaryPerDay,
+        //            });
+        //        }
 
-                return new PagedResult<ResponseModel.CheckinDetailDto>
-                {
-                    Items = items,
-                    PageIndex = pageIndex.Value,
-                    PageSize = pageSize.Value,
-                    TotalCount = totalCount
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
-            }
-        }
+        //        return new PagedResult<ResponseModel.CheckinDetailDto>
+        //        {
+        //            Items = items,
+        //            PageIndex = pageIndex.Value,
+        //            PageSize = pageSize.Value,
+        //            TotalCount = totalCount
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+        //        throw;
+        //    }
+        //}
     }
 }

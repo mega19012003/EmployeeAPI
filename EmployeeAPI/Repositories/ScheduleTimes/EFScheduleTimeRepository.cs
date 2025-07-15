@@ -12,9 +12,28 @@ namespace EmployeeAPI.Repositories.ScheduleTimes
             _context = context;
         }
 
-        public async Task<ScheduleTime?> GetScheduleTime()
+        public async Task<IEnumerable<ScheduleTime>> GetAllAsync()
         {
-            return await _context.ScheduleTimes.FirstOrDefaultAsync();
+            return _context.ScheduleTimes
+                .AsNoTracking()
+                .Include(c => c.Company);
+        }
+
+        public async Task<ScheduleTime?> GetTemplateAsync()
+        {
+            return await _context.ScheduleTimes.FirstOrDefaultAsync(x => x.IsSystemDefault);
+        }
+
+        public IQueryable<ScheduleTime> GetAll()
+        {
+            return _context.ScheduleTimes
+                .AsNoTracking()
+                .Include(c => c.Company);
+        }
+
+        public async Task<ScheduleTime?> GetScheduleTime(Guid id)
+        {
+            return await _context.ScheduleTimes.FirstOrDefaultAsync(p => p.id == id);
         }
 
         public async Task UpdateScheduleTime(ScheduleTime schedule)

@@ -67,17 +67,32 @@ namespace EmployeeAPI.Services.UserService
                     existingUser.ImageUrl = uploadedImageUrl;
                 }
 
-                if (isAdmin || isSystemAdmin)
+                if (isSystemAdmin) // sửa dc tt cơ bản và companyId
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new Exception("Không tìm thấy người dùng hiện tại");
+                    if(dto.CompanyId.HasValue) existingUser.CompanyId = dto.CompanyId.Value;
+                    if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
+                    if (dto.Role.HasValue)
+                    {
+                        if (dto.Role == RoleType.SystemAdmin || dto.Role == RoleType.Administrator)
+                            existingUser.Role = dto.Role.Value;
+                        else
+                            throw new Exception("Chỉ có thể cập nhật role của user sang Admin hoặc SystemAdmin");
+                    }
+                }
+                else if (isAdmin) // sửa dc tt cơ bản, departmentId và positionId
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (isAdmin && currentUser.CompanyId == null)
                         throw new Exception("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
 
                     if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
-                    if (dto.Role.HasValue) existingUser.Role = (RoleType)dto.Role;
+                    if (dto.Role.HasValue && (dto.Role == RoleType.Manager || dto.Role == RoleType.Employee)) existingUser.Role = (RoleType)dto.Role;
+                    else throw new Exception("Chỉ có thể cập nhật role của user sang Manager hoặc Employee");
+
+                    if (currentUser.CompanyId != existingUser.CompanyId)
+                        throw new Exception("Admin chỉ có thể cập nhật nhân viên cùng công ty");
 
                     if (existingUser.DepartmentId.HasValue)
                     {
@@ -97,6 +112,7 @@ namespace EmployeeAPI.Services.UserService
                                 throw new ArgumentException("Chức vụ này không thuộc phòng ban");
 
                             existingUser.PositionId = dto.PositionId;
+                            existingUser.DepartmentId = dto.DepartmentId;////////////////////////////////
                         }
                     }
                     else if (dto.PositionId.HasValue)
@@ -115,22 +131,18 @@ namespace EmployeeAPI.Services.UserService
                         existingUser.PositionId = dto.PositionId;
                     }
                 }
-                else if (isManager)
+                else if (isManager) // sửa dc tt cơ bản và positionId
                 {
                     if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
 
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng hiện tại");
                     if (currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
-                    if (currentUser.CompanyId.HasValue)
+                    //if (currentUser.CompanyId.HasValue)
+                    //    departmentId = currentUser.DepartmentId;
 
-
-                    departmentId = currentUser.DepartmentId;
-
-                    if (existingUser.DepartmentId != departmentId)
+                    if (existingUser.DepartmentId != existingUser.CompanyId)
                         throw new ArgumentException("Manager chỉ có thể cập nhật user cùng phòng ban");
 
                     if (dto.PositionId.HasValue)
@@ -202,18 +214,26 @@ namespace EmployeeAPI.Services.UserService
                 var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
                 var isManager = currentUserRoles.Contains("Manager");
 
+                if (isSystemAdmin)
+                {
+                    if (existingUser.Role != RoleType.SystemAdmin && existingUser.Role != RoleType.Administrator)
+                        throw new ArgumentException("SystemAdmin chỉ có thể xóa user SystemAdmin hoặc Admin");
+                }
+                else if (isAdmin)
+                {
+                    if (!currentUser.DepartmentId.HasValue)
+                        throw new ArgumentException("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
 
-                if (isManager)
+                    if (existingUser.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Admin không thể xóa user khác công ty");
+                }
+                else if (isManager)
                 {
                     if (!currentUser.DepartmentId.HasValue)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     if (existingUser.DepartmentId != currentUser.DepartmentId)
-                        throw new ArgumentException("Manager không thể xóa user kahc1 phòng ban");
-                }
-                else if (isAdmin) {
-                    if (!currentUser.DepartmentId.HasValue)
-                        throw new ArgumentException("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
+                        throw new ArgumentException("Manager không thể xóa user khác phòng ban");
                 }
 
                 existingUser.IsDeleted = true;
@@ -232,6 +252,7 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
+       
         public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
@@ -312,21 +333,41 @@ namespace EmployeeAPI.Services.UserService
         {
             var isAdmin = currentUserRoles.Contains("Administrator");
             var isManager = currentUserRoles.Contains("Manager");
+            var isEmployee = currentUserRoles.Contains("Employee");
+
+            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+            if (currentUser == null)
+                throw new ArgumentException("Không tìm thấy user hiện tại");
+
+            if (id == Guid.Empty)
+            {
+                id = currentUser.UserId;
+            }
+
+            if (isEmployee)
+            {
+                id = currentUser.UserId;
+            }
 
             var results = await _userRepository.GetUserInfoAsync(id);
             if (results == null)
                 throw new ArgumentException("Không tìm thấy user");
 
-            if (isManager) 
+            if (isAdmin)
             {
-                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                if (currentUser == null)
-                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                else if (currentUser?.DepartmentId == null)
+                if (currentUser.CompanyId == null)
+                    throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ SystemAdmin để cập nhật công ty");
+
+                if (results.CompanyId != currentUser.CompanyId)
+                    throw new UnauthorizedAccessException("Admin chỉ có thể truy cập thông tin user cùng công ty");
+            }
+            else if (isManager)
+            {
+                if (currentUser.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 if (results.DepartmentId != currentUser.DepartmentId)
-                    throw new UnauthorizedAccessException("Manager ch3i có truy cập thông tin user cùng phòng ban");
+                    throw new UnauthorizedAccessException("Manager chỉ có thể truy cập thông tin user cùng phòng ban");
             }
 
             return new ResponseModel.UserResultDto

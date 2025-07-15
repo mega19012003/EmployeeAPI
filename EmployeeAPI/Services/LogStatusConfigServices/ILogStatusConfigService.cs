@@ -1,12 +1,14 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
+using EmployeeAPI.Services.LogStatusConfigServices;
 
-namespace EmployeeAPI.Services.LogStatusConfigservices
+namespace EmployeeAPI.Services.LogStatusConfigServices
 {
     public interface ILogStatusConfigService
     {
-        Task<IEnumerable<LogStatusConfig>> GetAllConfigsAsync();
+        Task<PagedResult<ResponseModel.LogStatusDto>> GetAllConfigsAsync(string? name, Guid? companyId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles);
 
-        Task<LogStatusConfig?> GetConfigAsync(int id);
+        Task<ResponseModel.LogStatusDto> GetConfigIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
 
         Task<LogStatusConfig> UpdateConfigAsync(LogStatusConfig updatedConfig);
 

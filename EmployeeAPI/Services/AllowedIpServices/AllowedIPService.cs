@@ -1,9 +1,12 @@
-﻿using System.Net;
-using System.Transactions;
-using EmployeeAPI.Base;
+﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
+using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
+using System.Net;
+using System.Transactions;
+using static EmployeeAPI.Repositories.AllowedIPs.ResponseModel;
 using static EmployeeAPI.Services.PositionServices.ResponseModel;
 
 namespace EmployeeAPI.Services.AllowedIpServices
@@ -11,33 +14,52 @@ namespace EmployeeAPI.Services.AllowedIpServices
     public class AllowedIPService : IAllowedIPService
     {
         private readonly IAllowedIPRepository _allowedIPRepository;
+        private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
-        public AllowedIPService(IAllowedIPRepository allowedIPRepository, AppDbContext context)
+        public AllowedIPService(IAllowedIPRepository allowedIPRepository, AppDbContext context, IUserRepository userRepository)
         {
             _allowedIPRepository = allowedIPRepository;
             _context = context;
+            _userRepository = userRepository;
         }
 
-        public async Task<PagedResult<AllowedIP>> GetAllAsync(string? IpAdress, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<IPDto>> GetAllAsync(string? IpAdress, Guid? companyId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
             //return await _allowedIPRepository.GetAllAsync();
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            var query = _context.AllowedIPs
-                .Where(f => string.IsNullOrEmpty(IpAdress) || f.IPAddress.ToLower().Contains(IpAdress.ToLower()));
+            var query = _allowedIPRepository.GetAll();
+          
+
+            if (!currentUserRoles.Contains("SystemAdmin")) 
+            {
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser.CompanyId == null)
+                    throw new ArgumentException("Người dùng chưa có công ty.");
+                else if (currentUser.Department == null)
+                    throw new ArgumentException("Người dùng chưa có phòng ban.");
+
+                var userCompanyId = currentUser.CompanyId.Value;
+                query = query.Where(x => x.CompanyId == userCompanyId);
+            }
+            else if (companyId.HasValue)
+            {
+                query = query.Where(x => x.CompanyId == companyId.Value);
+            }
 
             var totalCount = await query.CountAsync();
 
             var items = await query
                 .Skip((pageIndex.Value - 1) * pageSize.Value)
                 .Take(pageSize.Value)
-                .Select(f => new AllowedIP
+                .Select(f => new IPDto
                 {
                     AllowedIPId = f.AllowedIPId,
                     IPAddress = f.IPAddress,
+                    companyName = f.Company.Name,
                 }).ToListAsync();
-            return new PagedResult<AllowedIP>
+            return new PagedResult<IPDto>
             {
                 Items = items,
                 PageIndex = pageIndex.Value,
@@ -46,23 +68,42 @@ namespace EmployeeAPI.Services.AllowedIpServices
             };
         }
 
-        public async Task<AllowedIP> GetByIdAsync(Guid id)
+        public async Task<IPDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var result = await _allowedIPRepository.GetByIdAsync(id);
             if (result == null)
                 throw new ArgumentException("Không tìm thấy IP");
 
-            return new AllowedIP
+            if (!currentUserRoles.Contains("SystemAdmin"))
+            {
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Người dùng chưa có công ty.");
+                if (currentUser.DepartmentId == null)
+                    throw new ArgumentException("Người dùng chưa có phòng ban.");
+
+                if (result.CompanyId != currentUser.CompanyId)
+                    throw new ArgumentException("Không có quyền truy cập IP của công ty khác.");
+            }
+
+            return new IPDto
             {
                 AllowedIPId = result.AllowedIPId,
-                IPAddress = result.IPAddress
+                IPAddress = result.IPAddress,
+                companyName = result.Company.Name,
             };
         }
 
-        public async Task<AllowedIP> AddAsync(string ip)
+        public async Task<IPDto> AddAsync(string ip, Guid currentUserId, IList<string> currentUserRoles)
         {
-            if (await _allowedIPRepository.ExistsAsync(ip))
-                throw new ArgumentException("IP này đã tồn tại");
+            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+            if (currentUser?.CompanyId == null)
+                throw new ArgumentException("Người dùng chưa có công ty.");
+
+            var companyId = currentUser.CompanyId.Value;
+
+            if (await _allowedIPRepository.ExistsAsync(ip, companyId))
+                throw new ArgumentException("IP này đã tồn tại trong công ty.");
 
             // Kiểm tra IP cụ thể
             bool isSpecificIP = IPAddress.TryParse(ip, out var _);
@@ -88,21 +129,30 @@ namespace EmployeeAPI.Services.AllowedIpServices
             {
                 AllowedIPId = Guid.NewGuid(),
                 IPAddress = ip,
+                CompanyId = companyId,
             };
 
             await _allowedIPRepository.AddAsync(allowedIP);
             await _context.SaveChangesAsync();
 
-            return new AllowedIP
+            return new IPDto
             {
                 AllowedIPId = allowedIP.AllowedIPId,
-                IPAddress = allowedIP.IPAddress
+                IPAddress = allowedIP.IPAddress,
+                companyName = allowedIP.Company.Name
             };
         }
 
-        public async Task<string> DeleteAsync(Guid id)
+        public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var result = await _allowedIPRepository.GetByIdAsync(id);
+            
+            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+            if (currentUser?.CompanyId == null)
+                throw new ArgumentException("Người dùng chưa có công ty.");
+            if (currentUser?.CompanyId != result.CompanyId)
+                throw new ArgumentException("Chỉ được phép xóa cấu hình IP của công ty");
+
             await _allowedIPRepository.DeleteAsync(id);
             await _context.SaveChangesAsync();
 

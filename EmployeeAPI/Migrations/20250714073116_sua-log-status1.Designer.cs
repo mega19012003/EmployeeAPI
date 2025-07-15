@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250712075854_update-password")]
-    partial class updatepassword
+    [Migration("20250714073116_sua-log-status1")]
+    partial class sualogstatus1
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,11 +31,16 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("IPAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AllowedIPId");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("AllowedIPs");
                 });
@@ -191,6 +196,9 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -206,13 +214,25 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
                     b.ToTable("Holidays");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
                 {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -224,7 +244,12 @@ namespace EmployeeAPI.Migrations
                     b.Property<double>("SalaryMultiplier")
                         .HasColumnType("float");
 
+                    b.Property<int>("enumId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("LogStatusConfigs");
                 });
@@ -254,7 +279,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("isPaied")
+                    b.Property<bool>("isPaid")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
@@ -293,11 +318,17 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<TimeOnly>("EndTimeAfternoon")
                         .HasColumnType("time");
 
                     b.Property<TimeOnly>("EndTimeMorning")
                         .HasColumnType("time");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .HasColumnType("bit");
 
                     b.Property<int>("LogAllowtime")
                         .HasColumnType("int");
@@ -309,6 +340,8 @@ namespace EmployeeAPI.Migrations
                         .HasColumnType("time");
 
                     b.HasKey("id");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("ScheduleTimes");
                 });
@@ -391,6 +424,17 @@ namespace EmployeeAPI.Migrations
                     b.ToTable("Users");
                 });
 
+            modelBuilder.Entity("EmployeeAPI.Models.AllowedIP", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.User", "Users")
@@ -447,6 +491,26 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.User", "Users")
@@ -466,6 +530,15 @@ namespace EmployeeAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.ScheduleTime", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>

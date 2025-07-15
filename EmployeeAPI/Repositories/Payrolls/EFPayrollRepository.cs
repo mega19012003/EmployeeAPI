@@ -52,22 +52,20 @@ namespace EmployeeAPI.Repositories.Payrolls
             return await _context.Payrolls.AnyAsync(p => p.UserId == UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year && !p.IsDeleted);
         }
 
-        public async Task<User> GetUserWithSalary(Guid UserId)
-        {
-            return await _context.Users.FirstOrDefaultAsync(s => s.UserId == UserId && !s.IsDeleted);
-        }
-
         public async Task CreatePayrollAsync(Payroll payroll)
         {
             _context.Payrolls.Add(payroll);
             //await _context.SaveChangesAsync();
         }
-        public async Task<int> CountDayWorked(Guid UserId, int month, int year)
-        {
-            return await _context.Checkins.CountAsync(c => c.UserId == UserId &&
-                                                           c.CheckinTime.Month == month &&
-                                                           c.CheckinTime.Year == year &&
-                                                           c.IsDeleted == false);
-        }
+
+
+        //public async Task<User> GetUserWithSalary(Guid UserId)
+        //{
+        //    return await _context.Users.FirstOrDefaultAsync(s => s.UserId == UserId && !s.IsDeleted);
+        //}
+        //public async Task<int> CountDayWorked(Guid UserId, int month, int year)
+        //{
+        //    return await _context.Checkins.CountAsync(c => c.UserId == UserId && c.CheckinTime.Month == month && c.CheckinTime.Year == year && c.IsDeleted == false);
+        //}
     }
 }

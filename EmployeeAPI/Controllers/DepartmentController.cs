@@ -18,7 +18,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [SwaggerGroupOrder(3)]
+    [SwaggerGroupOrder(5)]
     public class DepartmentController : ControllerBase
     {
         private readonly IDepartmentService _departmentService;
@@ -35,11 +35,16 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy danh sách phòng ban, manager/employee ko dc phép truy cập
         /// </summary>
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator, SystemAdmin")]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? Search, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, Guid? companyId, int? pageIndex, int? pageSize)
         {
-            var pagedResult = await _departmentService.GetAllAsync(Search, pageIndex, pageSize);
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _departmentService.GetAllAsync(Search, companyId, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentResultDto>>.ReturnResult("No result", pagedResult, 200));
@@ -48,9 +53,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy phòng ban theo Id
+        /// Lấy phòng ban theo Id, manager/employee ko dc phép truy cập
         /// </summary>
-        [Authorize(Roles = "Administrator")]
+        [Authorize(Roles = "Administrator, SystemAdmin")]
         [HttpGet("{departmentId}")]
         public async Task<IActionResult> GetById(Guid departmentId)
         {
@@ -64,9 +69,15 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
-        public async Task<IActionResult> AddDepartment([FromQuery] String Name)
+        public async Task<IActionResult> AddDepartment([FromQuery] string name)
         {
-            var result = await _departmentService.AddAsync(Name);
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _departmentService.AddAsync(name, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Department added success", result, 200));
         }
 
@@ -77,7 +88,13 @@ namespace EmployeeAPI.Controllers
         [HttpPut]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
         {
-            var result = await _departmentService.UpdateAsync(id, newName);
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _departmentService.UpdateAsync(id, newName, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Updated Department Success", result, 200));
         }
 
@@ -88,48 +105,54 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("{departmentId}")]
         public async Task<IActionResult> SoftDeleteDepartment(Guid departmentId)
         {
-            var result = await _departmentService.SoftDeleteAsync(departmentId);
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _departmentService.SoftDeleteAsync(departmentId, currentUserId, currentUserRoles);
             //if (result == null) return BadRequest(ApiResponse<string>.ReturnResult("", result, 400));
             return Ok(ApiResponse<string>.ReturnResult("Delete department success", result, 200));
         }
 
-        /// <summary>
-        /// Lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
-        /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("employee")]
-        public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return Unauthorized("UserId invalid");
+        ///// <summary>
+        ///// Lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
+        ///// </summary>
+        //[Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        //[HttpGet("employee")]
+        //public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return Unauthorized("UserId invalid");
 
-            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _departmentService.GetStaffByDepartmentAsync(departmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
+        //    var pagedResult = await _departmentService.GetStaffByDepartmentAsync(departmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
-            if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("No result", pagedResult, 200));
+        //    if (!pagedResult.Items.Any())
+        //        return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<ResponseModel.UserFilterDto>>.ReturnResult("Get list User by department success", pagedResult, 200));
-        }
+        //    return Ok(ApiResponse<PagedResult<ResponseModel.UserFilterDto>>.ReturnResult("Get list User by department success", pagedResult, 200));
+        //}
 
-        /// <summary>
-        /// Lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
-        /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("position")]
-        public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return Unauthorized("UserId invalid");
+        ///// <summary>
+        ///// Lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
+        ///// </summary>
+        //[Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        //[HttpGet("position")]
+        //public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return Unauthorized("UserId invalid");
 
-            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _departmentService.GetListPositionAsync(DepartmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
+        //    var pagedResult = await _departmentService.GetListPositionAsync(DepartmentId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<PagedResult<PositionByDepartmentDto >>.ReturnResult("Get list posistion by department success", pagedResult, 200));
-        }
+        //    return Ok(ApiResponse<PagedResult<PositionByDepartmentDto >>.ReturnResult("Get list posistion by department success", pagedResult, 200));
+        //}
     }
 }

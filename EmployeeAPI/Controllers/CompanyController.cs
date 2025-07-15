@@ -1,4 +1,5 @@
 ﻿using CloudinaryDotNet;
+using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
 using EmployeeAPI.Services.CompanyServices;
 using EmployeeAPI.Services.DepartmentServices;
@@ -10,8 +11,9 @@ using static EmployeeAPI.Services.CompanyServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
+    [SwaggerGroupOrder(4)]
     public class CompanyController : ControllerBase
     {
         public readonly ICompanyService _companyService;
@@ -43,7 +45,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách công ty, chỉ admin được phép dùng 
+        /// Lấy danh sách công ty, chỉ system admin được phép dùng 
         /// </summary>
         [HttpGet]
         [Authorize(Roles = "SystemAdmin")]
@@ -59,7 +61,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Thêm công ty mới, chỉ admin được phép dùng
+        /// Thêm công ty mới, chỉ system admin được phép dùng
         /// </summary>
         [HttpPost]
         [Authorize(Roles = "SystemAdmin")]
@@ -70,7 +72,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật công ty, chỉ admin được phép dùng
+        /// Cập nhật công ty, chỉ system admin được phép dùng
         /// </summary>
         [HttpPut]
         [Authorize(Roles = "SystemAdmin")]
@@ -81,7 +83,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa công ty, chỉ admin được phép dùng
+        /// Xóa công ty, chỉ system admin được phép dùng
         /// </summary>
         [HttpDelete("{companyId}")]
         [Authorize(Roles = "SystemAdmin")]

@@ -31,15 +31,21 @@ namespace EmployeeAPI.Services.DutyServices
 
             var query = _dutyRepository.GetAllQueryable();
 
-            if (currentUserRoles.Contains("Manager"))
+            if (currentUserRoles.Contains("Administrator"))
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (currentUser == null)
-                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Administrator chưa có công ty. Vui lòng liên hệ SystemAdmin để cập nhật công ty.");
 
-                if (currentUser.DepartmentId == null)
+                // Lọc Duty theo công ty của người tạo 
+                query = query.Where(d => d.AssignedBy.CompanyId == currentUser.CompanyId);
+            }
+            else if (currentUserRoles.Contains("Manager"))
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (currentUser?.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-                //query = query.Where(d => d.DutyDetails.Any(dd => dd.Users.DepartmentId == currentUser.DepartmentId));
+
                 query = query.Where(d => d.AssignedById == currentUserId);
             }
             else if (currentUserRoles.Contains("Employee"))
@@ -108,11 +114,18 @@ namespace EmployeeAPI.Services.DutyServices
             if (duty == null)
                 throw new ArgumentException("Không thể tìm thấy công việc này");
 
-            if (currentUserRoles.Contains("Manager"))
+
+            if (currentUserRoles.Contains("Administrator"))
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
-                if (currentUser == null)
-                    throw new ArgumentException("Không thể tìm thấy user hiện tại");
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Administrator chưa có công ty.");
+                if (duty.AssignedBy?.CompanyId != currentUser.CompanyId)
+                    throw new UnauthorizedAccessException("Administrator chỉ có thể xem công việc trong công ty của mình.");
+            }
+            else if (currentUserRoles.Contains("Manager"))
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
 
                 if (currentUser.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
@@ -156,7 +169,15 @@ namespace EmployeeAPI.Services.DutyServices
             var isManager = currentUserRoles.Contains("Manager");
             var isEmployee = currentUserRoles.Contains("Employee");
 
-            if (isManager)
+            if (isAdmin)
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Administrator chưa có công ty.");
+                if (dutyDetail.Duty?.AssignedBy?.CompanyId != currentUser.CompanyId)
+                    throw new UnauthorizedAccessException("Administrator chỉ có thể xem công việc trong công ty của mình.");
+            }
+            else if(isManager)
             {
                 bool isAssignedByMe = dutyDetail.Duty?.AssignedById == currentUserId;
                 bool isSelf = dutyDetail.UserId == currentUserId;

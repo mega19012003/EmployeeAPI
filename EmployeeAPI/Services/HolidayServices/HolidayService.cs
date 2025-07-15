@@ -1,8 +1,11 @@
 ﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Holidays;
+using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.HolidayServices;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.Design;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 
 
@@ -13,13 +16,15 @@ namespace EmployeeAPI.Services.HolidayServices
         private readonly IHolidayRepository _holidayRepository;
         private readonly ILogger<HolidayService> _logger;
         private readonly AppDbContext _context;
-        public HolidayService(IHolidayRepository holidayRepository, ILogger<HolidayService> logger , AppDbContext context)
+        private readonly IUserRepository _userRepository;
+        public HolidayService(IHolidayRepository holidayRepository, ILogger<HolidayService> logger , AppDbContext context, IUserRepository userRepository)
         {
             _holidayRepository = holidayRepository;
             _logger = logger;
             _context = context;
+            _userRepository = userRepository;
         }
-        public async Task<PagedResult<ResponseModel.HolidayResultDto>> GetAllAsync(string? name, int? pageSize, int? pageIndex)
+        public async Task<PagedResult<ResponseModel.HolidayResultDto>> GetAllAsync(string? name, Guid? companyId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -27,6 +32,19 @@ namespace EmployeeAPI.Services.HolidayServices
                 pageSize ??= 10;
 
                 var query = _holidayRepository.GetAll();
+
+                if(!currentUserRoles.Contains("SystemAdmin"))
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Chưa có công ty, vui lòng liên hệ admin để thêm");
+
+                    companyId = currentUser.CompanyId;
+
+                    query = query.Where(p => p.CompanyId == companyId);
+                }
+                else if(companyId.HasValue)
+                    query = query.Where(p => p.CompanyId == companyId);
 
                 if (!string.IsNullOrEmpty(name))
                 {
@@ -44,7 +62,8 @@ namespace EmployeeAPI.Services.HolidayServices
                         HolidayId = f.Id,
                         Name = f.name,
                         startDate = f.startDate,
-                        endDate = f.endDate
+                        endDate = f.endDate,
+                        companyName = f.Company.Name
                     })
                     .ToListAsync();
 
@@ -62,7 +81,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 throw;
             }
         }
-        public async Task<ResponseModel.HolidayResultDto> GetByIdAsync(Guid id)
+        public async Task<ResponseModel.HolidayResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -72,12 +91,24 @@ namespace EmployeeAPI.Services.HolidayServices
                     throw new ArgumentException("Không tìm thấy ngày lễ");
                 }
 
+                if (!currentUserRoles.Contains("SYstemAdmin"))
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Chưa có công ty, vui lòng liên hệ System Admin để thêm");
+                    if (currentUser.DepartmentId == null)
+                        throw new ArgumentException("Chưa có phòng ban, vui lòng liên hệ Admin để thêm");
+                    if (holiday.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Chỉ được phép truy cập thông tin ngày nghỉ cùng công ty");
+                }
+
                 return new ResponseModel.HolidayResultDto
                 {
                     HolidayId = holiday.Id,
                     Name = holiday.name,
                     startDate = holiday.startDate,
                     endDate = holiday.endDate,
+                    companyName = holiday.Company.Name
                 };
             }
             catch (Exception ex)
@@ -87,7 +118,7 @@ namespace EmployeeAPI.Services.HolidayServices
             }
         }
         
-        public async Task<ResponseModel.HolidayResultDto> CreateAsync(ResponseModel.CreateHolidayDto dto)
+        public async Task<ResponseModel.HolidayResultDto> CreateAsync(ResponseModel.CreateHolidayDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
@@ -103,12 +134,17 @@ namespace EmployeeAPI.Services.HolidayServices
                     throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
                 }
 
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser.CompanyId == null)
+                    throw new ArgumentException("Chưa có công ty, vui lòng liên hệ Sytem Admin để thêm");
+
                 var model = new Models.Holiday
                 {
                     Id = Guid.NewGuid(),
                     name = dto.Name,
                     startDate = dto.startDate,
                     endDate = dto.endDate,
+                    CompanyId = (Guid)currentUser.CompanyId,
                 };
 
                 await _holidayRepository.CreateAsync(model);
@@ -121,6 +157,7 @@ namespace EmployeeAPI.Services.HolidayServices
                     Name = model.name,
                     startDate = model.startDate,
                     endDate = model.endDate,
+                    companyName = model.Company.Name
                 };
             }
             catch (Exception ex)
@@ -131,7 +168,7 @@ namespace EmployeeAPI.Services.HolidayServices
             }
         }
 
-        public async Task<ResponseModel.HolidayResultDto> UpdateAsync(ResponseModel.UpdateHolidayDto dto)
+        public async Task<ResponseModel.HolidayResultDto> UpdateAsync(ResponseModel.UpdateHolidayDto dto, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -144,6 +181,12 @@ namespace EmployeeAPI.Services.HolidayServices
                 {
                     throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
                 }
+
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser.CompanyId == null)
+                    throw new ArgumentException("Chưa có công ty, vui lòng liên hệ System Admin để thêm");
+                if (currentUser.CompanyId != result.CompanyId)
+                    throw new ArgumentException("Chỉ được phép cập nhật ngày lễ của công ty");
 
                 result.name = dto.Name;
                 result.startDate = dto.startDate;
@@ -159,6 +202,7 @@ namespace EmployeeAPI.Services.HolidayServices
                     Name = result.name,
                     startDate = result.startDate,
                     endDate = result.endDate,
+                    companyName = result.Company.Name
                 };
             }
             catch (Exception ex)
@@ -169,7 +213,7 @@ namespace EmployeeAPI.Services.HolidayServices
             }
         }
         
-        public async Task<string> DeleteAsync(Guid id)
+        public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -177,6 +221,14 @@ namespace EmployeeAPI.Services.HolidayServices
                 var result = await _holidayRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Không thể tìm thấy ngày lễ");
+                
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (currentUser.CompanyId == null)
+                    throw new ArgumentException("Chưa có công ty, vui lòng liên hệ System Admin để thêm");
+                if (currentUser.CompanyId != result.CompanyId)
+                    throw new ArgumentException("Chỉ được phép xóa ngày lễ của công ty");
+
+
                 result.IsDeleted = true;
                 await _holidayRepository.SoftDeleteAsync(result);
                 await _context.SaveChangesAsync();

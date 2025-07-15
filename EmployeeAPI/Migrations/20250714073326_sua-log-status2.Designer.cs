@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250711082934_them-user")]
-    partial class themuser
+    [Migration("20250714073326_sua-log-status2")]
+    partial class sualogstatus2
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,11 +31,16 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("IPAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AllowedIPId");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("AllowedIPs");
                 });
@@ -191,6 +196,9 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -206,13 +214,25 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
                     b.ToTable("Holidays");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
                 {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -224,116 +244,14 @@ namespace EmployeeAPI.Migrations
                     b.Property<double>("SalaryMultiplier")
                         .HasColumnType("float");
 
+                    b.Property<int>("enumId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.ToTable("LogStatusConfigs");
+                    b.HasIndex("CompanyId");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 0,
-                            Name = "None",
-                            Note = "Chưa checkin/checkout",
-                            SalaryMultiplier = 0.0
-                        },
-                        new
-                        {
-                            Id = 1,
-                            Name = "OnTime",
-                            Note = "Đi đúng giờ",
-                            SalaryMultiplier = 1.0
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Late",
-                            Note = "Đi trễ",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "LeaveEarly",
-                            Note = "Về sớm",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "LateAndLeaveEarly",
-                            Note = "Đi trễ và về sớm",
-                            SalaryMultiplier = 0.5
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Overtime",
-                            Note = "Làm thêm giờ",
-                            SalaryMultiplier = 1.3
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "LateAndOvertime",
-                            Note = "Đi trễ và làm thêm giờ",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "Absent",
-                            Note = "Vắng",
-                            SalaryMultiplier = 0.0
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "OnHoliday",
-                            Note = "Làm vào ngày nghỉ",
-                            SalaryMultiplier = 2.0
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Name = "OnHolidayLate",
-                            Note = "Đi trễ vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
-                        },
-                        new
-                        {
-                            Id = 10,
-                            Name = "OnHolidayLeaveEarly",
-                            Note = "Về sớm vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
-                        },
-                        new
-                        {
-                            Id = 11,
-                            Name = "OnHolidayOvertime",
-                            Note = "Làm thêm giờ vào ngày nghỉ",
-                            SalaryMultiplier = 3.0
-                        },
-                        new
-                        {
-                            Id = 12,
-                            Name = "OnHolidayLateAndOvertime",
-                            Note = "Đi trễ và làm thêm giờ vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
-                        },
-                        new
-                        {
-                            Id = 13,
-                            Name = "OnHolidayLateAndLeaveEarly",
-                            Note = "Đi trễ và về sớm vào ngày nghỉ",
-                            SalaryMultiplier = 2.0
-                        },
-                        new
-                        {
-                            Id = 14,
-                            Name = "Others",
-                            Note = "Khác",
-                            SalaryMultiplier = 0.5
-                        });
+                    b.ToTable("LogStatusConfigs");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -361,7 +279,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<bool>("isPaied")
+                    b.Property<bool>("isPaid")
                         .HasColumnType("bit");
 
                     b.HasKey("Id");
@@ -400,11 +318,17 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<TimeOnly>("EndTimeAfternoon")
                         .HasColumnType("time");
 
                     b.Property<TimeOnly>("EndTimeMorning")
                         .HasColumnType("time");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .HasColumnType("bit");
 
                     b.Property<int>("LogAllowtime")
                         .HasColumnType("int");
@@ -416,6 +340,8 @@ namespace EmployeeAPI.Migrations
                         .HasColumnType("time");
 
                     b.HasKey("id");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("ScheduleTimes");
                 });
@@ -481,6 +407,9 @@ namespace EmployeeAPI.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("isResetPass")
+                        .HasColumnType("bit");
+
                     b.HasKey("UserId");
 
                     b.HasIndex("CompanyId");
@@ -493,168 +422,17 @@ namespace EmployeeAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
 
-                    b.HasData(
-                        new
-                        {
-                            UserId = new Guid("4bb4af3b-d172-4108-a7d3-73257cbea84c"),
-                            Address = "Hà Nội",
-                            Fullname = "Nguyễn Văn Quang",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "DiMXpjS7sJ+r9qrrIpnly64KZ8QZqtMqs9G/8grgq2AxAk0e",
-                            PhoneNumber = "0901000001",
-                            RefreshToken = "",
-                            Role = 2,
-                            SalaryPerHour = 20000.0,
-                            TokenVersion = 0,
-                            Username = "Manager01"
-                        },
-                        new
-                        {
-                            UserId = new Guid("ce8b19d6-fbd2-4781-b0a0-a2fce49c6b37"),
-                            Address = "TP. HCM",
-                            Fullname = "Lê Thị Hoa",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "sHDbOMkHJWoH5kd8w2w4c6d7+E0ozPuCwmk1O40L1zJjkvl6",
-                            PhoneNumber = "0901000002",
-                            RefreshToken = "",
-                            Role = 2,
-                            SalaryPerHour = 20000.0,
-                            TokenVersion = 0,
-                            Username = "Manager02"
-                        },
-                        new
-                        {
-                            UserId = new Guid("7b021be6-c477-4dd4-89dd-67e7916a7b0d"),
-                            Address = "Hà Nội",
-                            Fullname = "Nguyễn Phúc Hậu",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "v0UtYeysX9i7BubBElkarwDzXtmC3wmnUKIssAXtZmpAA9B1",
-                            PhoneNumber = "0901000009",
-                            RefreshToken = "",
-                            Role = 2,
-                            SalaryPerHour = 18000.0,
-                            TokenVersion = 0,
-                            Username = "Manager03"
-                        },
-                        new
-                        {
-                            UserId = new Guid("641771ad-dde6-437d-9c4a-38cf7064630a"),
-                            Address = "Hà Nội",
-                            Fullname = "Lê Bảo Nhân",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "Jl6AjwMfoXtLqTWVDpNGHvK8AhLQK/GUcnxay7Ovh2m8JNTG",
-                            PhoneNumber = "0901000010",
-                            RefreshToken = "",
-                            Role = 2,
-                            SalaryPerHour = 15000.0,
-                            TokenVersion = 0,
-                            Username = "Manager04"
-                        },
-                        new
-                        {
-                            UserId = new Guid("846692d4-d919-4b49-915e-7724824c35de"),
-                            Address = "Ninh Bình",
-                            Fullname = "Trần Minh Quân",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "HxfTkSNfSkBfVQVn9B013R7tbD8Sk8SVd/+Wt9jpXtec3SC5",
-                            PhoneNumber = "0901000008",
-                            RefreshToken = "",
-                            Role = 3,
-                            SalaryPerHour = 10000.0,
-                            TokenVersion = 0,
-                            Username = "User01"
-                        },
-                        new
-                        {
-                            UserId = new Guid("4baf844c-b009-4dc7-b41b-d40bd6516bc0"),
-                            Address = "Hải Phòng",
-                            Fullname = "Phạm Văn An",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "E0Yn2qgiHJw2k6tok1y9Krg3x0U96QDG7L6MN6JsYBrfu3K4",
-                            PhoneNumber = "0901000003",
-                            RefreshToken = "",
-                            Role = 3,
-                            SalaryPerHour = 12000.0,
-                            TokenVersion = 0,
-                            Username = "Employee02"
-                        },
-                        new
-                        {
-                            UserId = new Guid("152738ba-4a3f-4fc4-ac33-b39a8cbe71a6"),
-                            Address = "Đà Nẵng",
-                            Fullname = "Nguyễn Phúc Bảo",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "tHQAWj+qap6c3KwjGXhVowUhogBYjGpZFYZbrEnFqgZWFA4d",
-                            PhoneNumber = "0901000004",
-                            RefreshToken = "",
-                            Role = 3,
-                            SalaryPerHour = 15000.0,
-                            TokenVersion = 0,
-                            Username = "Employee03"
-                        },
-                        new
-                        {
-                            UserId = new Guid("5967e51c-4a4e-4d4b-b9ac-603a5c0dcdf4"),
-                            Address = "Huế",
-                            Fullname = "Trần Minh Đức",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "TH14IuYAmLEpz8z9HTg70lAnDChwvwVTgqri+d6U/tYcpin1",
-                            PhoneNumber = "0901000005",
-                            RefreshToken = "",
-                            Role = 3,
-                            SalaryPerHour = 8000.0,
-                            TokenVersion = 0,
-                            Username = "Employee04"
-                        },
-                        new
-                        {
-                            UserId = new Guid("e72839f3-209b-4449-a240-e69b7abe8d52"),
-                            Address = "Cần Thơ",
-                            Fullname = "Lê Văn Dũng",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "sH4PFnyOU2Om9xBEvgD0jhC69v9n2gN3Vbtei+C4orm/L64e",
-                            PhoneNumber = "0901000006",
-                            RefreshToken = "",
-                            Role = 3,
-                            SalaryPerHour = 5000.0,
-                            TokenVersion = 0,
-                            Username = "Employee05"
-                        },
-                        new
-                        {
-                            UserId = new Guid("d4f2a1bd-8a24-456a-a8a3-c1bb03f2fa78"),
-                            Address = "Bình Dương",
-                            Fullname = "Vũ Thị Ngọc Bích",
-                            ImageUrl = "",
-                            IsActive = true,
-                            IsDeleted = false,
-                            Password = "ircMRUaJ5uGQpUsdz0x42Mk6BVnUd+GpHK+taIlQHBAa7gLr",
-                            PhoneNumber = "0901000007",
-                            RefreshToken = "",
-                            Role = 3,
-                            SalaryPerHour = 12000.0,
-                            TokenVersion = 0,
-                            Username = "Employee06"
-                        });
+            modelBuilder.Entity("EmployeeAPI.Models.AllowedIP", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
@@ -713,6 +491,26 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.User", "Users")
@@ -732,6 +530,15 @@ namespace EmployeeAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.ScheduleTime", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>

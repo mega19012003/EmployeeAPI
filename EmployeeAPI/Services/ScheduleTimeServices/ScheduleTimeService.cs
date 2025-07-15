@@ -1,68 +1,149 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.ScheduleTimes;
+using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
+using static EmployeeAPI.Services.ScheduleTimeServices.ResponseModel;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace EmployeeAPI.Services.ScheduleTimeServices
 {
     public class ScheduleTimeService : IScheduleTimeService
     {
-        private readonly IScheduleTimeRepository _repository;
+        private readonly IScheduleTimeRepository _scheduleRepository;
         private readonly AppDbContext _context;
+        private readonly ILogger<IScheduleTimeService> _logger;
+        private readonly IUserRepository _userRepository;
 
-        public ScheduleTimeService(IScheduleTimeRepository repository, AppDbContext context)
+        public ScheduleTimeService(IScheduleTimeRepository repository, AppDbContext context, ILogger<IScheduleTimeService> logger, IUserRepository userRepository)
         {
-            _repository = repository;
+            _scheduleRepository = repository;
             _context = context;
+            _userRepository = userRepository;
+            _logger = logger;
         }
-        public async Task<ScheduleTime?> GetScheduleTimeAsync()
+
+
+        public async Task<PagedResult<ResponseModel.ScheduleDto>> GetAllAsync(Guid? companyId, int? pageIndex, int? pageSize/*, Guid currentUserId, IList<string> currentUserRoles*/)
         {
-            var result = await _repository.GetScheduleTime();
-            return new ScheduleTime
+            try
+            {
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                var query = _scheduleRepository.GetAll();
+
+                //if (!currentUserRoles.Contains("SystemAdmin"))
+                //{
+                //    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                //    if (currentUser?.CompanyId == null)
+                //        throw new ArgumentException("User chưa có công ty.");
+
+                //    query = query.Where(c => c.CompanyId == currentUser.CompanyId);
+                //}
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .Select(c => new ResponseModel.ScheduleDto
+                    {
+                        id = c.id,
+                        StartTimeMorning = c.StartTimeMorning,
+                        EndTimeMorning = c.EndTimeMorning,
+                        LogAllowtime = c.LogAllowtime,
+                        StartTimeAfternoon = c.StartTimeAfternoon,
+                        EndTimeAfternoon= c.EndTimeAfternoon,
+                        CompanyName = c.Company.Name,
+                    }).ToListAsync();
+
+                return new PagedResult<ResponseModel.ScheduleDto>
+                {
+                    Items = items,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving checkon. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
+        }
+
+        public async Task<ScheduleDto?> GetScheduleTimeByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
+        {
+            var result = await _scheduleRepository.GetScheduleTime(id);
+            if (result == null)
+                throw new ArgumentException("Không tìm thấy lịch làm việc.");
+
+            if (!currentUserRoles.Contains("SystemAdmin"))
+            {
+                var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Người dùng chưa có công ty.");
+
+                if (result.CompanyId != currentUser.CompanyId)
+                    throw new ArgumentException("Không có quyền truy cập vào thời gian làm việc của công ty khác.");
+            }
+
+            return new ScheduleDto
             {
                 StartTimeMorning = result.StartTimeMorning,
                 EndTimeMorning = result.EndTimeMorning,
                 StartTimeAfternoon = result.StartTimeAfternoon,
                 EndTimeAfternoon = result.EndTimeAfternoon,
-                //LateThresholdMinutes = result.LateThresholdMinutes,
                 LogAllowtime = result.LogAllowtime,
+                CompanyName = result.Company?.Name
             };
         }
 
-        public async Task<ScheduleTime> UpdateScheduleTimeAsync(ScheduleTime newSchedule)
+
+        public async Task<ScheduleDto> UpdateScheduleTimeAsync(ScheduleTime newSchedule, Guid currentUserID, IList<string> currentUserRoles)
         {
             using var trasaction = await _context.Database.BeginTransactionAsync();
             try {
-                var existing = await _context.ScheduleTimes.FirstOrDefaultAsync();
+                var existing = await _scheduleRepository.GetScheduleTime(newSchedule.id);
                 if (existing == null)
-                {
-                    newSchedule.id = Guid.NewGuid();
-                    _context.ScheduleTimes.Add(newSchedule);
-                }
-                else
-                {
-                    //Bỏ sang BE
-                    if (newSchedule.StartTimeMorning > newSchedule.EndTimeMorning || newSchedule.StartTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.StartTimeMorning > newSchedule.EndTimeAfternoon)
-                        throw new ArgumentException("Giờ bắt đầu buổi sáng không được lớn hơn giờ kết thúc buổi sáng, giờ bắt đầu/kết thúc buổi chiều");
+                    throw new ArgumentException("Không tìm thấy thời gian làm việc");
 
-                    if (newSchedule.EndTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.EndTimeMorning > newSchedule.EndTimeAfternoon)
-                        throw new ArgumentException("Giờ kết thúc buổi sáng không được lớn hơn giờ bắt đầu/kết thúc buổi chiều");
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserID);
+                if (currentUser?.CompanyId == null) throw new ArgumentException("Người dùng chưa có công ty. Vui lòng liên hệ admin để cập nhật");
+                if (currentUser?.CompanyId != newSchedule.CompanyId) throw new ArgumentException("Chỉ được phép cập nhật thời gian làm việc của công ty");
+                
+                if (newSchedule.StartTimeMorning > newSchedule.EndTimeMorning || newSchedule.StartTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.StartTimeMorning > newSchedule.EndTimeAfternoon)
+                    throw new ArgumentException("Giờ bắt đầu buổi sáng không được lớn hơn giờ kết thúc buổi sáng, giờ bắt đầu/kết thúc buổi chiều");
 
-                    if (newSchedule.StartTimeAfternoon > newSchedule.EndTimeAfternoon)
-                        throw new ArgumentException("Giờ bắt đầu buổi chiều không được lớn hơn giờ kết thúc buổi chiều");
+                if (newSchedule.EndTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.EndTimeMorning > newSchedule.EndTimeAfternoon)
+                    throw new ArgumentException("Giờ kết thúc buổi sáng không được lớn hơn giờ bắt đầu/kết thúc buổi chiều");
 
-                    existing.StartTimeMorning = newSchedule.StartTimeMorning;
-                    existing.EndTimeMorning = newSchedule.EndTimeMorning;
-                    //existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
-                    existing.StartTimeAfternoon = newSchedule.StartTimeAfternoon;
-                    existing.EndTimeAfternoon = newSchedule.EndTimeAfternoon;
-                    existing.LogAllowtime = newSchedule.LogAllowtime;
-                    _context.ScheduleTimes.Update(existing);
-                }
+                if (newSchedule.StartTimeAfternoon > newSchedule.EndTimeAfternoon)
+                    throw new ArgumentException("Giờ bắt đầu buổi chiều không được lớn hơn giờ kết thúc buổi chiều");
+
+                existing.StartTimeMorning = newSchedule.StartTimeMorning;
+                existing.EndTimeMorning = newSchedule.EndTimeMorning;
+                //existing.LateThresholdMinutes = newSchedule.LateThresholdMinutes;
+                existing.StartTimeAfternoon = newSchedule.StartTimeAfternoon;
+                existing.EndTimeAfternoon = newSchedule.EndTimeAfternoon;
+                existing.LogAllowtime = newSchedule.LogAllowtime;
+                _context.ScheduleTimes.Update(existing);
+
 
                 await _context.SaveChangesAsync();
                 await trasaction.CommitAsync();
 
-                return newSchedule;
+                return new ResponseModel.ScheduleDto
+                {
+                    id = existing.id,
+                    StartTimeMorning = existing.StartTimeMorning,
+                    EndTimeMorning = existing.EndTimeMorning,
+                    StartTimeAfternoon = existing.StartTimeAfternoon,
+                    EndTimeAfternoon= existing.EndTimeAfternoon,
+                    LogAllowtime = existing.LogAllowtime,
+                    CompanyName = existing.Company.Name
+                };
             }
             catch (Exception ex)
             {

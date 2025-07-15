@@ -14,6 +14,10 @@ namespace EmployeeAPI.Models
         public int LogAllowtime { get; set; }
          //public int LateThresholdMinutes { get; set; } 
         public TimeOnly StartTimeAfternoon { get; set; }
-        public TimeOnly EndTimeAfternoon { get; set; } 
+        public TimeOnly EndTimeAfternoon { get; set; }
+
+        public Guid? CompanyId { get; set; }
+        public Company? Company { get; set; }
+        public bool IsSystemDefault { get; set; }
     }
 }

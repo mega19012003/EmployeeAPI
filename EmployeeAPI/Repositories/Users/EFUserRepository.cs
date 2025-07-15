@@ -19,7 +19,7 @@ namespace EmployeeAPI.Repositories.Users
         public IQueryable<User> GetAll()
         {
             var result = _context.Users
-                .Include(u => u.CompanyId)
+                .Include(u => u.Company)
                 .Include(u => u.Department)
                 .Include(u => u.Position)
                 .Where(u => !u.IsDeleted)

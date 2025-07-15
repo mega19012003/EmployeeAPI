@@ -26,7 +26,7 @@ namespace EmployeeAPI.Services.PositionServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, Guid? departmentId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
+        public async Task<PagedResult<PositionDTO>> GetAllAsync(string? name, Guid? companyId, Guid? departmentId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRole)
         {
             try
             {
@@ -35,17 +35,23 @@ namespace EmployeeAPI.Services.PositionServices
                 var isManager = currentUserRole.Contains("Manager");
                 var isAdmin = currentUserRole.Contains("Administrator");
 
-                if (isManager)
+                var query = _positionRepository.GetQueryable();
+
+                if (isAdmin)
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                    else if (currentUser == null || currentUser.DepartmentId == null)
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống để cập nhật công ty.");
+
+                    query = query.Where(f => f.Department.CompanyId == currentUser.CompanyId);
+                }
+                else if (isManager)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null || currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
                     departmentId = currentUser.DepartmentId;
                 }
-
-                var query = _positionRepository.GetQueryable();
 
                 if (!string.IsNullOrEmpty(name))
                 {
@@ -97,24 +103,33 @@ namespace EmployeeAPI.Services.PositionServices
                 var position = await _positionRepository.GetByIdAsync(id);
                 if (position == null) throw new ArgumentException("Không tìm thấy chức vụ");
 
+
+                if (isAdmin)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống để cập nhật công ty.");
+
+                    if (position.Department?.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ có thể xem chức vụ thuộc công ty của mình.");
+                }
                 if (isManager)
                 {
                     var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng hiện tại");
                     if (currentUser == null || currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     departmentId = currentUser.DepartmentId;
 
                     if (position.DepartmentId != departmentId)
-                        throw new UnauthorizedAccessException("Manager can only view positions in their department.");
+                        throw new ArgumentException("Manager chỉ có thể xem chức vụ trong cùng phòng ban");
                 }
 
                 return new ResponseModel.PositionDTO
                 {
                     Id = position.Id,
                     Name = position.Name,
+                    DepartmentId = departmentId,
                     DepartmentName = position.Department.Name,
                 };
             }
@@ -141,24 +156,21 @@ namespace EmployeeAPI.Services.PositionServices
                 if (isManager)
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                    else if (currentUser?.DepartmentId == null)
+                    if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
 
                     departmentId = currentUser.DepartmentId.Value;
                 }
                 else if (isAdmin)
                 {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống để cập nhật công ty.");
                     if (!dto.DepartmentId.HasValue)
                         throw new ArgumentException("Vui lòng nhập phòng ban");
+                }
 
-                    departmentId = dto.DepartmentId.Value;
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("Access denied");
-                }
+                departmentId = dto.DepartmentId.Value;
 
                 var model = new Position
                 {
@@ -177,6 +189,7 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     Id = model.Id,
                     Name = model.Name,
+                    DepartmentId = departmentId,
                     DepartmentName = model.Department.Name,
                 };
             }
@@ -193,21 +206,28 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                //var isAdmin = roles.Contains("Admin");
+                var isAdmin = currentUserRole.Contains("Administrator");
                 var isManager = currentUserRole.Contains("Manager");
 
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Không tìm thấy chức vụ");
 
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (isManager)
                 {
-                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     if (result.DepartmentId != currentUser.DepartmentId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể cập nhật chức vụ cùng phòng ban");
+                }
+                else if (isAdmin)
+                {
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống để cập nhật công ty.");
+                    if (result.Department.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Admin chỉ có thể cập nhật chức vụ cho cùng công ty");
                 }
 
                 result.Name = newName;
@@ -220,6 +240,7 @@ namespace EmployeeAPI.Services.PositionServices
                 {
                     Id = result.Id,
                     Name = result.Name,
+                    DepartmentId = result.DepartmentId,
                     DepartmentName = result.Department.Name,
                 };
             }
@@ -236,22 +257,28 @@ namespace EmployeeAPI.Services.PositionServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var isAdmin = currentUserRole.Contains("Administrator");
                 var isManager = currentUserRole.Contains("Manager");
 
                 var result = await _positionRepository.GetByIdAsync(id);
                 if (result == null)
                     throw new ArgumentException("Không tìm thấy chức vụ");
 
-                if(isManager)
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                if (isManager)
                 {
-                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                    else if (currentUser?.DepartmentId == null)
+                    if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                     if (result.DepartmentId != currentUser.DepartmentId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa chức vụ cùng phòng ban");
+                }
+                else if (isAdmin)
+                {
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống để cập nhật công ty.");
+                    if (result.Department.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Admin chỉ có thể xóa chức vụ của cùng công ty");
                 }
 
                 result.IsDeleted = true;
@@ -269,62 +296,62 @@ namespace EmployeeAPI.Services.PositionServices
             }
         }
 
-        public async Task<PagedResult<UserFilterDto>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRole)
-        {
-            try
-            {
-                pageIndex ??= 1;
-                pageSize ??= 10;
-                Guid? departmentId = null;
-                var query = await _positionRepository.GetStaffByPositionAsync(positionId, pageSize, pageIndex);
+    //    public async Task<PagedResult<UserFilterDto>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRole)
+    //    {
+    //        try
+    //        {
+    //            pageIndex ??= 1;
+    //            pageSize ??= 10;
+    //            Guid? departmentId = null;
+    //            var query = await _positionRepository.GetStaffByPositionAsync(positionId, pageSize, pageIndex);
                 
-                var isManager = currentUserRole.Contains("Manager");
-                if (isManager)
-                {
-                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-                    else if (currentUser?.DepartmentId == null)
-                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
-                    departmentId = currentUser.DepartmentId;
-                }
+    //            var isManager = currentUserRole.Contains("Manager");
+    //            if (isManager)
+    //            {
+    //                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+    //                if (currentUser == null)
+    //                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
+    //                else if (currentUser?.DepartmentId == null)
+    //                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+    //                departmentId = currentUser.DepartmentId;
+    //            }
 
-                var result = await _positionRepository.GetByIdAsync(positionId);
-                if (result == null)
-                    throw new ArgumentException("Không tìm thấy chức vụ");
+    //            var result = await _positionRepository.GetByIdAsync(positionId);
+    //            if (result == null)
+    //                throw new ArgumentException("Không tìm thấy chức vụ");
 
-                var allUsers = query
-                    .SelectMany(d => d.Users
-                    .Where(s => !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));
+    //            var allUsers = query
+    //                .SelectMany(d => d.Users
+    //                .Where(s => !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));
 
-                var totalCount = allUsers.Count();
+    //            var totalCount = allUsers.Count();
 
-                var items = allUsers
-                    .Skip((pageIndex.Value - 1) * pageSize.Value)
-                    .Take(pageSize.Value)
-                    .Select(st => new UserFilterDto
-                    {
-                        UserId = st.UserId,
-                        Name = st.Fullname,
-                        Position = st.Position.Name,
-                        SalaryPerHour = st.SalaryPerHour,
-                        ImageUrl = st.ImageUrl,
-                    })
-                    .ToList();
+    //            var items = allUsers
+    //                .Skip((pageIndex.Value - 1) * pageSize.Value)
+    //                .Take(pageSize.Value)
+    //                .Select(st => new UserFilterDto
+    //                {
+    //                    UserId = st.UserId,
+    //                    Name = st.Fullname,
+    //                    Position = st.Position.Name,
+    //                    SalaryPerHour = st.SalaryPerHour,
+    //                    ImageUrl = st.ImageUrl,
+    //                })
+    //                .ToList();
 
-                return new PagedResult<UserFilterDto>
-                {
-                    TotalCount = totalCount,
-                    PageIndex = pageIndex.Value,
-                    PageSize = pageSize.Value,
-                    Items = items
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError("An error occurred while retrieving User by position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
-            }
-        }
+    //            return new PagedResult<UserFilterDto>
+    //            {
+    //                TotalCount = totalCount,
+    //                PageIndex = pageIndex.Value,
+    //                PageSize = pageSize.Value,
+    //                Items = items
+    //            };
+    //        }
+    //        catch (Exception ex)
+    //        {
+    //            _logger.LogError("An error occurred while retrieving User by position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+    //            throw;
+    //        }
+    //    }
     }
 }

@@ -20,7 +20,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [SwaggerGroupOrder(4)]
+    [SwaggerGroupOrder(6)]
     public class PositionController : ControllerBase
     {
         private readonly IPositionService _positionService;
@@ -35,12 +35,11 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách chức vụ, manager lấy danh sách theo phòng ban của mình
+        /// Lấy danh sách chức vụ, Admin lấy danh sách theo công ty, manager lấy danh sách theo phòng ban của mình
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet]
-         
-        public async Task<IActionResult> GetAllPositions(string? Search, Guid? departmentId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllPositions(string? Search, Guid? companyId, Guid? departmentId, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -48,7 +47,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _positionService.GetAllAsync(Search, departmentId, pageIndex, pageSize, currentUserId, currentUserRoles);
+            var result = await _positionService.GetAllAsync(Search, companyId, departmentId, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!result.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("No result", result, 200));
@@ -57,7 +56,25 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Thêm chức vụ trong phỏng ban, manager ko cần thiết nhập department id
+        /// Lấy chức vụ theo id, Admin lấy chcu71 vụ theo công ty, manager chỉ dc lấy chức vụ theo phòng ban của mình    
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        [HttpGet("{positionId}")]
+        public async Task<IActionResult> GetPositionById(Guid positionId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _positionService.GetByIdAsync(positionId, currentUserId, currentUserRoles);
+
+            return Ok(ApiResponse<PositionDTO>.ReturnResult("Get position success", pagedResult, 200));
+        }
+
+        /// <summary>
+        /// Thêm chức vụ trong phỏng ban, manager ko cần thiết nhập department id, chỉ admin/manager dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
@@ -74,7 +91,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// cập nhật chức vụ trong phòng ban, chưa authorize
+        /// cập nhật chức vụ trong phòng ban, chưa authorize, chỉ admin/manager dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
@@ -94,7 +111,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa mềm chức vụ trong phòng ban
+        /// Xóa mềm chức vụ trong phòng ban, chỉ admin/manager dc phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("{positionId}")]
@@ -110,43 +127,27 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
         }
 
-        /// <summary>
-        /// Lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
-        /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("employee")]
-        public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return Unauthorized("UserId invalid");
+        ///// <summary>
+        ///// Lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
+        ///// </summary>
+        //[Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        //[HttpGet("employee")]
+        //public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return Unauthorized("UserId invalid");
 
-            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _positionService.GetStaffByPositionAsync(PositionId, pageSize, pageIndex, currentUserId, currentUserRoles);
+        //    var pagedResult = await _positionService.GetStaffByPositionAsync(PositionId, pageSize, pageIndex, currentUserId, currentUserRoles);
 
-            if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("No result", pagedResult, 200));
+        //    if (!pagedResult.Items.Any())
+        //        return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("No result", pagedResult, 200));
 
-            return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("Get list employee by position success", pagedResult, 200));
-        }
+        //    return Ok(ApiResponse<PagedResult<UserFilterDto>>.ReturnResult("Get list employee by position success", pagedResult, 200));
+        //}
 
-        /// <summary>
-        /// Lấy chức vụ theo id, manager chỉ dc lấy chức vụ theo phòng ban của mình    
-        /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
-        [HttpGet("{positionId}")]
-        public async Task<IActionResult> GetPositionById(Guid positionId)
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return Unauthorized("UserId invalid");
 
-            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-
-            var pagedResult = await _positionService.GetByIdAsync(positionId, currentUserId, currentUserRoles);
-
-            return Ok(ApiResponse<PositionDTO>.ReturnResult("Get position success", pagedResult, 200));
-        }
     }
 }

@@ -1,10 +1,13 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Companies;
+using EmployeeAPI.Repositories.LogStatusConfigs;
+using EmployeeAPI.Repositories.ScheduleTimes;
 using EmployeeAPI.Repositories.Users;
-using static EmployeeAPI.Services.CompanyServices.ResponseModel;
-using EmployeeAPI.Base;
-using System.Transactions;
 using EmployeeAPI.Services.ImageServices;
+using Microsoft.EntityFrameworkCore;
+using System.Transactions;
+using static EmployeeAPI.Services.CompanyServices.ResponseModel;
 
 namespace EmployeeAPI.Services.CompanyServices
 {
@@ -15,39 +18,17 @@ namespace EmployeeAPI.Services.CompanyServices
         private readonly IUserRepository _userRepository;
         private readonly AppDbContext _context;
         private readonly ICloudImageService _cloudinary;
-        public CompanyService(ICompanyRepository companyRepository, ICloudImageService cloudinary, ILogger<CompanyService> logger, IUserRepository userRepository, AppDbContext context)
+        private readonly ILogStatusConfigRepository _logStatusConfigRepository;
+        private readonly IScheduleTimeRepository _scheduleTimeRepository;
+        public CompanyService(ICompanyRepository companyRepository, ICloudImageService cloudinary, ILogger<CompanyService> logger, IUserRepository userRepository, AppDbContext context, ILogStatusConfigRepository logStatusConfigRepository, IScheduleTimeRepository scheduleTimeRepository)
         {
             _companyRepository = companyRepository;
             _logger = logger;
             _userRepository = userRepository;
             _context = context;
             _cloudinary = cloudinary;
-        }
-
-        public async Task<CompanyResultDto> GetCompanyByIdAsync(Guid companyId, Guid currentUserId, IList<string> curretnUserRole)
-        {
-            var isEmployee = curretnUserRole.Contains("Employee");
-            var isManager = curretnUserRole.Contains("Manager");
-            var isAdmin = curretnUserRole.Contains("Administrator");
-
-            var currentUser = await _context.Users.FindAsync(currentUserId);
-            if (currentUser == null)
-                throw new ArgumentException("Không thể tìm thấy user hiện tại");
-
-            if (isManager || isEmployee || isAdmin)
-            {
-                companyId = (Guid)currentUser.CompanyId;
-            }
-
-            var result = await _companyRepository.GetCompanyByIdAsync(companyId);
-
-            return new CompanyResultDto
-            {
-                Name = result.Name,
-                Address = result.Address,
-                LogoUrl = result.LogoUrl,
-                CompanyId = companyId
-            };
+            _logStatusConfigRepository = logStatusConfigRepository;
+            _scheduleTimeRepository = scheduleTimeRepository;
         }
 
         public async Task<PagedResult<CompanyResultDto>> GetAllCompaniesAsync(string? Name, int? pageIndex, int? pagesize)
@@ -90,23 +71,47 @@ namespace EmployeeAPI.Services.CompanyServices
             }
         }
 
+        public async Task<CompanyResultDto> GetCompanyByIdAsync(Guid companyId, Guid currentUserId, IList<string> curretnUserRole)
+        {
+            var isEmployee = curretnUserRole.Contains("Employee");
+            var isManager = curretnUserRole.Contains("Manager");
+            var isAdmin = curretnUserRole.Contains("Administrator");
+
+            var currentUser = await _context.Users.FindAsync(currentUserId);
+
+            if (isManager || isEmployee || isAdmin)
+            {
+                companyId = (Guid)currentUser.CompanyId;
+            }
+
+            var result = await _companyRepository.GetCompanyByIdAsync(companyId);
+
+            return new CompanyResultDto
+            {
+                Name = result.Name,
+                Address = result.Address,
+                LogoUrl = result.LogoUrl,
+                CompanyId = companyId
+            };
+        }
+
         public async Task<CompanyResultDto> CreateCompanyAsync(CreateCompanyDto dto)
         {
-            using var Transaction = await _context.Database.BeginTransactionAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
                 if (string.IsNullOrEmpty(dto.Name))
                 {
                     throw new ArgumentException("Tên công ty không được để trống");
                 }
-                string image = null;
 
+                string image = null;
                 if (dto.LogoUrl != null)
                 {
                     image = await _cloudinary.UploadImageAsync(dto.LogoUrl);
                 }
 
-                var model = new Company
+                var newCompany = new Company
                 {
                     Id = Guid.NewGuid(),
                     Name = dto.Name,
@@ -115,23 +120,66 @@ namespace EmployeeAPI.Services.CompanyServices
                     IsDeleted = false
                 };
 
-                await _companyRepository.AddCompanyAsync(model);
-                await Transaction.CommitAsync();
+                await _companyRepository.AddCompanyAsync(newCompany);
+                //await _context.SaveChangesAsync();
+
+                // Clone LogStatusConfig
+                var defaultConfigs = await _logStatusConfigRepository.GetTemplateAsync();
+
+                var clonedConfigs = defaultConfigs.Select(x => new LogStatusConfig
+                {
+                    Id = Guid.NewGuid(),            
+                    enumId = x.enumId,              
+                    Name = x.Name,
+                    SalaryMultiplier = x.SalaryMultiplier,
+                    Note = x.Note,
+                    CompanyId = newCompany.Id,
+                    CompanyName = newCompany.Name,
+                    IsSystemDefault = false
+                }).ToList();
+
+                await _context.LogStatusConfigs.AddRangeAsync(clonedConfigs);
+                //await _context.SaveChangesAsync();
+
+                // Clone Schedule
+                var defaultSchedule = await _scheduleTimeRepository.GetTemplateAsync();
+
+                if (defaultSchedule != null)
+                {
+                    var companySchedule = new ScheduleTime
+                    {
+                        id = Guid.NewGuid(),
+                        StartTimeMorning = defaultSchedule.StartTimeMorning,
+                        EndTimeMorning = defaultSchedule.EndTimeMorning,
+                        StartTimeAfternoon = defaultSchedule.StartTimeAfternoon,
+                        EndTimeAfternoon = defaultSchedule.EndTimeAfternoon,
+                        LogAllowtime = defaultSchedule.LogAllowtime,
+                        IsSystemDefault = false,
+                        CompanyId = newCompany.Id
+                    };
+
+                    await _context.ScheduleTimes.AddAsync(companySchedule);
+                    //await _context.SaveChangesAsync();
+                }
+                await _context.SaveChangesAsync();
+                await transaction.CommitAsync();
+
                 return new CompanyResultDto
                 {
-                    Name = model.Name,
-                    Address = model.Address,
-                    LogoUrl = model.LogoUrl,
-                    CompanyId = model.Id
+                    Name = newCompany.Name,
+                    Address = newCompany.Address,
+                    LogoUrl = newCompany.LogoUrl,
+                    CompanyId = newCompany.Id
                 };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while adding company");
-                await Transaction.RollbackAsync();
+                _logger.LogError(ex, "Error occurred while adding company and cloning log status configs");
+                await transaction.RollbackAsync();
                 throw;
             }
         }
+
 
         public async Task<CompanyResultDto> UpdateCompanyAsync(UpdateCompanyDto dto)
         {

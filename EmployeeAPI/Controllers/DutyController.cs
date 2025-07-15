@@ -12,7 +12,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [SwaggerGroupOrder(5)]
+    [SwaggerGroupOrder(7)]
     public class DutyController : ControllerBase
     {
         private readonly IDutyService _dutyService;
@@ -24,7 +24,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy danh sách công việc manager chỉ lấy dc công việc do mình tạo ra, employee chỉ lấy dc công việc có bản thân ở trong
+        /// Admin lấy danh sách công việc cảu công ty, manager chỉ lấy dc công việc do mình tạo ra, employee chỉ lấy dc công việc có bản thân ở trong
         /// </summary>
         [Authorize]
         [HttpGet]
@@ -62,7 +62,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy chi tiết công việc theo id
+        /// Lấy chi tiết công việc theo id, ADmin lấy chi tiết theo công ty, manager lấy thoe phòng ban, employee lấy chit tiết có bản thân ở trong
         /// </summary>
         [Authorize]
         [HttpGet("detail/{detailId}")]
@@ -80,7 +80,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Thêm công việc
+        /// Thêm công việc, do admin/manager xử lý 
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
@@ -98,7 +98,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Thêm chi tiết công việc
+        /// Thêm chi tiết công việc, do admin/manager xử lý 
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost("DutyDetail")]
@@ -116,7 +116,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật công việc
+        /// Cập nhật công việc, do admin/manager xử lý 
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
@@ -152,7 +152,7 @@ namespace EmployeeAPI.Controllers
         //}
 
         /// <summary>
-        /// Cập nhật chi tiết công việc
+        /// Cập nhật chi tiết công việc, do admin/manager xử lý 
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut("DutyDetail")]
@@ -170,7 +170,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Đánh dấu là hoàn tất chi tiết công việc, employee có thể đánh dấu công việc của mình, manager có thể đánh dấu
+        /// Đánh dấu là hoàn tất chi tiết công việc, employee có thể đánh dấu công việc của mình miễn là trước hạn, manager có thể đánh dấu bất kể trước hay sau hạn
         /// </summary>
         [Authorize(Roles = "Administrator, Manager, Employee")]
         [HttpPut("MarkCompleted/{dutyDetailId}")]
@@ -188,7 +188,7 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa công việc
+        /// Xóa công việc, do admin/manager xử lý 
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("dutyId")]
@@ -203,7 +203,7 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete duty success", result, 200));
         }
         /// <summary>
-        /// Xóa chi tiết công việc
+        /// Xóa chi tiết công việc, do admin/manager xử lý 
         /// </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("detailId")]

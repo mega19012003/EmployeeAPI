@@ -18,7 +18,7 @@ namespace EmployeeAPI.Repositories.Auth
             _context = context;
         }
 
-        public async Task<User> LoginAsync(string username, string password)
+        public async Task<User> LoginAsync(string username)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
             //if (user == null || !HashPassword.Verify(user.Password, password))

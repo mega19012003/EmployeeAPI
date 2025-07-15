@@ -14,6 +14,6 @@ namespace EmployeeAPI.Models
         public string Note { get; set; }
         public bool IsDeleted { get; set; } = false;
         public int DaysWorked { get; set; } 
-        public bool isPaied { get; set; }
+        public bool isPaid { get; set; }
     }
 }

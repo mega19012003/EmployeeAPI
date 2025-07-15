@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250711040037_initia2")]
-    partial class initia2
+    [Migration("20250714072831_sua-log-status")]
+    partial class sualogstatus
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -31,11 +31,16 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<string>("IPAddress")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
                     b.HasKey("AllowedIPId");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("AllowedIPs");
                 });
@@ -91,7 +96,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Company");
+                    b.ToTable("Companies");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
@@ -191,6 +196,9 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
@@ -206,13 +214,25 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
+                    b.HasIndex("CompanyId");
+
                     b.ToTable("Holidays");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
                 {
-                    b.Property<int>("Id")
-                        .HasColumnType("int");
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("CompanyName")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .HasColumnType("bit");
 
                     b.Property<string>("Name")
                         .IsRequired()
@@ -224,116 +244,14 @@ namespace EmployeeAPI.Migrations
                     b.Property<double>("SalaryMultiplier")
                         .HasColumnType("float");
 
+                    b.Property<int>("enumId")
+                        .HasColumnType("int");
+
                     b.HasKey("Id");
 
-                    b.ToTable("LogStatusConfigs");
+                    b.HasIndex("CompanyId");
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 0,
-                            Name = "None",
-                            Note = "Chưa checkin/checkout",
-                            SalaryMultiplier = 0.0
-                        },
-                        new
-                        {
-                            Id = 1,
-                            Name = "OnTime",
-                            Note = "Đi đúng giờ",
-                            SalaryMultiplier = 1.0
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Late",
-                            Note = "Đi trễ",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "LeaveEarly",
-                            Note = "Về sớm",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 4,
-                            Name = "LateAndLeaveEarly",
-                            Note = "Đi trễ và về sớm",
-                            SalaryMultiplier = 0.5
-                        },
-                        new
-                        {
-                            Id = 5,
-                            Name = "Overtime",
-                            Note = "Làm thêm giờ",
-                            SalaryMultiplier = 1.3
-                        },
-                        new
-                        {
-                            Id = 6,
-                            Name = "LateAndOvertime",
-                            Note = "Đi trễ và làm thêm giờ",
-                            SalaryMultiplier = 0.69999999999999996
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Name = "Absent",
-                            Note = "Vắng",
-                            SalaryMultiplier = 0.0
-                        },
-                        new
-                        {
-                            Id = 8,
-                            Name = "OnHoliday",
-                            Note = "Làm vào ngày nghỉ",
-                            SalaryMultiplier = 2.0
-                        },
-                        new
-                        {
-                            Id = 9,
-                            Name = "OnHolidayLate",
-                            Note = "Đi trễ vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
-                        },
-                        new
-                        {
-                            Id = 10,
-                            Name = "OnHolidayLeaveEarly",
-                            Note = "Về sớm vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
-                        },
-                        new
-                        {
-                            Id = 11,
-                            Name = "OnHolidayOvertime",
-                            Note = "Làm thêm giờ vào ngày nghỉ",
-                            SalaryMultiplier = 3.0
-                        },
-                        new
-                        {
-                            Id = 12,
-                            Name = "OnHolidayLateAndOvertime",
-                            Note = "Đi trễ và làm thêm giờ vào ngày nghỉ",
-                            SalaryMultiplier = 1.5
-                        },
-                        new
-                        {
-                            Id = 13,
-                            Name = "OnHolidayLateAndLeaveEarly",
-                            Note = "Đi trễ và về sớm vào ngày nghỉ",
-                            SalaryMultiplier = 2.0
-                        },
-                        new
-                        {
-                            Id = 14,
-                            Name = "Others",
-                            Note = "Khác",
-                            SalaryMultiplier = 0.5
-                        });
+                    b.ToTable("LogStatusConfigs");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -360,6 +278,9 @@ namespace EmployeeAPI.Migrations
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
+
+                    b.Property<bool>("isPaid")
+                        .HasColumnType("bit");
 
                     b.HasKey("Id");
 
@@ -397,11 +318,17 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<TimeOnly>("EndTimeAfternoon")
                         .HasColumnType("time");
 
                     b.Property<TimeOnly>("EndTimeMorning")
                         .HasColumnType("time");
+
+                    b.Property<bool>("IsSystemDefault")
+                        .HasColumnType("bit");
 
                     b.Property<int>("LogAllowtime")
                         .HasColumnType("int");
@@ -413,6 +340,8 @@ namespace EmployeeAPI.Migrations
                         .HasColumnType("time");
 
                     b.HasKey("id");
+
+                    b.HasIndex("CompanyId");
 
                     b.ToTable("ScheduleTimes");
                 });
@@ -478,6 +407,9 @@ namespace EmployeeAPI.Migrations
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
 
+                    b.Property<bool>("isResetPass")
+                        .HasColumnType("bit");
+
                     b.HasKey("UserId");
 
                     b.HasIndex("CompanyId");
@@ -490,6 +422,17 @@ namespace EmployeeAPI.Migrations
                         .IsUnique();
 
                     b.ToTable("Users");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.AllowedIP", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
@@ -548,6 +491,26 @@ namespace EmployeeAPI.Migrations
                     b.Navigation("Users");
                 });
 
+            modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Company");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
+                });
+
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
                 {
                     b.HasOne("EmployeeAPI.Models.User", "Users")
@@ -567,6 +530,15 @@ namespace EmployeeAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict);
 
                     b.Navigation("Department");
+                });
+
+            modelBuilder.Entity("EmployeeAPI.Models.ScheduleTime", b =>
+                {
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>

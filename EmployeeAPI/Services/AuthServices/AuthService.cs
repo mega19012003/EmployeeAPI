@@ -40,14 +40,30 @@ namespace EmployeeAPI.Services.AuthServices
                 var currentUsername = user.Identity.Name;
                 var currentUser = await _repository.GetUserByName(currentUsername);
 
-                if (currentUser == null)
-                    throw new ArgumentException("Không thể tìm thấy người dùng hiện tại");
-                else if (currentUser.Role == RoleType.SystemAdmin && (dto.Role != RoleType.SystemAdmin && dto.Role != RoleType.Administrator))
-                    throw new ArgumentException("Quản trị hệ thống chỉ được phép tạo tài khoản quản trị hoặc admin của công ty");
-                else if (currentUser.Role == RoleType.Administrator && (dto.Role != RoleType.Employee || dto.Role != RoleType.Manager))
-                    throw new ArgumentException("Admin chỉ được phép tạo tài khoản manager hoặc employee");
-                else if (currentUser.Role == RoleType.Manager && dto.Role != RoleType.Employee)
-                    throw new ArgumentException("Manager chỉ có thể tạo user employee");
+
+                if (currentUser.Role == RoleType.SystemAdmin)
+                {
+                    if (dto.Role != RoleType.SystemAdmin && dto.Role != RoleType.Administrator)
+                        throw new ArgumentException("Quản trị hệ thống chỉ được phép tạo tài khoản quản trị hoặc admin của công ty.");
+                }
+                else if (currentUser.Role == RoleType.Administrator)
+                {
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ SystemAdmin để cập nhật công ty.");
+
+                    if (dto.Role != RoleType.Employee && dto.Role != RoleType.Manager)
+                        throw new ArgumentException("Admin chỉ được phép tạo tài khoản Manager hoặc Employee.");
+                }
+                else if (currentUser.Role == RoleType.Manager)
+                {
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Manager chưa có công ty. Vui lòng liên hệ Admin để cập nhật công ty.");
+                    if (currentUser.DepartmentId == null)
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+
+                    if (dto.Role != RoleType.Employee)
+                        throw new ArgumentException("Manager chỉ có thể tạo user Employee.");
+                }
 
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
@@ -70,6 +86,8 @@ namespace EmployeeAPI.Services.AuthServices
                     ImageUrl = "",
                     PositionId = null,
                     SalaryPerHour = 0,
+                    IsActive = true,
+                    IsDeleted = false,
                 };
 
                 if (currentUser.Role == RoleType.Administrator && currentUser.CompanyId != null)
@@ -107,6 +125,7 @@ namespace EmployeeAPI.Services.AuthServices
                 throw;
             }
         }
+
         public async Task<User> GetUserById(Guid userId)
         {
             var user = await _repository.GetByIdAsync(userId);
@@ -114,11 +133,12 @@ namespace EmployeeAPI.Services.AuthServices
                 throw new ArgumentException("Không tim thấy người dùng");
             return user;
         }
+
         public async Task<User> LoginAsync(string username, string password)
         {
             try 
             {
-                var user = await _repository.LoginAsync(username, password);
+                var user = await _repository.LoginAsync(username);
 
                 if (user.IsDeleted)
                     throw new ArgumentException("Người dùng này đã bị xóa");
@@ -198,13 +218,25 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("Không tìm thấy người dùng hiện tại");
 
                 var user = await _repository.GetByIdAsync(userId);
-                if (user == null)
-                    throw new ArgumentException("Không tìm thấy người dùng");
 
-                if (currentUser.Role == RoleType.Manager &&
-                    user.DepartmentId != currentUser.DepartmentId)
+                if (currentUser.Role == RoleType.SystemAdmin)
                 {
-                    throw new ArgumentException("Manager chỉ có thể reset password cho user cùng phòng ban");
+                    if (user.Role != RoleType.Administrator && user.Role != RoleType.SystemAdmin)
+                        throw new ArgumentException("Quản trị hệ thống chỉ được phép reset password cho admin của công ty hoặc quản trị hệ thống khác");
+                }
+                else if (currentUser.Role == RoleType.Administrator)
+                {
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ SystemAdmin để cập nhật công ty.");
+                    if (user.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ được phép reset password cho nhân viên cùng công ty.");
+                }
+                else if (currentUser.Role == RoleType.Manager)
+                {
+                    if (currentUser.DepartmentId == null)
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+                    if (user.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager chỉ có thể reset password cho user cùng phòng ban.");
                 }
 
                 user.Password = HashPassword.Hash(user.Username);

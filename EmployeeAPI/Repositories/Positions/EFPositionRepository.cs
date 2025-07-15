@@ -13,12 +13,12 @@ namespace EmployeeAPI.Repositories.Positions
 
         public IQueryable<Position> GetQueryable()
         {
-            return _context.Positions.AsNoTracking().Where(p => !p.IsDeleted);
+            return _context.Positions.AsNoTracking().Include(p => p.Department).Where(p => !p.IsDeleted);
         }
 
         public async Task<Position> GetByIdAsync(Guid id)
         {
-            return await _context.Positions.Include(p => p.Department).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
+            return await _context.Positions.Include(p => p.Department).ThenInclude(d => d.Company).FirstOrDefaultAsync(p => p.Id == id && !p.IsDeleted);
         }
 
         public async Task AddAsync(Position position)

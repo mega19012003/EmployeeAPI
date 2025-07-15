@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Base;
+﻿using EmployeeAPI.Attributes;
+using EmployeeAPI.Base;
 using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.Dashboards;
 using EmployeeAPI.Services.DepartmentServices;
@@ -14,6 +15,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [SwaggerGroupOrder(3)]
     public class DashboardController : ControllerBase
     {
         private readonly IDashboardService _dashboardService;
@@ -24,7 +26,7 @@ namespace EmployeeAPI.Controllers
         }
 
         [HttpGet("overview")]
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         public async Task<IActionResult> GetOverview()
         {
             var result = await _dashboardService.GetOverviewAsync(User);

@@ -16,16 +16,7 @@ namespace EmployeeAPI.Repositories.Payrolls
 
         //Task<int> CountCheckinsByStatus(Guid userId, CheckinMorningStatus status, int month, int year);
         Task<bool> ExistsPayrollForMonth(Guid userId, int month, int year);
-        //Task<int> CountValidCheckins(Guid userId, int month, int year);
-        //Task<int> CountLateCheckins(Guid userId, int month, int year);
-        //Task<int> CountAbsentCheckins(Guid userId, int month, int year);
-        //Task<int> CountAbsentPermissionCheckins(Guid userId, int month, int year);
-        //Task<int> CountLeaveEarlyCheckins(Guid userId, int month, int year);
-        //Task<int> CountOvertimeCheckins(Guid userId, int month, int year);
-        //Task<int> CountOnHolidayPermissionCheckins(Guid userId, int month, int year);
-        //Task<int> CountothersCheckins(Guid UserId, int month, int year);
-        //Task<int> CountDayWorked(Guid userId, int month, int year);
-        Task<User> GetUserWithSalary(Guid userId);
+        //Task<User> GetUserWithSalary(Guid userId);
         Task CreatePayrollAsync(Payroll payroll);
     }
 }

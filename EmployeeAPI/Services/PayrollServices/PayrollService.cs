@@ -9,6 +9,7 @@ using EmployeeAPI.Services.CheckinServices;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.VisualBasic;
+using System.ComponentModel.Design;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 using static EmployeeAPI.Services.PayrollServices.ResponseModel;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
@@ -34,7 +35,7 @@ namespace EmployeeAPI.Services.PayrollServices
             _context = context;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
@@ -43,7 +44,23 @@ namespace EmployeeAPI.Services.PayrollServices
                 .Include(p => p.Users)
                 .Where(p => !p.IsDeleted);
 
-            if (currentUserRoles.Contains("Manager"))
+
+            if (currentUserRoles.Contains("SystemAdmin"))
+            {
+                if (companyId.HasValue)
+                {
+                    query = query.Where(p => p.Users.CompanyId == companyId.Value);
+                }
+            }
+            else if (currentUserRoles.Contains("Administrator"))
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống.");
+
+                query = query.Where(p => p.Users.CompanyId == currentUser.CompanyId);
+            }
+            else if (currentUserRoles.Contains("Manager"))
             {
                 var manager = await _context.Users.FindAsync(currentUserId);
                 if (manager == null)
@@ -56,7 +73,7 @@ namespace EmployeeAPI.Services.PayrollServices
 
                 query = query.Where(p => p.Users.DepartmentId == departmentId);
             }
-            if( currentUserRoles.Contains("Employee"))
+            else if( currentUserRoles.Contains("Employee"))
             {
                 var employee = await _context.Users.FindAsync(currentUserId);
                 if (employee == null)
@@ -132,7 +149,16 @@ namespace EmployeeAPI.Services.PayrollServices
             var manager = currentUserRoles.Contains("Manager");
             var employee = currentUserRoles.Contains("Employee");
 
-            if (manager)
+            if (currentUserRoles.Contains("Administrator"))
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Admin chưa có công ty.");
+
+                if (payroll.Users.CompanyId != currentUser.CompanyId)
+                    throw new UnauthorizedAccessException("Admin chỉ có thể xem bảng lương của user cùng công ty.");
+            }
+            else if (manager)
             {
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser.DepartmentId == null)
@@ -199,84 +225,84 @@ namespace EmployeeAPI.Services.PayrollServices
                 throw;
             }
         }
-        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
-        {
-            try
-            {
-                // Gán ngầm staffId nếu user là employee
-                if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
-                {
-                    staffId = currentUserId;
-                }
-                else if (currentUserRoles.Contains("Manager"))
-                {
-                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
-                    if (currentUser == null)
-                        throw new ArgumentException("Không tìm thấy người dùng");
+        //public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        //{
+        //    try
+        //    {
+        //        // Gán ngầm staffId nếu user là employee
+        //        if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
+        //        {
+        //            staffId = currentUserId;
+        //        }
+        //        else if (currentUserRoles.Contains("Manager"))
+        //        {
+        //            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+        //            if (currentUser == null)
+        //                throw new ArgumentException("Không tìm thấy người dùng");
 
-                    if (currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+        //            if (currentUser.DepartmentId == null)
+        //                throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
 
-                    // Kiểm tra user được lấy có tồn tại không
-                    var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
-                    if (findUser == null)
-                        throw new ArgumentException("Không tìm thấy user");
+        //            // Kiểm tra user được lấy có tồn tại không
+        //            var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
+        //            if (findUser == null)
+        //                throw new ArgumentException("Không tìm thấy user");
 
-                    if (findUser.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
+        //            if (findUser.DepartmentId != currentUser.DepartmentId)
+        //                throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
 
-                }
-                else if (currentUserRoles.Contains("Administrator"))
-                {
-                    // Admin: bắt buộc phải nhập staffId
-                    if (staffId == null || staffId == Guid.Empty)
-                        throw new ArgumentException("Please input userId");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("You do not have permission");
-                }
+        //        }
+        //        else if (currentUserRoles.Contains("Administrator"))
+        //        {
+        //            // Admin: bắt buộc phải nhập staffId
+        //            if (staffId == null || staffId == Guid.Empty)
+        //                throw new ArgumentException("Please input userId");
+        //        }
+        //        else
+        //        {
+        //            throw new UnauthorizedAccessException("You do not have permission");
+        //        }
 
-                pageIndex ??= 1;
-                pageSize ??= 10;
+        //        pageIndex ??= 1;
+        //        pageSize ??= 10;
 
-                var user = await _userRepository.GetUserInfoAsync(staffId.Value);
-                if (user == null)
-                    throw new ArgumentException("Không tìm thấy user");
+        //        var user = await _userRepository.GetUserInfoAsync(staffId.Value);
+        //        if (user == null)
+        //            throw new ArgumentException("Không tìm thấy user");
 
-                var query = _context.Payrolls
-                    .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
-                    .Include(p => p.Users);
+        //        var query = _context.Payrolls
+        //            .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
+        //            .Include(p => p.Users);
 
-                var totalCount = await query.CountAsync();
+        //        var totalCount = await query.CountAsync();
 
-                var items = await query
-                    .Skip((pageIndex.Value - 1) * pageSize.Value)
-                    .Take(pageSize.Value)
-                    .Select(c => new ResponseModel.PayrollResultDto
-                    {
-                        Id = c.Id,
-                        CreatedDate = c.CreatedDate,
-                        Salary = c.Salary,
-                        Note = c.Note,
-                        Name = c.Users.Fullname ?? null,
-                    }).ToListAsync();
+        //        var items = await query
+        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
+        //            .Take(pageSize.Value)
+        //            .Select(c => new ResponseModel.PayrollResultDto
+        //            {
+        //                Id = c.Id,
+        //                CreatedDate = c.CreatedDate,
+        //                Salary = c.Salary,
+        //                Note = c.Note,
+        //                Name = c.Users.Fullname ?? null,
+        //            }).ToListAsync();
 
-                return new PagedResult<ResponseModel.PayrollResultDto>
-                {
-                    Items = items,
-                    PageIndex = pageIndex.Value,
-                    PageSize = pageSize.Value,
-                    TotalCount = totalCount
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;
-            }
-        }
+        //        return new PagedResult<ResponseModel.PayrollResultDto>
+        //        {
+        //            Items = items,
+        //            PageIndex = pageIndex.Value,
+        //            PageSize = pageSize.Value,
+        //            TotalCount = totalCount
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+        //        throw;
+        //    }
+        //}
 
         ////////////////////////////////////////////////////////
 

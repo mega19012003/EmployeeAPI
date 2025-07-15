@@ -12,7 +12,7 @@ namespace EmployeeAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [SwaggerGroupOrder(7)]
+    [SwaggerGroupOrder(9)]
     public class PayrollController : ControllerBase
     {
         private readonly IPayrollService _payrollService;
@@ -29,7 +29,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAllPayrolls(string? Search, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllPayrolls(string? Search, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -37,7 +37,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, Search, Day, Month, Year, pageIndex, pageSize);
+            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, Search, companyId, Day, Month, Year, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
@@ -113,24 +113,24 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete payroll success", result, 200));
         }
 
-        /// <summary>
-        /// Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
-        /// </summary>
-        [Authorize]
-        [HttpGet("employee")]
-        public async Task<IActionResult> GetPayrollByStaff(Guid userId, int? pageIndex, int? pageSize)
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+        ///// <summary>
+        ///// Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
+        ///// </summary>
+        //[Authorize]
+        //[HttpGet("employee")]
+        //public async Task<IActionResult> GetPayrollByStaff(Guid userId, int? pageIndex, int? pageSize)
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+        //    var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _payrollService.GetPayrollByUser(userId, currentUserId, currentRoles, pageIndex, pageSize);
-            if (!pagedResult.Items.Any())
-                return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
-            return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
-        }
+        //    var pagedResult = await _payrollService.GetPayrollByUser(userId, currentUserId, currentRoles, pageIndex, pageSize);
+        //    if (!pagedResult.Items.Any())
+        //        return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
+        //    return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
+        //}
     }
 }
 

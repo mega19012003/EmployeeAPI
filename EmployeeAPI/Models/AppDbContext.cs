@@ -28,23 +28,27 @@ namespace EmployeeAPI.Models
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
 
-            //modelBuilder.Entity<LogStatusConfig>().HasData(
-            //    new LogStatusConfig { Id = 0,  Name = "None",                       SalaryMultiplier = 0.0, Note = "Chưa checkin/checkout" },
-            //    new LogStatusConfig { Id = 1,  Name = "OnTime",                     SalaryMultiplier = 1.0, Note = "Đi đúng giờ" },
-            //    new LogStatusConfig { Id = 2,  Name = "Late",                       SalaryMultiplier = 0.7, Note = "Đi trễ" },
-            //    new LogStatusConfig { Id = 3,  Name = "LeaveEarly",                 SalaryMultiplier = 0.7, Note = "Về sớm" },
-            //    new LogStatusConfig { Id = 4,  Name = "LateAndLeaveEarly",          SalaryMultiplier = 0.5, Note = "Đi trễ và về sớm" },
-            //    new LogStatusConfig { Id = 5,  Name = "Overtime",                   SalaryMultiplier = 1.3, Note = "Làm thêm giờ" },
-            //    new LogStatusConfig { Id = 6,  Name = "LateAndOvertime",            SalaryMultiplier = 0.7, Note = "Đi trễ và làm thêm giờ" },
-            //    new LogStatusConfig { Id = 7,  Name = "Absent",                     SalaryMultiplier = 0.0, Note = "Vắng" },
-            //    new LogStatusConfig { Id = 8,  Name = "OnHoliday",                  SalaryMultiplier = 2.0, Note = "Làm vào ngày nghỉ" },
-            //    new LogStatusConfig { Id = 9,  Name = "OnHolidayLate",              SalaryMultiplier = 1.5, Note = "Đi trễ vào ngày nghỉ" },
-            //    new LogStatusConfig { Id = 10, Name = "OnHolidayLeaveEarly",        SalaryMultiplier = 1.5, Note = "Về sớm vào ngày nghỉ" },
-            //    new LogStatusConfig { Id = 11, Name = "OnHolidayOvertime",          SalaryMultiplier = 3.0, Note = "Làm thêm giờ vào ngày nghỉ" },
-            //    new LogStatusConfig { Id = 12, Name = "OnHolidayLateAndOvertime",   SalaryMultiplier = 1.5, Note = "Đi trễ và làm thêm giờ vào ngày nghỉ" },
-            //    new LogStatusConfig { Id = 13, Name = "OnHolidayLateAndLeaveEarly", SalaryMultiplier = 2.0, Note = "Đi trễ và về sớm vào ngày nghỉ" },
-            //    new LogStatusConfig { Id = 14, Name = "Others",                     SalaryMultiplier = 0.5, Note = "Khác" }
-            //);
+            modelBuilder.Entity<LogStatusConfig>().HasData(
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 0, Name = "None", SalaryMultiplier = 0.0, Note = "Chưa checkin/checkout", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 1, Name = "OnTime", SalaryMultiplier = 1.0, Note = "Đi đúng giờ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 2, Name = "Late", SalaryMultiplier = 0.7, Note = "Đi trễ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 3, Name = "LeaveEarly", SalaryMultiplier = 0.7, Note = "Về sớm", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 4, Name = "LateAndLeaveEarly", SalaryMultiplier = 0.5, Note = "Đi trễ và về sớm", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 5, Name = "Overtime", SalaryMultiplier = 1.3, Note = "Làm thêm giờ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 6, Name = "LateAndOvertime", SalaryMultiplier = 0.7, Note = "Đi trễ và làm thêm giờ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 7, Name = "Absent", SalaryMultiplier = 0.0, Note = "Vắng", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 8, Name = "OnHoliday", SalaryMultiplier = 2.0, Note = "Làm vào ngày nghỉ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 9, Name = "OnHolidayLate", SalaryMultiplier = 1.5, Note = "Đi trễ vào ngày nghỉ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 10, Name = "OnHolidayLeaveEarly", SalaryMultiplier = 1.5, Note = "Về sớm vào ngày nghỉ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 11, Name = "OnHolidayOvertime", SalaryMultiplier = 3.0, Note = "Làm thêm giờ vào ngày nghỉ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 12, Name = "OnHolidayLateAndOvertime", SalaryMultiplier = 1.5, Note = "Đi trễ và làm thêm giờ vào ngày nghỉ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 13, Name = "OnHolidayLateAndLeaveEarly", SalaryMultiplier = 2.0, Note = "Đi trễ và về sớm vào ngày nghỉ", CompanyId = null, IsSystemDefault = true },
+                new LogStatusConfig { Id = Guid.NewGuid(), enumId = 14, Name = "Others", SalaryMultiplier = 0.5, Note = "Khác", CompanyId = null, IsSystemDefault = true }
+            );
+
+            modelBuilder.Entity<ScheduleTime>().HasData(
+                new ScheduleTime { id = Guid.NewGuid(), StartTimeMorning = TimeOnly.Parse("08:00:00"), EndTimeMorning = TimeOnly.Parse("12:00:00"), StartTimeAfternoon = TimeOnly.Parse("13:00:00"), EndTimeAfternoon = TimeOnly.Parse("17:00:00"), LogAllowtime = 5, IsSystemDefault = true, CompanyId = null });
+
 
             //modelBuilder.Entity<Department>().HasData(
             //    new Department { Id = Guid.NewGuid(), Name = "Phòng nhân sự", isDeleted = false },

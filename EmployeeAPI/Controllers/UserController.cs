@@ -32,9 +32,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Cập nhật thông tin người dùng, sẽ do admin/manager chỉnh sửa 1 số thông tin quan trọng, employee chỉ dc sửa thông tin cá nhân
+        /// Cập nhật thông tin người dùng, sẽ do SystemAdmin/admin/manager chỉnh sửa 1 số thông tin quan trọng, employee chỉ dc sửa thông tin cá nhân
         /// </summary>
-        [Authorize]
+        [Authorize(Roles = "Administrator, Manager, Employee")]
         [HttpPut]
         //[Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateStaffAsync([FromForm] ResponseModel.UpdateDto dto)
@@ -50,9 +50,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Xóa người dùng, sẽ do admin/manager xử lý
+        /// Xóa người dùng, sẽ do systemAdmin/admin/manager xử lý
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "SystemAdmin, Administrator, Manager")]
         [HttpDelete("{userId}")]
         public async Task<IActionResult> SoftDeleteAsync(Guid userId)
         {
@@ -67,9 +67,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Admin có thể lấy danh sách thông tin của người dùng, manager lấy danh sách theo phòng ban
+        /// SystemAdmin có thể lấy danh sách thông tin của người dùng, ADmin lấy ds user của cty, manager lấy danh sách theo phòng ban
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet]
         public async Task<IActionResult> GetAllUserAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, [FromQuery] int? pageIndex = 1, [FromQuery] int? pageSize = 10)
         {
@@ -88,9 +88,10 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Admin có thể lấy thông tin của người dùng, manager chỉ có thể lấy thông tin user theo phòng ban
+        /// SystemAdmin có thể lấy thông tin của người dùng, Admin lấy thông tin cùng cty, 
+        /// manager chỉ có thể lấy thông tin user theo phòng ban, employee chỉ dc lấy tt của bản thân
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize]
         [HttpGet("{userId}")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid userId)
         {

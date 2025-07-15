@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using EmployeeAPI.Base;
 using EmployeeAPI.Models;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
 namespace EmployeeAPI.Repositories.AllowedIPs
@@ -12,6 +13,14 @@ namespace EmployeeAPI.Repositories.AllowedIPs
         {
             _context = context;
         }
+
+        public IQueryable<AllowedIP> GetAll()
+        {
+            return _context.AllowedIPs
+                .AsNoTracking()
+                .Include(c => c.Company);
+        }
+
         public async Task<IEnumerable<AllowedIP>> GetAllAsync()
         {
             return await _context.AllowedIPs.ToListAsync();
@@ -36,9 +45,10 @@ namespace EmployeeAPI.Repositories.AllowedIPs
             }
         }
 
-        public async Task<bool> ExistsAsync(string ip)
+        public async Task<bool> ExistsAsync(string ip, Guid companyId)
         {
-            return await _context.AllowedIPs.AnyAsync(a => a.IPAddress == ip);
+            return await _context.AllowedIPs
+                .AnyAsync(a => a.IPAddress == ip && a.CompanyId == companyId);
         }
     }
 }

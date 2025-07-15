@@ -15,12 +15,12 @@ namespace EmployeeAPI.Repositories.Departments
         }
         public async Task<IEnumerable<Department>> GetAllAsync()
         {
-            return await _context.Departments.Where(p => p.isDeleted).AsNoTracking().ToListAsync();
+            return await _context.Departments.Where(p => p.isDeleted).Include(p => p.Company).AsNoTracking().ToListAsync();
         }
 
         public async Task<Department> GetByIdAsync(Guid id)
         {
-            return await _context.Departments.Include(d => d.Positions).FirstOrDefaultAsync(p => p.Id == id && !p.isDeleted);
+            return await _context.Departments/*.Include(d => d.Positions)*/.Include(p => p.Company).FirstOrDefaultAsync(p => p.Id == id && !p.isDeleted);
         }
         public async Task AddAsync(Department department)
         {

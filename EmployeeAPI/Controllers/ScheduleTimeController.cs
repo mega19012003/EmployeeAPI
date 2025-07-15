@@ -1,10 +1,15 @@
-﻿using EmployeeAPI.Base;
+﻿using CloudinaryDotNet;
+using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Services.CheckinServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using System.ComponentModel.Design;
+using System.Security.Claims;
+using static EmployeeAPI.Services.ScheduleTimeServices.ResponseModel;
 
 namespace EmployeeAPI.Controllers
 {
@@ -14,36 +19,65 @@ namespace EmployeeAPI.Controllers
     {
         private readonly IScheduleTimeService _scheduleTimeService;
         private readonly ICheckinService _checkinService;
-        public ScheduleTimeController(IScheduleTimeService scheduleTimeService, ICheckinService checkinService) 
+        public ScheduleTimeController(IScheduleTimeService scheduleTimeService, ICheckinService checkinService)
         {
             _checkinService = checkinService;
             _scheduleTimeService = scheduleTimeService;
         }
 
+
         /// <summary>
-        /// Lấy thời gian biểu hiện tại, dùng cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ
+        /// Lấy toàn bộ schedule time, chỉ system Admin mới dc dùng
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetScheduleTime()
+        public async Task<IActionResult> GetAllScheduleTime(Guid? companyId, int? pageIndex, int? pageSize)
         {
-            var result = await _scheduleTimeService.GetScheduleTimeAsync();
-            return Ok(ApiResponse<ScheduleTime>.ReturnResult("Get Schedule time Success", result, 200));
+            //var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            //if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+            //    return Unauthorized("UserId invalid");
+            //var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _scheduleTimeService.GetAllAsync(companyId, pageIndex, pageSize/*, currentUserId, currentUserRoles*/);
+            return Ok(ApiResponse<PagedResult<ScheduleDto>>.ReturnResult("Get Schedule time Success", pagedResult, 200));
+        }
+
+        /// <summary>
+        /// Lấy thời gian biểu hiện tại, bổ hợ cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ, chỉ systeam admin lấy được theo toàn bộ id
+        /// </summary>
+        [Authorize]
+        [HttpGet("{scheduleId}")]
+        public async Task<IActionResult> GetScheduleByIdTime(Guid Id)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _scheduleTimeService.GetScheduleTimeByIdAsync(Id, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ScheduleDto>.ReturnResult("Get Schedule time Success", result, 200));
         }
         /// <summary>
         /// Cập nhật gian biểu, chỉ có admin dc phép dùng
         /// </summary>
         /// <remarks>
         /// { "StartTimeMorning": "08:00:00",
-        ///"lateThresholdMinutes": 15,
+        /// "EndTimeMorning": "12:00:00",
+        /// "lateThresholdMinutes": 5,
+        /// "StartTimeMorning": "13:00:00",
         ///"EndTimeAfternoon": "17:00:00" }
         /// </remarks>
         [Authorize(Roles = "Administrator")]
         [HttpPut] 
         public async Task<ActionResult<ScheduleTime>> UpdateScheduleTime(ScheduleTime scheduleTime)
         {
-            var result = await _scheduleTimeService.UpdateScheduleTimeAsync(scheduleTime);
-            return Ok(ApiResponse<ScheduleTime>.ReturnResult("Update Schedule time Success", result, 200));
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _scheduleTimeService.UpdateScheduleTimeAsync(scheduleTime, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ScheduleDto>.ReturnResult("Update Schedule time Success", result, 200));
         }
 
         /// <summary>

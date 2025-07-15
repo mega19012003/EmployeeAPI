@@ -235,7 +235,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Reset password, chỉ có admin/manager dc phép dùng
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpPut("reset-password")]
         public async Task<IActionResult> ResetPassword([FromForm] Guid id)
         {

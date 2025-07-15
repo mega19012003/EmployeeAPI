@@ -13,12 +13,13 @@ namespace EmployeeAPI.Repositories.Holidays
         }
         public IQueryable<Holiday> GetAll()
         {
-            return _context.Holidays.Where(h => !h.IsDeleted).AsQueryable();
+            return _context.Holidays.Where(h => !h.IsDeleted).Include(h => h.Company).AsQueryable();
         }
         public async Task<Holiday> GetByIdAsync(Guid id)
         {
             return await _context.Holidays
                 .Where(h => h.Id == id && !h.IsDeleted)
+                .Include(h => h.Company)
                 .FirstOrDefaultAsync();
         }
         public async Task<Holiday> CreateAsync(Holiday holiday)
@@ -49,6 +50,7 @@ namespace EmployeeAPI.Repositories.Holidays
 
             return await _context.Holidays
                 .Where(h => !h.IsDeleted)
+                .Include(h => h.Company)
                 .AnyAsync(h =>
                     (h.startDate.Month < h.endDate.Month || h.startDate.Month == h.endDate.Month) &&
                     (

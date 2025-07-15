@@ -1,11 +1,12 @@
-﻿using System.Data.Common;
-using System.Runtime.InteropServices;
-using EmployeeAPI.Base;
+﻿using EmployeeAPI.Base;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Services.AllowedIpServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Data.Common;
+using System.Runtime.InteropServices;
+using System.Security.Claims;
 
 namespace EmployeeAPI.Controllers
 {
@@ -21,14 +22,35 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
         /// <summary>
-        ///  Lấy danh sách ip, Chỉ có admin dc phép dùng
+        ///  Lấy danh sách ip, system admin dc phép lấy toàn bộ cấu hình IP, admin/manager/employee chỉ dc phép lấy cấu hình theo công ty
         /// </summary>
-        [Authorize(Roles = "Administrator")]
+        [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? Search, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, Guid companyId, int? pageIndex, int? pageSize)
         {
-            var pageResult = await _allowedIPService.GetAllAsync(Search, pageIndex, pageSize);
-            return Ok(ApiResponse<PagedResult<AllowedIP>>.ReturnResult("Get ip success", pageResult, 200));
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pageResult = await _allowedIPService.GetAllAsync(Search, companyId, pageIndex, pageSize, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<PagedResult<ResponseModel.IPDto>>.ReturnResult("Get ip success", pageResult, 200));
+        }
+
+        /// <summary>
+        ///  Lấy ip, system admin dc phép lấy toàn bộ cấu hình IP, admin/manager/employee chỉ dc phép lấy cấu hình theo công ty
+        /// </summary>
+        [Authorize]
+        [HttpGet("{IPAddressId}")]
+        public async Task<IActionResult> GetById(Guid IPAddressId)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pageResult = await _allowedIPService.GetByIdAsync(IPAddressId, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ResponseModel.IPDto>.ReturnResult("Get ip success", pageResult, 200));
         }
 
         /// <summary>
@@ -38,8 +60,13 @@ namespace EmployeeAPI.Controllers
         [HttpPost]
         public async Task<IActionResult> Create([FromQuery] string IPAddress)
         {
-            var result = await _allowedIPService.AddAsync(IPAddress);
-            return Ok(ApiResponse<AllowedIP>.ReturnResult("Add new IP success", result, 200));
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var result = await _allowedIPService.AddAsync(IPAddress, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ResponseModel.IPDto>.ReturnResult("Add new IP success", result, 200));
         }
         /// <summary>
         ///  Chỉ có admin dc phép dùng
@@ -48,19 +75,13 @@ namespace EmployeeAPI.Controllers
         [HttpDelete("{ipId}")]
         public async Task<IActionResult> Delete(Guid ipId)
         {
-            var result = await _allowedIPService.DeleteAsync(ipId);
-            return Ok(ApiResponse<string>.ReturnResult("Delete IP success", result, 200));
-        }
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-        /// <summary>
-        ///  Lấy ip, Chỉ có admin dc phép dùng
-        /// </summary>
-        [Authorize(Roles = "Administrator")]
-        [HttpGet("{IPAddressId}")]
-        public async Task<IActionResult> GetById(Guid IPAddressId)
-        {
-            var pageResult = await _allowedIPService.GetByIdAsync(IPAddressId);
-            return Ok(ApiResponse<AllowedIP>.ReturnResult("Get ip success", pageResult, 200));
+            var result = await _allowedIPService.DeleteAsync(ipId, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<string>.ReturnResult("Delete IP success", result, 200));
         }
     }
 }
