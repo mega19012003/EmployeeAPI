@@ -263,40 +263,48 @@ namespace EmployeeAPI.Services.UserService
                 var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
                 var isManager = currentUserRoles.Contains("Manager");
 
-                if (isManager)
+                if (isSystemAdmin)
                 {
-                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-                    if (currentUser == null || currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+                    // SystemAdmin: có thể lọc tất cả theo companyId, departmentId, positionId
+                    if (companyId.HasValue)
+                        query = query.Where(u => u.CompanyId == companyId.Value);
 
-                    var managerDeptId = currentUser.DepartmentId.Value;
+                    if (departmentId.HasValue)
+                        query = query.Where(u => u.DepartmentId == departmentId.Value);
 
-                    query = query.Where(u => u.DepartmentId.HasValue && u.DepartmentId.Value == managerDeptId);
+                    if (positionId.HasValue)
+                        query = query.Where(u => u.PositionId == positionId.Value);
                 }
-
-                if (isAdmin)
+                else if (isAdmin)
                 {
+                    // Admin: chỉ xem user trong cùng công ty của mình
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser?.CompanyId == null)
                         throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
 
                     query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
 
+                    // Thêm lọc theo department và position nếu client có gửi
                     if (departmentId.HasValue)
-                    {
                         query = query.Where(u => u.DepartmentId == departmentId.Value);
-                    }
+
+                    if (positionId.HasValue)
+                        query = query.Where(u => u.PositionId == positionId.Value);
+                }
+                else if (isManager)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser == null || currentUser.DepartmentId == null)
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+
+                    // Manager: chỉ xem user trong cùng phòng ban
+                    query = query.Where(u => u.DepartmentId.HasValue && u.DepartmentId.Value == currentUser.DepartmentId.Value);
+
+                    // Có thể thêm lọc theo position
+                    if (positionId.HasValue)
+                        query = query.Where(u => u.PositionId == positionId.Value);
                 }
 
-                if (positionId.HasValue)
-                {
-                    query = query.Where(u => u.PositionId == positionId.Value);
-                }
-
-                if (!string.IsNullOrEmpty(SearchTerm))
-                {
-                    query = query.Where(u => u.Fullname.ToLower().Contains(SearchTerm.ToLower()));
-                }
 
                 var totalCount = await query.CountAsync();
 
