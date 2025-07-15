@@ -274,9 +274,18 @@ namespace EmployeeAPI.Services.UserService
                     query = query.Where(u => u.DepartmentId.HasValue && u.DepartmentId.Value == managerDeptId);
                 }
 
-                if (isAdmin && departmentId.HasValue)
+                if (isAdmin)
                 {
-                    query = query.Where(u => u.DepartmentId == departmentId.Value);
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
+
+                    query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
+
+                    if (departmentId.HasValue)
+                    {
+                        query = query.Where(u => u.DepartmentId == departmentId.Value);
+                    }
                 }
 
                 if (positionId.HasValue)
