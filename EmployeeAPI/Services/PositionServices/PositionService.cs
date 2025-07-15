@@ -58,6 +58,11 @@ namespace EmployeeAPI.Services.PositionServices
                     query = query.Where(f => f.Name.ToLower().Contains(name.ToLower()));
                 }
 
+                if (companyId.HasValue)
+                {
+                    query = query.Where(f => f.Department.CompanyId == companyId.Value);
+                }
+
                 if (departmentId.HasValue)
                 {
                     query = query.Where(f => f.DepartmentId == departmentId.Value);
