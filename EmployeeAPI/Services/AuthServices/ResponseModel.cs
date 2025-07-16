@@ -22,6 +22,7 @@ namespace EmployeeAPI.Services.AuthServices
             public string Username { get; set; }
             [Required]
             public string Password { get; set; }
+            public bool isResetPassword { get; set; }
         }
         public class ChangePasswordDto
         {

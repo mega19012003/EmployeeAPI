@@ -27,6 +27,7 @@ namespace EmployeeAPI.Models
         public double SalaryPerHour { get; set; }
         public bool IsActive { get; set; }
         public bool IsDeleted { get; set; }
+        public bool IsResetPassword { get; set; }
         public string? ImageUrl { get; set; }
 
         /// /////////////////////////////////////////////////

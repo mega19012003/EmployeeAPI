@@ -239,6 +239,7 @@ namespace EmployeeAPI.Services.AuthServices
                         throw new UnauthorizedAccessException("Manager chỉ có thể reset password cho user cùng phòng ban.");
                 }
 
+                user.isResetPass = true;
                 user.Password = HashPassword.Hash(user.Username);
                 
                 await _repository.UpdateUserAsync(user);
@@ -337,35 +338,33 @@ namespace EmployeeAPI.Services.AuthServices
                 && password.Any(char.IsDigit) 
                 && password.Any(ch => "!@#$%^&*()_-+=<>?".Contains(ch)); 
         }
+        //public static class PasswordGenerator
+        //{
+        //    private static readonly Random _random = new Random();
+        //    private const string Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        //    private const string Lower = "abcdefghijklmnopqrstuvwxyz";
+        //    private const string Digits = "0123456789";
+        //    private const string Symbols = "!@#$%^&*()_-+=<>?";
 
-        public static class PasswordGenerator
-        {
-            private static readonly Random _random = new Random();
-            private const string Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-            private const string Lower = "abcdefghijklmnopqrstuvwxyz";
-            private const string Digits = "0123456789";
-            private const string Symbols = "!@#$%^&*()_-+=<>?";
+        //    public static string Generate(int length = 8)
+        //    {
+        //        if (length < 8) throw new ArgumentException("Password too short");
 
-            public static string Generate(int length = 8)
-            {
-                if (length < 8) throw new ArgumentException("Password too short");
+        //        var chars = new List<char>
+        //        {
+        //            Upper[_random.Next(Upper.Length)],
+        //            Lower[_random.Next(Lower.Length)],
+        //            Digits[_random.Next(Digits.Length)],
+        //            Symbols[_random.Next(Symbols.Length)]
+        //        };
 
-                var chars = new List<char>
-                {
-                    Upper[_random.Next(Upper.Length)],
-                    Lower[_random.Next(Lower.Length)],
-                    Digits[_random.Next(Digits.Length)],
-                    Symbols[_random.Next(Symbols.Length)]
-                };
+        //        string all = Upper + Lower + Digits + Symbols;
+        //        while (chars.Count < length)
+        //            chars.Add(all[_random.Next(all.Length)]);
 
-                string all = Upper + Lower + Digits + Symbols;
-                while (chars.Count < length)
-                    chars.Add(all[_random.Next(all.Length)]);
-
-                return new string(chars.OrderBy(x => _random.Next()).ToArray());
-            }
-        }
-
+        //        return new string(chars.OrderBy(x => _random.Next()).ToArray());
+        //    }
+        //}
         public async Task<ResponseModel.AuthDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto)
         {
             var result = await _repository.GetLoginUserAsync(dto.UserName);

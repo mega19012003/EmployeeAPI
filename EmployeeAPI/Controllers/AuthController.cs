@@ -101,7 +101,8 @@ namespace EmployeeAPI.Controllers
                 Data = new
                 {
                     AccessToken = jwt,
-                    RefreshToken = user.RefreshToken
+                    RefreshToken = user.RefreshToken,
+                    IsResetPass = user.isResetPass
                 },
                 StatusCode = 200,
             });
