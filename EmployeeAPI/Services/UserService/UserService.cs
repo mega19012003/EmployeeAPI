@@ -375,16 +375,12 @@ namespace EmployeeAPI.Services.UserService
 
             if (isAdmin)
             {
-                if (currentUser.CompanyId == null)
-                    throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ SystemAdmin để cập nhật công ty");
 
                 if (results.CompanyId != currentUser.CompanyId)
                     throw new UnauthorizedAccessException("Admin chỉ có thể truy cập thông tin user cùng công ty");
             }
             else if (isManager)
             {
-                if (currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
                 if (results.DepartmentId != currentUser.DepartmentId)
                     throw new UnauthorizedAccessException("Manager chỉ có thể truy cập thông tin user cùng phòng ban");

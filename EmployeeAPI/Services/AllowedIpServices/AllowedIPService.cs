@@ -49,8 +49,8 @@ namespace EmployeeAPI.Services.AllowedIpServices
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser.CompanyId == null)
                     throw new ArgumentException("Người dùng chưa có công ty.");
-                else if (currentUser.Department == null)
-                    throw new ArgumentException("Người dùng chưa có phòng ban.");
+                //else if (!currentUserRoles.Contains("SystemAdmin") && currentUser.Department == null)
+                //    throw new ArgumentException("Người dùng chưa có phòng ban.");
 
                 var userCompanyId = currentUser.CompanyId.Value;
                 query = query.Where(x => x.CompanyId == userCompanyId);

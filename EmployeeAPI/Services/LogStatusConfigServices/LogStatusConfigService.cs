@@ -42,7 +42,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                     var currentUser = await _userRepo.GetActiveUserIdAsync(currentUserId);
 
                     if (currentUser == null || currentUser.CompanyId == null)
-                        throw new ArgumentException("Người dùng hiện tại chưa thuộc công ty nào. Vui lòng liên hệ admin để cập nhật công ty.");
+                        throw new ArgumentException("Người dùng hiện tại chưa thuộc công ty nào. Vui lòng liên hệ System admin để cập nhật công ty.");
 
                     query = query.Where(p => p.CompanyId == currentUser.CompanyId);
                 }
