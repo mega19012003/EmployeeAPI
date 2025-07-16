@@ -406,6 +406,7 @@ namespace EmployeeAPI.Services.UserService
                 CompanyId = results.Company?.Id,
                 SalaryPerHour = results.SalaryPerHour,
                 ImageUrl = results.ImageUrl,
+                IsActive = results.IsActive,
             };
         }
     }
