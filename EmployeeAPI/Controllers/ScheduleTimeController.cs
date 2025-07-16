@@ -72,7 +72,7 @@ namespace EmployeeAPI.Controllers
         /// </remarks>
         [Authorize(Roles = "Administrator")]
         [HttpPut] 
-        public async Task<ActionResult<ScheduleTime>> UpdateScheduleTime(ScheduleTime scheduleTime)
+        public async Task<ActionResult<ScheduleDto>> UpdateScheduleTime(UpdateSchedule scheduleTime)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))

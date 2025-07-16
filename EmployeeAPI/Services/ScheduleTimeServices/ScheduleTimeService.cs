@@ -106,7 +106,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
         }
 
 
-        public async Task<ScheduleDto> UpdateScheduleTimeAsync(ScheduleTime newSchedule, Guid currentUserID, IList<string> currentUserRoles)
+        public async Task<ScheduleDto> UpdateScheduleTimeAsync(UpdateSchedule newSchedule, Guid currentUserID, IList<string> currentUserRoles)
         {
             using var trasaction = await _context.Database.BeginTransactionAsync();
             try {
@@ -116,7 +116,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserID);
                 if (currentUser?.CompanyId == null) throw new ArgumentException("Người dùng chưa có công ty. Vui lòng liên hệ admin để cập nhật");
-                if (currentUser?.CompanyId != newSchedule.CompanyId) throw new ArgumentException("Chỉ được phép cập nhật thời gian làm việc của công ty");
+                if (currentUser?.CompanyId != existing.CompanyId) throw new ArgumentException("Chỉ được phép cập nhật thời gian làm việc của công ty");
                 
                 if (newSchedule.StartTimeMorning > newSchedule.EndTimeMorning || newSchedule.StartTimeMorning > newSchedule.StartTimeAfternoon || newSchedule.StartTimeMorning > newSchedule.EndTimeAfternoon)
                     throw new ArgumentException("Giờ bắt đầu buổi sáng không được lớn hơn giờ kết thúc buổi sáng, giờ bắt đầu/kết thúc buổi chiều");
