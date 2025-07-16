@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _logStatusConfigRepository = logStatusConfigRepository;
         }
         
-        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -49,6 +49,14 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var query = _checkinRepository.GetAll();
 
+
+                if (currentUserRoles.Contains("SystemAdmin"))
+                {
+                    if(companyId.HasValue)
+                    {
+                        query = query.Where(c => c.Users.CompanyId == companyId);
+                    }
+                }
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
@@ -342,21 +350,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var workEndTime = schedule.EndTimeAfternoon;
 
-                //if (currentTime > workEndTime.AddMinutes(schedule.LogAllowtime)) //làm tăng ca
-                //{
-                //    checkin.LogStatus = Enums.LogStatus.Overtime;
-                //    overtimeHours = (currentTime - workEndTime).TotalHours;
-                //}
-                //else if (currentTime >= workEndTime && currentTime <= workEndTime.AddMinutes(schedule.LogAllowtime) && checkin.LogStatus == Enums.LogStatus.OnTime) //đúng giờ
-                //{
-                //    checkin.LogStatus = Enums.LogStatus.OnTime;
-                //}
-                //else 
-                //{
-                //    if (checkin.LogStatus == Enums.LogStatus.Late) //trễ và về sớm
-                //        checkin.LogStatus = Enums.LogStatus.LateAndLeaveEarly;
-                //    else checkin.LogStatus = Enums.LogStatus.LeaveEarly; //trễ
-                //}
                 if (isHoliday || isSunday)
                 {
                     // Ngày nghỉ / Chủ nhật
@@ -658,105 +651,5 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-        //public async Task<PagedResult<ResponseModel.CheckinDetailDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
-        //{
-        //    try
-        //    {
-        //        if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
-        //        {
-        //            staffId = currentUserId;
-        //        }
-        //        else if (currentUserRoles.Contains("Manager"))
-        //        {
-        //            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
-
-        //            if (currentUser.DepartmentId == null) throw new Exception("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-
-        //            if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
-
-        //            var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
-        //            if (findUser == null) throw new ArgumentException("Không thể tìm thấy user này");
-
-        //            if (findUser.DepartmentId != currentUser.DepartmentId) throw new UnauthorizedAccessException("Manager chỉ có thể xem danh sách checkin từ user cùng phòng ban");
-
-        //        }
-        //        else if (currentUserRoles.Contains("Administrator"))
-        //        {
-        //            if (staffId == null || staffId == Guid.Empty) throw new ArgumentException("Vui lòng chọn user");
-        //        }
-
-        //        pageIndex ??= 1;
-        //        pageSize ??= 10;
-        //        var now = DateTime.Now;
-        //        if (Year == null)
-        //            Year = now.Year;
-        //        //else if (Year == 0)
-        //        //    Year = null;
-
-        //        if (Month == null)
-        //            Month = now.Month;
-        //        else if (Month == 0)
-        //            Month = null;
-
-        //        if (Day == null)
-        //            Day = now.Day;
-        //        else if (Day == 0)
-        //            Day = null;
-
-        //        var user = await _userRepository.GetUserInfoAsync(staffId.Value);
-
-        //        if (user == null)
-        //            throw new ArgumentException("Không thể tìm thấy user này");
-
-        //        var query = _context.Checkins.Where(p => !p.IsDeleted && p.UserId == staffId.Value);
-        //        query = query.Where(c => c.CheckinTime.Year == Year.Value);
-
-        //        if (Month.HasValue)
-        //            query = query.Where(c => c.CheckinTime.Month == Month.Value);
-
-        //        if (Day.HasValue)
-        //            query = query.Where(c => c.CheckinTime.Day == Day.Value);
-
-        //        if (Year.HasValue)
-        //            query = query.Where(c => c.CheckinTime.Year == Year.Value);
-
-        //        var totalCount = await query.CountAsync();
-
-        //        var itemsRaw = await query
-        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
-        //            .Take(pageSize.Value)
-        //            .Include(c => c.Users) 
-        //            .ToListAsync();
-
-        //        var items = new List<ResponseModel.CheckinDetailDto>();
-
-        //        foreach (var c in itemsRaw)
-        //        {
-        //            items.Add(new ResponseModel.CheckinDetailDto
-        //            {
-        //                Id = c.Id,
-        //                CheckinTime = c.CheckinTime,
-        //                CheckoutTime = c.CheckoutTime,
-        //                LogStatus = (int?)c.LogStatus,
-        //                Status = c.LogStatus.ToString(),
-        //                Name = c.Users.Fullname,
-        //                SalaryPerDay = c.SalaryPerDay,
-        //            });
-        //        }
-
-        //        return new PagedResult<ResponseModel.CheckinDetailDto>
-        //        {
-        //            Items = items,
-        //            PageIndex = pageIndex.Value,
-        //            PageSize = pageSize.Value,
-        //            TotalCount = totalCount
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-        //        throw;
-        //    }
-        //}
     }
 }

@@ -24,14 +24,21 @@ namespace EmployeeAPI.Services.DutyServices
             _logger = logger;
         }
 
-        public async Task<PagedResult<ResponseModel.DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
             var query = _dutyRepository.GetAllQueryable();
 
-            if (currentUserRoles.Contains("Administrator"))
+            if (currentUserRoles.Contains("SystemAdmin"))
+            {
+                if (companyId.HasValue)
+                {
+                    query = query.Where(d => d.AssignedBy.CompanyId == companyId);
+                }
+            }
+            else if (currentUserRoles.Contains("Administrator"))
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser?.CompanyId == null)

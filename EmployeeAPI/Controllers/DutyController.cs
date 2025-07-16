@@ -28,7 +28,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? Search, int? day, int? month, int? year, int? pageSize, int? pageIndex)
+        public async Task<IActionResult> GetAll(string? Search, Guid? companyId, int? day, int? month, int? year, int? pageSize, int? pageIndex)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -36,7 +36,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, Search, day, month, year, pageIndex, pageSize);
+            var pagedResult = await _dutyService.GetAllAsync(currentUserId, currentUserRoles, Search, companyId, day, month, year, pageIndex, pageSize);
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.DutyResultDto>>.ReturnResult("No result", pagedResult, 200));
 
