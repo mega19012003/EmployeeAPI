@@ -92,8 +92,12 @@ namespace EmployeeAPI.Services.UserService
 
                     if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
-                    if (dto.Role.HasValue && (dto.Role == RoleType.Manager || dto.Role == RoleType.Employee)) existingUser.Role = (RoleType)dto.Role;
-                    else throw new Exception("Chỉ có thể cập nhật role của user sang Manager hoặc Employee");
+                    if (dto.Role.HasValue)
+                    {
+                        if (dto.Role == RoleType.SystemAdmin)
+                            throw new Exception("Admin không được phép gán role SystemAdmin");
+                        existingUser.Role = dto.Role.Value;
+                    }
 
                     if (currentUser.CompanyId != existingUser.CompanyId)
                         throw new Exception("Admin chỉ có thể cập nhật nhân viên cùng công ty");
