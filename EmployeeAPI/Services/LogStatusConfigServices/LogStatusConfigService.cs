@@ -63,6 +63,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                     .Select(f => new ResponseModel.LogStatusDto
                     {
                         Id = f.Id,
+                        enumId = f.enumId,
                         Name = f.Name,
                         SalaryMultiplier = f.SalaryMultiplier,
                         Note = f.Note,
@@ -108,6 +109,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
             return new ResponseModel.LogStatusDto
             {
                 Id = result.Id,
+                enumId = result.enumId,
                 Name = result.Name,
                 SalaryMultiplier = result.SalaryMultiplier,
                 Note = result.Note,
