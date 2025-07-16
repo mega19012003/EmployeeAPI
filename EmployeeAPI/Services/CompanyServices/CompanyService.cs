@@ -53,7 +53,8 @@ namespace EmployeeAPI.Services.CompanyServices
                         Name = c.Name,
                         Address = c.Address,
                         LogoUrl = c.LogoUrl,
-                        CompanyId = c.Id
+                        CompanyId = c.Id,
+                        IsDeleted = c.IsDeleted,
                     });
 
                 return new PagedResult<CompanyResultDto>
@@ -101,7 +102,8 @@ namespace EmployeeAPI.Services.CompanyServices
                 Name = result.Name ?? string.Empty,
                 Address = result.Address ?? string.Empty,
                 LogoUrl = result.LogoUrl ?? string.Empty,
-                CompanyId = companyId
+                CompanyId = result.Id,
+                IsDeleted = result.IsDeleted,
             };
         }
 

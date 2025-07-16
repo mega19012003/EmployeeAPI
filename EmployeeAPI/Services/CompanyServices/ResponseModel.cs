@@ -10,7 +10,7 @@ namespace EmployeeAPI.Services.CompanyServices
             public string? Name { get; set; }
             public string? Address { get; set; }
             public string? LogoUrl { get; set; }
-            //public bool IsDeleted { get; set; }
+            public bool IsDeleted { get; set; }
         }
 
         public class CreateCompanyDto
