@@ -497,6 +497,8 @@ namespace EmployeeAPI.Services.DutyServices
                 var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId && (!u.IsDeleted || u.IsActive));
                 if (userToAssign == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
+                if (userToAssign.Role != RoleType.Employee)
+                    throw new ArgumentException("Chỉ nhân viên được phép gán vào 1 công việc");
 
                 if (currentUserRoles.Contains("Admin"))
                 {
