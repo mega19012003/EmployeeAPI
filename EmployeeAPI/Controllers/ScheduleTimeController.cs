@@ -27,18 +27,18 @@ namespace EmployeeAPI.Controllers
 
 
         /// <summary>
-        /// Lấy toàn bộ schedule time, chỉ system Admin mới dc dùng
+        /// Lấy toàn bộ schedule time, chỉ system Admin lấy dc toàn bộ danh sách
         /// </summary>
-        [Authorize(Roles = "SystemAdmin")]
+        [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllScheduleTime(Guid? companyId, int? pageIndex, int? pageSize)
         {
-            //var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            //if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-            //    return Unauthorized("UserId invalid");
-            //var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _scheduleTimeService.GetAllAsync(companyId, pageIndex, pageSize/*, currentUserId, currentUserRoles*/);
+            var pagedResult = await _scheduleTimeService.GetAllAsync(companyId, pageIndex, pageSize, currentUserId, currentUserRoles);
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ScheduleDto>>.ReturnResult("No result", pagedResult, 200));
 

@@ -24,7 +24,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
         }
 
 
-        public async Task<PagedResult<ResponseModel.ScheduleDto>> GetAllAsync(Guid? companyId, int? pageIndex, int? pageSize/*, Guid currentUserId, IList<string> currentUserRoles*/)
+        public async Task<PagedResult<ResponseModel.ScheduleDto>> GetAllAsync(Guid? companyId, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -33,7 +33,15 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
                 var query = _scheduleRepository.GetAll();
 
-                if (companyId.HasValue)
+                if (!currentUserRoles.Contains("SystemAdmin"))
+                {
+                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Người dùng chưa có công ty.");
+
+                    query = query.Where(s => s.CompanyId == currentUser.CompanyId);
+                }
+                else if (companyId.HasValue)
                 {
                     query = query.Where(p => p.CompanyId == companyId);
                 }
@@ -50,7 +58,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                         EndTimeMorning = c.EndTimeMorning,
                         LogAllowtime = c.LogAllowtime,
                         StartTimeAfternoon = c.StartTimeAfternoon,
-                        EndTimeAfternoon= c.EndTimeAfternoon,
+                        EndTimeAfternoon = c.EndTimeAfternoon,
                         CompanyName = c.Company.Name,
                     }).ToListAsync();
 
@@ -64,7 +72,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving checkon. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Error occurred while retrieving schedule. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
                 throw;
             }
         }
