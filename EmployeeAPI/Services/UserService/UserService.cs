@@ -72,6 +72,10 @@ namespace EmployeeAPI.Services.UserService
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if(dto.CompanyId.HasValue) existingUser.CompanyId = dto.CompanyId.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
+                    if (existingUser.Role != RoleType.SystemAdmin && existingUser.Role != RoleType.Administrator)
+                    {
+                        throw new Exception("SystemAdmin chỉ có thể chỉnh sửa user có role là Admin hoặc SystemAdmin");
+                    }
                     if (dto.Role.HasValue)
                     {
                         if (dto.Role == RoleType.SystemAdmin || dto.Role == RoleType.Administrator)

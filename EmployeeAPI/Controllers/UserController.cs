@@ -34,7 +34,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Cập nhật thông tin người dùng, sẽ do SystemAdmin/admin/manager chỉnh sửa 1 số thông tin quan trọng, employee chỉ dc sửa thông tin cá nhân
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager, Employee")]
+        [Authorize(Roles = "SystemAdmin, Administrator, Manager, Employee")]
         [HttpPut]
         //[Consumes("multipart/form-data")]
         public async Task<IActionResult> UpdateStaffAsync([FromForm] ResponseModel.UpdateDto dto)
