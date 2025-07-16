@@ -31,6 +31,11 @@ namespace EmployeeAPI.Services.AllowedIpServices
 
             var query = _allowedIPRepository.GetAll();
 
+            if (!string.IsNullOrEmpty(IpAdress))
+            {
+                var keyword = IpAdress.Trim().ToLower();
+                query = query.Where(x => x.IPAddress.ToLower().Contains(keyword));
+            }
 
             if (currentUserRoles.Contains("SystemAdmin"))
             {
