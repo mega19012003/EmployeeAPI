@@ -88,10 +88,9 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// SystemAdmin có thể lấy thông tin của người dùng, Admin lấy thông tin cùng cty, 
-        /// manager chỉ có thể lấy thông tin user theo phòng ban, employee chỉ dc lấy tt của bản thân
+        /// Lấy user theo id, employee ko được phép dùng
         /// </summary>
-        [Authorize]
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet("{userId}")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid userId)
         {

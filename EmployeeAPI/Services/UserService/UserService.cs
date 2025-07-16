@@ -356,11 +356,6 @@ namespace EmployeeAPI.Services.UserService
             if (currentUser == null)
                 throw new ArgumentException("Không tìm thấy user hiện tại");
 
-            if (id == Guid.Empty)
-            {
-                id = currentUser.UserId;
-            }
-
             if (isEmployee)
             {
                 id = currentUser.UserId;
@@ -395,12 +390,12 @@ namespace EmployeeAPI.Services.UserService
                 RoleName = results.Role.ToString(),
                 Address = results.Address,
                 PhoneNumber = results.PhoneNumber,
-                DepartmentName = results.Department.Name ?? string.Empty,
-                DepartmentId = results.Department.Id,
-                PositionName = results.Position.Name ?? string.Empty,
-                PositionId = results.PositionId,
-                CompanyName = results.Company.Name ?? string.Empty,
-                CompanyId = results.CompanyId,
+                DepartmentName = results.Department?.Name ?? string.Empty,
+                DepartmentId = results.Department?.Id,
+                PositionName = results.Position?.Name ?? string.Empty,
+                PositionId = results.Position?.Id,
+                CompanyName = results.Company?.Name ?? string.Empty,
+                CompanyId = results.Company?.Id,
                 SalaryPerHour = results.SalaryPerHour,
                 ImageUrl = results.ImageUrl,
             };
