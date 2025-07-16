@@ -194,6 +194,7 @@ namespace EmployeeAPI.Services.AuthServices
                 if(!IsStrongPassword(newPassword))
                     throw new ArgumentException("Password mới phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
+                user.IsResetPassword = false;
                 user.Password = HashPassword.Hash(newPassword);
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
