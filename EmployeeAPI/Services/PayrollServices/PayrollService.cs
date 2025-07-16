@@ -225,86 +225,6 @@ namespace EmployeeAPI.Services.PayrollServices
                 throw;
             }
         }
-        //public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetPayrollByUser(Guid? staffId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
-        //{
-        //    try
-        //    {
-        //        // Gán ngầm staffId nếu user là employee
-        //        if (!currentUserRoles.Contains("Administrator") && !currentUserRoles.Contains("Manager"))
-        //        {
-        //            staffId = currentUserId;
-        //        }
-        //        else if (currentUserRoles.Contains("Manager"))
-        //        {
-        //            var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
-        //            if (currentUser == null)
-        //                throw new ArgumentException("Không tìm thấy người dùng");
-
-        //            if (currentUser.DepartmentId == null)
-        //                throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-
-
-        //            // Kiểm tra user được lấy có tồn tại không
-        //            var findUser = await _userRepository.GetUserInfoAsync(staffId.Value);
-        //            if (findUser == null)
-        //                throw new ArgumentException("Không tìm thấy user");
-
-        //            if (findUser.DepartmentId != currentUser.DepartmentId)
-        //                throw new UnauthorizedAccessException("Manager cannot access checkins from other departments");
-
-        //        }
-        //        else if (currentUserRoles.Contains("Administrator"))
-        //        {
-        //            // Admin: bắt buộc phải nhập staffId
-        //            if (staffId == null || staffId == Guid.Empty)
-        //                throw new ArgumentException("Please input userId");
-        //        }
-        //        else
-        //        {
-        //            throw new UnauthorizedAccessException("You do not have permission");
-        //        }
-
-        //        pageIndex ??= 1;
-        //        pageSize ??= 10;
-
-        //        var user = await _userRepository.GetUserInfoAsync(staffId.Value);
-        //        if (user == null)
-        //            throw new ArgumentException("Không tìm thấy user");
-
-        //        var query = _context.Payrolls
-        //            .Where(p => !p.IsDeleted && p.UserId == staffId.Value)
-        //            .Include(p => p.Users);
-
-        //        var totalCount = await query.CountAsync();
-
-        //        var items = await query
-        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
-        //            .Take(pageSize.Value)
-        //            .Select(c => new ResponseModel.PayrollResultDto
-        //            {
-        //                Id = c.Id,
-        //                CreatedDate = c.CreatedDate,
-        //                Salary = c.Salary,
-        //                Note = c.Note,
-        //                Name = c.Users.Fullname ?? null,
-        //            }).ToListAsync();
-
-        //        return new PagedResult<ResponseModel.PayrollResultDto>
-        //        {
-        //            Items = items,
-        //            PageIndex = pageIndex.Value,
-        //            PageSize = pageSize.Value,
-        //            TotalCount = totalCount
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error occurred while deleting checkin. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-        //        throw;
-        //    }
-        //}
-
-        ////////////////////////////////////////////////////////
 
         public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -395,7 +315,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 }
 
                 return (c.LogStatus != LogStatus.None)
-                    && (normalWorkedHours >= fullDayHours * 0.8);
+                    && (normalWorkedHours >= fullDayHours * 0.9);
             })
             .Select(c => c.CheckinTime.Date)
             .Distinct()
