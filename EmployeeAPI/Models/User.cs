@@ -14,7 +14,7 @@ namespace EmployeeAPI.Models
         [MaxLength(20, ErrorMessage = "Username không được dài quá 20 ký tự")]
         public string Username { get; set; }
         public string Password { get; set; }
-        public bool isResetPass { get; set; }
+        //public bool isResetPass { get; set; }
         [MaxLength(100, ErrorMessage = "Họ tên không được dài quá 100 ký tự")]
         public string Fullname { get; set; }
         public RoleType Role { get; set; }

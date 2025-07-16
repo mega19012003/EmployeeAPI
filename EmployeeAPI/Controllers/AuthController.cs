@@ -102,7 +102,7 @@ namespace EmployeeAPI.Controllers
                 {
                     AccessToken = jwt,
                     RefreshToken = user.RefreshToken,
-                    IsResetPass = user.isResetPass
+                    isResetPassword = user.IsResetPassword
                 },
                 StatusCode = 200,
             });

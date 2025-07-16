@@ -239,7 +239,7 @@ namespace EmployeeAPI.Services.AuthServices
                         throw new UnauthorizedAccessException("Manager chỉ có thể reset password cho user cùng phòng ban.");
                 }
 
-                user.isResetPass = true;
+                user.IsResetPassword = true;
                 user.Password = HashPassword.Hash(user.Username);
                 
                 await _repository.UpdateUserAsync(user);
