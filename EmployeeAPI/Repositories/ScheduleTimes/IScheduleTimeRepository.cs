@@ -8,7 +8,7 @@ namespace EmployeeAPI.Repositories.ScheduleTimes
         Task<IEnumerable<ScheduleTime>> GetAllAsync();
         Task<ScheduleTime?> GetTemplateAsync();
         IQueryable<ScheduleTime> GetAll();
-        Task<ScheduleTime> GetScheduleTime(Guid id);
+        Task<ScheduleTime> GetScheduleTimeId(Guid id);
         Task UpdateScheduleTime(ScheduleTime scheduleTime);
     }
 }

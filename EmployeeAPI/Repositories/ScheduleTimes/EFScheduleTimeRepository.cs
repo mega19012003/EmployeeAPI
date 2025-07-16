@@ -31,7 +31,7 @@ namespace EmployeeAPI.Repositories.ScheduleTimes
                 .Include(c => c.Company).Where(c => !c.IsSystemDefault);
         }
 
-        public async Task<ScheduleTime?> GetScheduleTime(Guid id)
+        public async Task<ScheduleTime?> GetScheduleTimeId(Guid id)
         {
             return await _context.ScheduleTimes.FirstOrDefaultAsync(p => p.id == id);
         }

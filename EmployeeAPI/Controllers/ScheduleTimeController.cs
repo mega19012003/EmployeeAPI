@@ -29,7 +29,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy toàn bộ schedule time, chỉ system Admin mới dc dùng
         /// </summary>
-        [Authorize]
+        [Authorize(Roles = "SystemAdmin")]
         [HttpGet]
         public async Task<IActionResult> GetAllScheduleTime(Guid? companyId, int? pageIndex, int? pageSize)
         {
@@ -50,14 +50,14 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet("{scheduleId}")]
-        public async Task<IActionResult> GetScheduleByIdTime(Guid Id)
+        public async Task<IActionResult> GetScheduleByIdTime(Guid scheduleId)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return Unauthorized("UserId invalid");
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _scheduleTimeService.GetScheduleTimeByIdAsync(Id, currentUserId, currentUserRoles);
+            var result = await _scheduleTimeService.GetScheduleTimeByIdAsync(scheduleId, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ScheduleDto>.ReturnResult("Get Schedule time Success", result, 200));
         }
         /// <summary>

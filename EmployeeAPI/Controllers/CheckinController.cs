@@ -101,29 +101,29 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkin Morning success", result, 200));
         }
 
-        ///// <summary>
-        ///// Cập nhật checkout cho user
-        ///// </summary>
-        //[Authorize]
-        //[HttpPut("Chekout")]
-        //public async Task<IActionResult> Chekout([FromForm] ResponseModel. CreateCheckoutDto dto)
-        //{
-        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-        //        return Unauthorized("UserId invalid");
+        /// <summary>
+        /// Cập nhật checkout cho user
+        /// </summary>
+        [Authorize]
+        [HttpPut("Chekout")]
+        public async Task<IActionResult> Chekout([FromForm] ResponseModel.CreateCheckoutDto dto)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-        //    var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
-        //    var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
-        //    if (!isAllowed)
-        //    {
-        //        return StatusCode(403, new { Message = $"IP Không hợp lệ để checkin", Data = $"IP ({ip}) không nằm trong khoảng cho phép để checkin", StatusCode = 403 });
-        //    }
+            var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
+            var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
+            if (!isAllowed)
+            {
+                return StatusCode(403, new { Message = $"IP Không hợp lệ để checkin", Data = $"IP ({ip}) không nằm trong khoảng cho phép để checkin", StatusCode = 403 });
+            }
 
-        //    var result = await _checkinService.CheckoutAsync(dto.userId, currentUserId, currentUserRoles);
-        //    return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkout success", result, 200));
-        //}
+            var result = await _checkinService.CheckoutAsync(dto.userId, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkout success", result, 200));
+        }
 
         /// <summary>
         /// Cập nhật thông tin checkin, nếu thông tin bị sai hoặc nhân viên hoặc lách luật, manager chỉ dc update checkin của nhân viên trong cùng phòng ban
@@ -145,19 +145,19 @@ namespace EmployeeAPI.Controllers
         /// - OnHolidayLateAndLeaveEarly = 13 (Đi trễ và về sớm vào ngày lễ)
         /// - Others = 14 (khác)
         /// </remarks>
-        //[Authorize(Roles = "Administrator,Manager")]
-        //[HttpPut]
-        //public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckinDto dto)
-        //{
-        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-        //        return Unauthorized("UserId invalid");
+        [Authorize(Roles = "Administrator,Manager")]
+        [HttpPut]
+        public async Task<IActionResult> Update([FromBody] ResponseModel.UpdateCheckinDto dto)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
 
-        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-        //    var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
-        //    return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Update success", updated, 200));
-        //}
+            var updated = await _checkinService.UpdateAsync(dto, currentUserId, currentUserRoles);
+            return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Update success", updated, 200));
+        }
 
         /// <summary>
         /// Xóa checkin, nếu thông tin checkin ko có so với sự thật, manager chỉ dc xóa checkin của nhân viên trong cùng phòng ban

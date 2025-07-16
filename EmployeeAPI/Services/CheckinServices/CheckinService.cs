@@ -197,6 +197,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 var isAdmin = roles.Contains("Administrator");
                 var isManager = roles.Contains("Manager");
                 var isEmployee = roles.Contains("Employee");
+                var isSystemAdmin = roles.Contains("SystemAdmin");
 
                 Guid targetUserId = userId ?? currentUserId;
 
@@ -226,6 +227,8 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var startOfDay = now.Date;
                 var endOfDay = now.Date.AddDays(1).AddTicks(-1);
+                if (!isSystemAdmin && currentUser.CompanyId == null)
+                    throw new ArgumentException("Người dùng chưa có công ty.");
 
                 var (_, _, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync((Guid)currentUser.CompanyId);
 

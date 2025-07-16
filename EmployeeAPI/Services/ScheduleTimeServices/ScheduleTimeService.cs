@@ -71,7 +71,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
         public async Task<ScheduleDto?> GetScheduleTimeByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
-            var result = await _scheduleRepository.GetScheduleTime(id);
+            var result = await _scheduleRepository.GetScheduleTimeId(id);
             if (result == null)
                 throw new ArgumentException("Không tìm thấy lịch làm việc.");
 
@@ -83,6 +83,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
                 if (result.CompanyId != currentUser.CompanyId)
                     throw new ArgumentException("Không có quyền truy cập vào thời gian làm việc của công ty khác.");
+                id = (Guid)currentUser.CompanyId;
             }
 
             return new ScheduleDto
@@ -101,7 +102,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
         {
             using var trasaction = await _context.Database.BeginTransactionAsync();
             try {
-                var existing = await _scheduleRepository.GetScheduleTime(newSchedule.id);
+                var existing = await _scheduleRepository.GetScheduleTimeId(newSchedule.id);
                 if (existing == null)
                     throw new ArgumentException("Không tìm thấy thời gian làm việc");
 

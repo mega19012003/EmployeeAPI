@@ -12,8 +12,8 @@ namespace EmployeeAPI.Services.CheckinServices
         //Task AutoMarkAbsentAsync(TimeOnly EndTimeAfternoon);
         Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.CheckinResultDto> CheckinAsync(Guid? userId, Guid currentUserId, IList<string> roles);
-        //Task<ResponseModel.CheckinResultDto> CheckoutAsync(Guid? userId, Guid currentUserId, IList<string> roles);
-        //Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles);
+        Task<ResponseModel.CheckinResultDto> CheckoutAsync(Guid? userId, Guid currentUserId, IList<string> roles);
+        Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         //Task<PagedResult<ResponseModel.CheckinDetailDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? day, int? month, int? year, int? pageIndex, int? pageSize);
     }

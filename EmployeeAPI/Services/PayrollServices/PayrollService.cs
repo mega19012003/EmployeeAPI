@@ -395,7 +395,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 }
 
                 return (c.LogStatus != LogStatus.None)
-                    && (normalWorkedHours >= fullDayHours);
+                    && (normalWorkedHours >= fullDayHours * 0.8);
             })
             .Select(c => c.CheckinTime.Date)
             .Distinct()
