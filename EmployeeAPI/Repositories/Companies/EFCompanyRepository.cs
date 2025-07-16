@@ -12,7 +12,7 @@ namespace EmployeeAPI.Repositories.Companies
         }
         public async Task<Company> GetCompanyByIdAsync(Guid id)
         {
-            return await _context.Companies.FirstOrDefaultAsync(c => c.Id == id && !c.IsDeleted);
+            return await _context.Companies.FirstOrDefaultAsync(c => c.Id == id);
         }
 
         public async Task<IEnumerable<Company>> GetAllCompaniesAsync()

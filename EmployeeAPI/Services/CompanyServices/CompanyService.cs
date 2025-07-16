@@ -73,27 +73,38 @@ namespace EmployeeAPI.Services.CompanyServices
 
         public async Task<CompanyResultDto> GetCompanyByIdAsync(Guid companyId, Guid currentUserId, IList<string> curretnUserRole)
         {
+            if (curretnUserRole == null)
+                throw new ArgumentException("Danh sách quyền của người dùng không hợp lệ");
+
             var isEmployee = curretnUserRole.Contains("Employee");
             var isManager = curretnUserRole.Contains("Manager");
             var isAdmin = curretnUserRole.Contains("Administrator");
 
             var currentUser = await _context.Users.FindAsync(currentUserId);
+            if (currentUser == null)
+                throw new ArgumentException("Người dùng không tồn tại");
+
+            if ((isManager || isEmployee || isAdmin) && currentUser.CompanyId == null)
+                throw new ArgumentException("Người dùng chưa thuộc công ty nào");
 
             if (isManager || isEmployee || isAdmin)
             {
-                companyId = (Guid)currentUser.CompanyId;
+                companyId = currentUser.CompanyId.Value;
             }
 
             var result = await _companyRepository.GetCompanyByIdAsync(companyId);
+            if (result == null)
+                throw new ArgumentException("Không tìm thấy công ty");
 
             return new CompanyResultDto
             {
-                Name = result.Name,
-                Address = result.Address,
-                LogoUrl = result.LogoUrl,
+                Name = result.Name ?? string.Empty,
+                Address = result.Address ?? string.Empty,
+                LogoUrl = result.LogoUrl ?? string.Empty,
                 CompanyId = companyId
             };
         }
+
 
         public async Task<CompanyResultDto> CreateCompanyAsync(CreateCompanyDto dto)
         {
