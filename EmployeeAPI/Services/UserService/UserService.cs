@@ -117,7 +117,7 @@ namespace EmployeeAPI.Services.UserService
 
                             bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                             if (!isValidPosition)
-                                throw new ArgumentException("Chức vụ này không thuộc phòng ban");
+                                throw new ArgumentException("Phòng ban không có trong chức vụ này");
 
                             existingUser.PositionId = dto.PositionId;
                             existingUser.DepartmentId = dto.DepartmentId;////////////////////////////////
