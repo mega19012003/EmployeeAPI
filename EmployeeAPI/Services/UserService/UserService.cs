@@ -150,12 +150,12 @@ namespace EmployeeAPI.Services.UserService
                     //if (currentUser.CompanyId.HasValue)
                     //    departmentId = currentUser.DepartmentId;
 
-                    if (existingUser.DepartmentId != existingUser.CompanyId)
+                    if (existingUser.DepartmentId != existingUser.DepartmentId)
                         throw new ArgumentException("Manager chỉ có thể cập nhật user cùng phòng ban");
 
                     if (dto.PositionId.HasValue)
                     {
-                        var department = await _departmentRepository.GetByIdAsync(departmentId.Value);
+                        var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
                         if (department == null)
                             throw new ArgumentException("Không tìm thấy phòng ban");
 
