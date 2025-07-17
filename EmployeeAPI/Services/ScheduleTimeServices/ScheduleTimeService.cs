@@ -96,6 +96,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
 
             return new ScheduleDto
             {
+                id = result.id,
                 StartTimeMorning = result.StartTimeMorning,
                 EndTimeMorning = result.EndTimeMorning,
                 StartTimeAfternoon = result.StartTimeAfternoon,
