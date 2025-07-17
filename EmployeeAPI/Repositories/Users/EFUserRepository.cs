@@ -31,7 +31,7 @@ namespace EmployeeAPI.Repositories.Users
         public async Task<User> GetUserInfoAsync(Guid id)
         {
             return await _context.Users
-                .Include(u => u.Company)
+                .Include(p => p.Company)
                 .Include(p => p.Department)
                 .Include(p => p.Position)
                  .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted);
@@ -41,7 +41,7 @@ namespace EmployeeAPI.Repositories.Users
         public async Task<User> GetActiveUserIdAsync(Guid id)
         {
             return await _context.Users
-                .Include(u => u.Company)
+                .Include(p => p.Company)
                 .Include(p => p.Department)
                 .Include(p => p.Position)
                 .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);
