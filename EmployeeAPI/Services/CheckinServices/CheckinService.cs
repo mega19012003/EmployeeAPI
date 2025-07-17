@@ -514,7 +514,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     if (currentUser.CompanyId == null)
                         throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
 
-                    if (currentUser.DepartmentId != employee.DepartmentId)
+                    if (currentUser.CompanyId != employee.CompanyId)
                         throw new ArgumentException("Admin chỉ có thể cập nhật checkin cho user cùng công ty");
                 }
                 if (currentUserRoles.Contains("Manager"))
