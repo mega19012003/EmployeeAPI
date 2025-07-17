@@ -91,13 +91,11 @@ namespace EmployeeAPI.Services.HolidayServices
                     throw new ArgumentException("Không tìm thấy ngày lễ");
                 }
 
-                if (!currentUserRoles.Contains("SYstemAdmin"))
+                if (currentUserRoles.Contains("Administrator"))
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser.CompanyId == null)
-                        throw new ArgumentException("Chưa có công ty, vui lòng liên hệ System Admin để thêm");
-                    if (currentUser.DepartmentId == null)
-                        throw new ArgumentException("Chưa có phòng ban, vui lòng liên hệ Admin để thêm");
+                        throw new ArgumentException("Chưa có công ty, vui lòng liên hệ Admin hoặc System Admin  để thêm");
                     if (holiday.CompanyId != currentUser.CompanyId)
                         throw new ArgumentException("Chỉ được phép truy cập thông tin ngày nghỉ cùng công ty");
                 }

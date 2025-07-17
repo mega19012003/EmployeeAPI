@@ -87,9 +87,6 @@ namespace EmployeeAPI.Services.AllowedIpServices
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser?.CompanyId == null)
                     throw new ArgumentException("Người dùng chưa có công ty.");
-                if (currentUser.DepartmentId == null)
-                    throw new ArgumentException("Người dùng chưa có phòng ban.");
-
                 if (result.CompanyId != currentUser.CompanyId)
                     throw new ArgumentException("Không có quyền truy cập IP của công ty khác.");
             }

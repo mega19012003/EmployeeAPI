@@ -94,7 +94,7 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = d.StartDate,
                     EndDate = d.EndDate,
                     AssignedBy = d.AssignedBy.Fullname,
-                    CompanyName = d.Company.Name,
+                    CompanyName = d.Company.Name ?? string.Empty,
                     DutyDetails = d.DutyDetails.Where(dd => !dd.IsDeleted).Select(dd => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = dd.DutyDetailId,

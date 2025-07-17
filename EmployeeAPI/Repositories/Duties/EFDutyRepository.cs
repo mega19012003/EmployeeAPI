@@ -34,6 +34,7 @@ namespace EmployeeAPI.Repositories.Duties
         {
             return await _context.Duties
                 .Include(p => p.AssignedBy)
+                .Include(p => p.Company)
                 .Include(p => p.DutyDetails.Where(dd => !dd.IsDeleted))
                 .ThenInclude(p => p.Users)
                 .Where(p => !p.IsDeleted)

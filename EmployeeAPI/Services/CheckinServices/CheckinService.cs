@@ -179,6 +179,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinTime = checkin.CheckinTime,
                     CheckoutTime = checkin.CheckoutTime,
                     Name = checkin.Users.Fullname,
+                    LogStatus = (int?)checkin.LogStatus,
+                    Status = checkin.LogStatus.ToString(),
                     SalaryPerDay = checkin.SalaryPerDay,
                 };
             }
