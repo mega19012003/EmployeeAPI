@@ -271,6 +271,12 @@ namespace EmployeeAPI.Services.UserService
                 var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
                 var isManager = currentUserRoles.Contains("Manager");
 
+                if (!string.IsNullOrWhiteSpace(SearchTerm))
+                {
+                    var keyword = SearchTerm.Trim().ToLower();
+                    query = query.Where(u => u.Fullname.ToLower().Contains(keyword) || u.Username.ToLower().Contains(keyword));
+                }
+
                 if (isSystemAdmin)
                 {
                     // SystemAdmin: có thể lọc tất cả theo companyId, departmentId, positionId
