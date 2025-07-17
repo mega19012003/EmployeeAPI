@@ -68,7 +68,9 @@ namespace EmployeeAPI.Services.AuthServices
                 var existed = await _repository.GetUserByName(dto.Username);
                 if (existed != null)
                     throw new ArgumentException("Username đã tồn tại");
-                else if(!IsStrongPassword(dto.Password))
+                else if (dto.Username.Length < 4)
+                    throw new ArgumentException("Username phải có ít nhất 4 ký tự trở lên");
+                else if (!IsStrongPassword(dto.Password))
                     throw new ArgumentException("Password phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
                 var departmentId = Guid.Empty;
