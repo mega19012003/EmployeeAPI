@@ -63,7 +63,7 @@ namespace EmployeeAPI.Controllers
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]
         [HttpPut]
-        public async Task<IActionResult> Update([FromBody] LogStatusConfig updated)
+        public async Task<IActionResult> Update([FromBody] UpdateLogStatusDto updated)
         {
             var result = await _service.UpdateConfigAsync(updated);
             return Ok(ApiResponse<LogStatusDto>.ReturnResult("Update config success", result, 200));

@@ -67,7 +67,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                         Name = f.Name,
                         SalaryMultiplier = f.SalaryMultiplier,
                         Note = f.Note,
-                        CompanyId = f.CompanyId,
+                        //CompanyId = f.CompanyId,
                         CompanyName = f.Company.Name,
                        
                     }).ToListAsync();
@@ -113,12 +113,12 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                 Name = result.Name,
                 SalaryMultiplier = result.SalaryMultiplier,
                 Note = result.Note,
-                CompanyId = result.CompanyId,
+                //CompanyId = result.CompanyId,
                 CompanyName = result.Company?.Name
             };
         }
 
-        public async Task<LogStatusDto> UpdateConfigAsync(LogStatusConfig updatedConfig)
+        public async Task<LogStatusDto> UpdateConfigAsync(UpdateLogStatusDto updatedConfig)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
@@ -138,10 +138,11 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                 return new LogStatusDto
                 {
                     Id = existing.Id,
+                    enumId = existing.enumId,
                     Name = existing.Name,
                     SalaryMultiplier = existing.SalaryMultiplier,
                     Note = existing.Note,
-                    CompanyId = existing.CompanyId,
+                    //CompanyId = existing.CompanyId,
                     CompanyName = existing.Company.Name
                 };
             }

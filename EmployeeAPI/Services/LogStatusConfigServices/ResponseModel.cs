@@ -8,16 +8,20 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
     {
         public class LogStatusDto
         {
-            //[DatabaseGenerated(DatabaseGeneratedOption.None)] // 👈 Bắt buộc để EF không tự tăng Id
             public Guid Id { get; set; }
             public int enumId { get; set; }
             public string Name { get; set; } = null!;
             public double SalaryMultiplier { get; set; }
             public string? Note { get; set; }
-
-            public Guid? CompanyId { get; set; }
             public string? CompanyName { get; set; }
-            public bool IsSystemDefault { get; set; }
+        }
+
+        public class UpdateLogStatusDto
+        {
+            public Guid Id { get; set; }
+            public string Name { get; set; } = null!;
+            public double SalaryMultiplier { get; set; }
+            public string? Note { get; set; }
         }
     }
 }

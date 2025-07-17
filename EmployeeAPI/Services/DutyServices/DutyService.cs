@@ -147,7 +147,6 @@ namespace EmployeeAPI.Services.DutyServices
                 if (!isAssignedToUser)
                     throw new UnauthorizedAccessException("Nhân viên không thể truy cập công việc của người khác");
             }
-
             return new ResponseModel.DutyResultDto
             {
                 Id = duty.Id,
@@ -156,7 +155,7 @@ namespace EmployeeAPI.Services.DutyServices
                 StartDate = duty.StartDate,
                 EndDate = duty.EndDate,
                 AssignedBy = duty.AssignedBy?.Fullname,
-                CompanyName = duty.Company.Name,
+                CompanyName = duty.Company?.Name,
                 DutyDetails = duty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                 {
                     DutyDetailId = d.DutyDetailId,

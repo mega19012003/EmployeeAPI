@@ -10,7 +10,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
 
         Task<ResponseModel.LogStatusDto> GetConfigIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
 
-        Task<ResponseModel.LogStatusDto> UpdateConfigAsync(LogStatusConfig updatedConfig);
+        Task<ResponseModel.LogStatusDto> UpdateConfigAsync(ResponseModel.UpdateLogStatusDto updatedConfig);
 
     }
 }
