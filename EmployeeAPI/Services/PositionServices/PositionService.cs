@@ -171,8 +171,15 @@ namespace EmployeeAPI.Services.PositionServices
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser?.CompanyId == null)
                         throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ quản trị hệ thống để cập nhật công ty.");
+
                     if (!dto.DepartmentId.HasValue)
                         throw new ArgumentException("Vui lòng nhập phòng ban");
+
+                    departmentId = dto.DepartmentId.Value;
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException("Bạn không có quyền tạo chức vụ.");
                 }
 
                 departmentId = dto.DepartmentId.Value;
