@@ -129,10 +129,10 @@ namespace EmployeeAPI.Services.Dashboards
 
             if (!isSystemAdmin)
             {
-                if (companyId == null)
+                if (currentUser.CompanyId == null)
                     throw new ArgumentException("Người dùng chưa được gán công ty");
 
-                holidayQuery = holidayQuery.Where(h => h.CompanyId == companyId.Value);
+                holidayQuery = holidayQuery.Where(h => h.CompanyId == currentUser.CompanyId.Value);
             }
 
             var upcomingHolidays = await holidayQuery
