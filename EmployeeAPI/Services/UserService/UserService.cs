@@ -51,6 +51,10 @@ namespace EmployeeAPI.Services.UserService
                 if (!string.IsNullOrWhiteSpace(dto.Fullname)) existingUser.Fullname = dto.Fullname;
                 if (!string.IsNullOrWhiteSpace(dto.Address)) existingUser.Address = dto.Address;
                 if (!string.IsNullOrWhiteSpace(dto.PhoneNumber)) existingUser.PhoneNumber = dto.PhoneNumber;
+                if (dto.IsActive.HasValue && dto.IsActive.Value == false && dto.UserId == currentUserId)
+                {
+                    throw new Exception("Bạn không thể tự vô hiệu hóa chính mình.");
+                }
 
                 if (dto.ImageUrl != null)
                 {
