@@ -229,7 +229,7 @@ namespace EmployeeAPI.Services.UserService
                 }
                 else if (isAdmin)
                 {
-                    if (!currentUser.DepartmentId.HasValue)
+                    if (!currentUser.CompanyId.HasValue)
                         throw new ArgumentException("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
 
                     if (existingUser.CompanyId != currentUser.CompanyId)

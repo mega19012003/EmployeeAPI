@@ -125,7 +125,7 @@ namespace EmployeeAPI.Services.Dashboards
             // Ngày lễ sắp tới: SystemAdmin/Admin/Manager đều xem được tất cả
             var todayDateOnly = DateOnly.FromDateTime(now);
             var upcomingHolidays = await _context.Holidays
-                .Where(h => h.startDate > todayDateOnly)
+                .Where(h => h.startDate > todayDateOnly && h.CompanyId == companyId.Value)
                 .OrderBy(h => h.startDate)
                 .Select(h => new UpcomingHolidayDto
                 {
