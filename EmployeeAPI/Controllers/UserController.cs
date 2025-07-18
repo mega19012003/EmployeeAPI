@@ -90,7 +90,7 @@ namespace EmployeeAPI.Controllers
         /// <summary>
         /// Lấy user theo id, employee ko được phép dùng
         /// </summary>
-        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin, Employee")]
         [HttpGet("{userId}")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid userId)
         {
