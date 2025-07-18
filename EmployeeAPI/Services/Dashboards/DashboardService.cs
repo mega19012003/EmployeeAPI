@@ -123,9 +123,15 @@ namespace EmployeeAPI.Services.Dashboards
             var totalPayrollThisMonth = await payrollQuery.SumAsync(p => (decimal?)p.Salary) ?? 0;
 
             // Ngày lễ sắp tới: SystemAdmin/Admin/Manager đều xem được tất cả
-            var todayDateOnly = DateOnly.FromDateTime(now);
-            var upcomingHolidays = await _context.Holidays
-                .Where(h => h.startDate > todayDateOnly && h.CompanyId == companyId.Value)
+            if (!isSystemAdmin)
+            {
+                if (companyId == null)
+                    throw new ArgumentException("Người dùng chưa được gán công ty");
+
+                holidayQuery = holidayQuery.Where(h => h.CompanyId == companyId.Value);
+            }
+
+            var upcomingHolidays = await holidayQuery
                 .OrderBy(h => h.startDate)
                 .Select(h => new UpcomingHolidayDto
                 {
