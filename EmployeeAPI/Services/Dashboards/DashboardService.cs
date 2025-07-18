@@ -123,6 +123,10 @@ namespace EmployeeAPI.Services.Dashboards
             var totalPayrollThisMonth = await payrollQuery.SumAsync(p => (decimal?)p.Salary) ?? 0;
 
             // Ngày lễ sắp tới: SystemAdmin/Admin/Manager đều xem được tất cả
+            var todayDateOnly = DateOnly.FromDateTime(now);
+            var holidayQuery = _context.Holidays
+    .Where(h => h.startDate > todayDateOnly);
+
             if (!isSystemAdmin)
             {
                 if (companyId == null)
