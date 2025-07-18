@@ -182,7 +182,6 @@ namespace EmployeeAPI.Services.PositionServices
                     throw new UnauthorizedAccessException("Bạn không có quyền tạo chức vụ.");
                 }
 
-                departmentId = dto.DepartmentId.Value;
 
                 var model = new Position
                 {
