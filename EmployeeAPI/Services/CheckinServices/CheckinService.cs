@@ -47,7 +47,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _checkinRepository.GetAll();
+                var query = _checkinRepository.GetAll().Where(p => p.Users.Role == RoleType.Manager || p.Users.Role == RoleType.Employee);
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
@@ -507,8 +507,8 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new ArgumentException("Không tìm thấy bản ghi checkin này");
 
                 var employee = await _userRepository.GetActiveUserIdAsync(existing.UserId);
-                if (employee == null)
-                    throw new ArgumentException("Không tìm thấy người dùng");
+                //if (employee == null)
+                //    throw new ArgumentException("Không tìm thấy người dùng");
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
