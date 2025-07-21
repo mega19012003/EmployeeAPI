@@ -47,7 +47,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var query = _checkinRepository.GetAll().Where(p => p.Users.Role == RoleType.Manager || p.Users.Role == RoleType.Employee);
+                var query = _checkinRepository.GetAll();
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
@@ -627,7 +627,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 pageIndex ??= 1;
                 pageSize ??= 10;
 
-                var userQuery = _userRepository.GetAll();
+                var userQuery = _userRepository.GetAll().Where(p => p.Role == RoleType.Manager || p.Role == RoleType.Employee);
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
