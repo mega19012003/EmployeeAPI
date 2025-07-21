@@ -11,7 +11,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
             public Guid Id { get; set; }
             public int enumId { get; set; }
             public string Name { get; set; } = null!;
-            public double SalaryMultiplier { get; set; }
+            //public double SalaryMultiplier { get; set; }
             public string? Note { get; set; }
             public string? CompanyName { get; set; }
         }
@@ -20,7 +20,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
         {
             public Guid Id { get; set; }
             public string Name { get; set; } = null!;
-            public double SalaryMultiplier { get; set; }
+            //public double SalaryMultiplier { get; set; }
             public string? Note { get; set; }
         }
     }

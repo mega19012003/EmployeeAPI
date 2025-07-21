@@ -144,7 +144,7 @@ namespace EmployeeAPI.Services.CompanyServices
                     Id = Guid.NewGuid(),            
                     enumId = x.enumId,              
                     Name = x.Name,
-                    SalaryMultiplier = x.SalaryMultiplier,
+                    //SalaryMultiplier = x.SalaryMultiplier,
                     Note = x.Note,
                     CompanyId = newCompany.Id,
                     //CompanyName = newCompany.Name,

@@ -35,12 +35,13 @@ namespace EmployeeAPI.Services.PayrollServices
             _context = context;
         }
 
-        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.PayrollResultDto>> GetAllPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId/*, int? Day*/, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
 
             var query = _context.Payrolls
+                .Where(p => p.Users.Role == RoleType.Manager || p.Users.Role == RoleType.Employee)
                 .Include(p => p.Users)
                 .Where(p => !p.IsDeleted);
 
@@ -102,8 +103,8 @@ namespace EmployeeAPI.Services.PayrollServices
             if (Month.HasValue)
                 query = query.Where(c => c.CreatedDate.Month == Month.Value);
 
-            if (Day.HasValue)
-                query = query.Where(c => c.CreatedDate.Day == Day.Value);
+            //if (Day.HasValue)
+            //    query = query.Where(c => c.CreatedDate.Day == Day.Value);
 
             if (Year.HasValue)
                 query = query.Where(c => c.CreatedDate.Year == Year.Value);
@@ -225,7 +226,6 @@ namespace EmployeeAPI.Services.PayrollServices
                 throw;
             }
         }
-
         public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
         {
             var staff = await _userRepository.GetActiveUserIdAsync(staffId);
@@ -315,7 +315,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 }
 
                 return (c.LogStatus != LogStatus.None)
-                    && (normalWorkedHours >= fullDayHours * 0.9);
+                    && (normalWorkedHours >= fullDayHours/* * 0.9*/);
             })
             .Select(c => c.CheckinTime.Date)
             .Distinct()
@@ -357,5 +357,98 @@ namespace EmployeeAPI.Services.PayrollServices
                 Note = existingPayroll.Note
             };
         }
+
+        public async Task<PagedResult<ResponseModel.UserWithPayrollDto>> GetUsersWithPayrolls(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, Guid? departmentId, Guid? positionId/*, int? day*/, int? month, int? year, int? pageIndex, int? pageSize)
+        {
+            pageIndex ??= 1;
+            pageSize ??= 10;
+            var now = DateTime.Now;
+            year ??= now.Year;
+            month ??= now.Month;
+
+            var query = _userRepository.GetAll().Where(p => p.Role == RoleType.Manager || p.Role == RoleType.Employee);
+
+            /*if (currentUserRoles.Contains("SystemAdmin"))
+            {
+                if (companyId.HasValue)
+                    query = usersQuery.Where(u => u.CompanyId == companyId.Value);
+            }
+            else*/
+            if (currentUserRoles.Contains("Administrator"))
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (currentUser?.CompanyId == null)
+                    throw new ArgumentException("Admin chưa có công ty.");
+
+                query = query.Where(u => u.CompanyId == currentUser.CompanyId);
+            }
+            else if (currentUserRoles.Contains("Manager"))
+            {
+                var currentUser = await _context.Users.FindAsync(currentUserId);
+                if (currentUser?.DepartmentId == null)
+                    throw new ArgumentException("Manager chưa có phòng ban.");
+
+                query = query.Where(u => u.DepartmentId == currentUser.DepartmentId);
+            }
+            else if (currentUserRoles.Contains("Employee"))
+            {
+                query = query.Where(u => u.UserId == currentUserId);
+            }
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                var nameLower = name.ToLower();
+                query = query.Where(u => u.Fullname.ToLower().Contains(nameLower));
+            }
+
+            if (departmentId.HasValue)
+            {
+                query = query.Where(u => u.DepartmentId == departmentId.Value);
+            }
+
+            if (positionId.HasValue)
+            {
+                query = query.Where(u => u.PositionId == positionId.Value);
+            }
+
+            var totalCount = await query.CountAsync();
+
+            var items = await query
+                //.OrderByDescending(p => p.CreatedDate)
+                .Skip((pageIndex.Value - 1) * pageSize.Value)
+                .Take(pageSize.Value)
+                .Select(u => new ResponseModel.UserWithPayrollDto
+                {
+                    UserId = u.UserId,
+                    Fullname = u.Fullname,
+                    CompanyName = u.Company.Name ?? string.Empty,
+                    DepartmentName = u.Department.Name ?? string.Empty,
+                    PositionName = u.Position.Name ?? string.Empty,
+                    Payrolls = u.Payrolls
+                    .Where(p => !p.IsDeleted &&
+                    (!month.HasValue || p.CreatedDate.Month == month.Value) &&
+                    (!year.HasValue || p.CreatedDate.Year == year.Value) /*&&
+                    (!day.HasValue || p.CreatedDate.Day == day.Value)*/)
+                    .OrderByDescending(p => p.CreatedDate)
+                    .Select(p => new ResponseModel.PayrollResultDto
+                    {
+                        Id = p.Id,
+                        Salary = p.Salary,
+                        DaysWorked = p.DaysWorked,
+                        CreatedDate = p.CreatedDate,
+                        Note = p.Note,
+                        Name = u.Fullname
+                    }).ToList()
+                }).ToListAsync();
+
+            return new PagedResult<ResponseModel.UserWithPayrollDto>
+            {
+                Items = items,
+                PageIndex = pageIndex.Value,
+                PageSize = pageSize.Value,
+                TotalCount = totalCount
+            };
+        }
+
     }
 }

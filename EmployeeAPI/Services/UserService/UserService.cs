@@ -364,6 +364,100 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetActiveEmployeesAndManagersAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        {
+            try
+            {
+                var query = _userRepository.GetAll().Where(u => !u.IsDeleted && u.IsActive && (u.Role == RoleType.Employee || u.Role == RoleType.Manager));
+
+                var isAdmin = currentUserRoles.Contains("Administrator");
+                var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
+                var isManager = currentUserRoles.Contains("Manager");
+
+                if (!string.IsNullOrWhiteSpace(SearchTerm))
+                {
+                    var keyword = SearchTerm.Trim().ToLower();
+                    query = query.Where(u => u.Fullname.ToLower().Contains(keyword) || u.Username.ToLower().Contains(keyword));
+                }
+
+                if (isSystemAdmin)
+                {
+                    if (companyId.HasValue)
+                        query = query.Where(u => u.CompanyId == companyId.Value);
+
+                    if (departmentId.HasValue)
+                        query = query.Where(u => u.DepartmentId == departmentId.Value);
+
+                    if (positionId.HasValue)
+                        query = query.Where(u => u.PositionId == positionId.Value);
+                }
+                else if (isAdmin)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
+
+                    query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
+
+                    if (departmentId.HasValue)
+                        query = query.Where(u => u.DepartmentId == departmentId.Value);
+
+                    if (positionId.HasValue)
+                        query = query.Where(u => u.PositionId == positionId.Value);
+                }
+                else if (isManager)
+                {
+                    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                    if (currentUser?.DepartmentId == null)
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+
+                    query = query.Where(u => u.DepartmentId == currentUser.DepartmentId.Value);
+
+                    if (positionId.HasValue)
+                        query = query.Where(u => u.PositionId == positionId.Value);
+                }
+
+                var totalCount = await query.CountAsync();
+
+                var items = await query
+                    .Skip((pageIndex ?? 1 - 1) * (pageSize ?? 10))
+                    .Take(pageSize ?? 10)
+                    .Select(u => new ResponseModel.UserResultDto
+                    {
+                        UserId = u.UserId,
+                        Fullname = u.Fullname,
+                        Username = u.Username,
+                        RoleName = u.Role.ToString(),
+                        Address = u.Address,
+                        PhoneNumber = u.PhoneNumber,
+                        DepartmentName = u.Department.Name ?? string.Empty,
+                        DepartmentId = u.Department.Id,
+                        PositionName = u.Position.Name ?? string.Empty,
+                        PositionId = u.PositionId,
+                        CompanyName = u.Company.Name ?? string.Empty,
+                        CompanyId = u.CompanyId,
+                        IsActive = u.IsActive,
+                        SalaryPerHour = u.SalaryPerHour,
+                        ImageUrl = u.ImageUrl,
+                    })
+                    .ToListAsync();
+
+                return new PagedResult<ResponseModel.UserResultDto>
+                {
+                    TotalCount = totalCount,
+                    PageIndex = pageIndex ?? 1,
+                    PageSize = pageSize ?? 10,
+                    Items = items
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Lỗi khi lấy danh sách Employee và Manager: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
+            }
+        }
+
+
         public async Task<ResponseModel.UserResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var isAdmin = currentUserRoles.Contains("Administrator");

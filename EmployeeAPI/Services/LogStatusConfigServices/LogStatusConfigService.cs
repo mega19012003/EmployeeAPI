@@ -65,7 +65,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                         Id = f.Id,
                         enumId = f.enumId,
                         Name = f.Name,
-                        SalaryMultiplier = f.SalaryMultiplier,
+                        //SalaryMultiplier = f.SalaryMultiplier,
                         Note = f.Note,
                         //CompanyId = f.CompanyId,
                         CompanyName = f.Company.Name,
@@ -111,7 +111,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                 Id = result.Id,
                 enumId = result.enumId,
                 Name = result.Name,
-                SalaryMultiplier = result.SalaryMultiplier,
+                //SalaryMultiplier = result.SalaryMultiplier,
                 Note = result.Note,
                 //CompanyId = result.CompanyId,
                 CompanyName = result.Company?.Name
@@ -127,7 +127,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                 if (existing == null)
                     throw new ArgumentException("Cấu hình log status không tìm thấy");
 
-                existing.SalaryMultiplier = updatedConfig.SalaryMultiplier;
+                //existing.SalaryMultiplier = updatedConfig.SalaryMultiplier;
                 existing.Name = updatedConfig.Name;
                 existing.Note = updatedConfig.Note;
 
@@ -140,7 +140,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
                     Id = existing.Id,
                     enumId = existing.enumId,
                     Name = existing.Name,
-                    SalaryMultiplier = existing.SalaryMultiplier,
+                    //SalaryMultiplier = existing.SalaryMultiplier,
                     Note = existing.Note,
                     //CompanyId = existing.CompanyId,
                     CompanyName = existing.Company.Name

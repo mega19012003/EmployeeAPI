@@ -1,11 +1,12 @@
-﻿using System.Security.Claims;
-using EmployeeAPI.Attributes;
+﻿using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
 using EmployeeAPI.Services.PayrollServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using static EmployeeAPI.Services.UserService.ResponseModel;
 
 namespace EmployeeAPI.Controllers
@@ -29,7 +30,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAllPayrolls(string? Search, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllPayrolls(string? Search, Guid? companyId, int? Month, int? Year, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -37,7 +38,7 @@ namespace EmployeeAPI.Controllers
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, Search, companyId, Day, Month, Year, pageIndex, pageSize);
+            var pagedResult = await _payrollService.GetAllPayrolls(currentUserId, currentRoles, Search, companyId, Month, Year, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
@@ -113,24 +114,29 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete payroll success", result, 200));
         }
 
-        ///// <summary>
-        ///// Lấy danh sách chấm công cho nhân viên, manager chỉ phép lấy nhân viên thuộc phòng ban của mình, employee chỉ dc lấy danh sách của bản thân
-        ///// </summary>
-        //[Authorize]
-        //[HttpGet("employee")]
-        //public async Task<IActionResult> GetPayrollByStaff(Guid userId, int? pageIndex, int? pageSize)
-        //{
-        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-        //        return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
+        /// <summary>
+        /// Lấy toàn bộ danh sách người dùng kèm payroll của họ.
+        /// Manager chỉ được thấy người trong phòng ban.
+        /// Employee chỉ thấy chính mình.
+        /// </summary>
+        [Authorize]
+        [HttpGet("user-payrolls")]
+        public async Task<IActionResult> GetAllUsersWithPayrolls(string? Search, Guid? companyId, Guid? departmentId, Guid? positionId, int? Month, int? Year, int? pageIndex, int? pageSize)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-        //    var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-        //    var pagedResult = await _payrollService.GetPayrollByUser(userId, currentUserId, currentRoles, pageIndex, pageSize);
-        //    if (!pagedResult.Items.Any())
-        //        return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("No result", pagedResult, 200));
-        //    return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("Get list payroll by User success", pagedResult, 200));
-        //}
+            var result = await _payrollService.GetUsersWithPayrolls(currentUserId, currentRoles, Search, companyId, departmentId, positionId, Month, Year, pageIndex, pageSize);
+
+            if (!result.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.UserWithPayrollDto>>.ReturnResult("No data found", result, 200));
+
+            return Ok(ApiResponse<PagedResult<ResponseModel.UserWithPayrollDto>>.ReturnResult("Get users with payrolls success", result, 200));
+        }
+
     }
 }
 

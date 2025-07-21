@@ -568,7 +568,7 @@ namespace EmployeeAPI.Services.DutyServices
                     else
                     {
                         if (detail.UserId != currentUserId)
-                            throw new UnauthorizedAccessException("EMployee chỉ có thể đánh dấu hoàn thành cho công việc của bản thân");
+                            throw new UnauthorizedAccessException("Bạn chỉ có thể đánh dấu hoàn thành cho công việc của bản thân");
                     }
                 }
 

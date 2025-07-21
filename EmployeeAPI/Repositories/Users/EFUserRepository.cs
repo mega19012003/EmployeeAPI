@@ -1,4 +1,5 @@
-﻿using EmployeeAPI.Models;
+﻿using EmployeeAPI.Enums;
+using EmployeeAPI.Models;
 using Microsoft.EntityFrameworkCore;
 using System.Text;
 
@@ -20,6 +21,7 @@ namespace EmployeeAPI.Repositories.Users
         {
             var result = _context.Users
                 .Include(u => u.Company)
+                .Include(u => u.Payrolls)
                 .Include(u => u.Department)
                 .Include(u => u.Position)
                 .Where(u => !u.IsDeleted)
@@ -32,6 +34,7 @@ namespace EmployeeAPI.Repositories.Users
         {
             return await _context.Users
                 .Include(p => p.Company)
+                .Include(u => u.Payrolls)
                 .Include(p => p.Department)
                 .Include(p => p.Position)
                  .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted);
@@ -42,6 +45,7 @@ namespace EmployeeAPI.Repositories.Users
         {
             return await _context.Users
                 .Include(p => p.Company)
+                .Include(u => u.Payrolls)
                 .Include(p => p.Department)
                 .Include(p => p.Position)
                 .FirstOrDefaultAsync(p => p.UserId == id && !p.IsDeleted && p.IsActive);

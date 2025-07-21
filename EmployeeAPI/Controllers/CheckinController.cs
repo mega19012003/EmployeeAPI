@@ -30,11 +30,11 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
-        /// Lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban, employee lấy danh sách của bản thân
+        /// Lấy toàn bộ danh sách checkin, manager chỉ dc phép lấy theo phòng ban, employee lấy danh sách của bản thân, admin lấy theo công ty
         /// </summary>
         [Authorize]
         [HttpGet]
-        public async Task<IActionResult> GetAll(string? Search, Guid? companyId, int? Day, int? Month , int? Year, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAll(string? Search, Guid? companyId, Guid? departmentId, Guid? positionId, int? Day, int? Month , int? Year, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -42,7 +42,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _checkinService.GetAllAsync(Search, companyId, Day, Month, Year, pageIndex, pageSize, currentUserId, currentUserRoles);
+            var pagedResult = await _checkinService.GetAllAsync(Search, companyId, departmentId, positionId, Day, Month, Year, pageIndex, pageSize, currentUserId, currentUserRoles);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<ResponseModel.CheckinResultDto>>.ReturnResult("No result", pagedResult, 200));
@@ -179,26 +179,23 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete Checkin Success", result, 200));
         }
 
-        ///// <summary>
-        ///// Lấy danh sách checkin của user, manager chỉ lấy dc danh sách checkin của nhân viên trong cùng phòng ban, employee chỉ dc phép lấy danh sách của chính mình
-        ///// </summary>
-        //[Authorize]
-        //[HttpGet("employee")]
-        //public async Task<IActionResult> GetCheckinsByUser(Guid userId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
-        //{
-        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-        //        return Unauthorized("UserId invalid");
+        [Authorize]
+        [HttpGet("users-checkins")]
+        public async Task<IActionResult> GetAllUsersCheckins(string? Search, Guid? companyId, Guid? departmentId, Guid? positionId, int? day, int? month, int? year, int? pageIndex, int? pageSize)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
-        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+            var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-        //    var result = await _checkinService.GetCheckinByUserAsync(currentUserId, currentUserRoles, userId, Day, Month, Year, pageIndex, pageSize);
+            var result = await _checkinService.GetUsersWithCheckinsAsync(Search, companyId, departmentId, positionId, day, month, year, pageIndex, pageSize, currentUserId, currentRoles);
 
-        //    if (!result.Items.Any())
-        //        return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDetailDto>>.ReturnResult("No result", result, 200));
+            if (!result.Items.Any())
+                return Ok(ApiResponse<PagedResult<ResponseModel.UserWithCheckinsDto>>.ReturnResult("No data found", result, 200));
 
-        //    return Ok(ApiResponse<PagedResult<ResponseModel.CheckinDetailDto>>.ReturnResult("Get list checkin by user success", result, 200));
+            return Ok(ApiResponse<PagedResult<ResponseModel.UserWithCheckinsDto>>.ReturnResult("Get checkin list success", result, 200));
+        }
 
-        //}
     }
 }

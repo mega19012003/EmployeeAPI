@@ -88,6 +88,28 @@ namespace EmployeeAPI.Controllers
         }
 
         /// <summary>
+        /// SystemAdmin có thể lấy danh sách Employee và Manager theo công ty, Admin theo công ty, Manager theo phòng ban.
+        /// </summary>
+        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        [HttpGet("employee-manager")]
+        public async Task<IActionResult> GetAllEmployeeAndManagerAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, [FromQuery] int? pageIndex = 1, [FromQuery] int? pageSize = 10)
+        {
+            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+                return Unauthorized("UserId invalid");
+
+            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+
+            var pagedResult = await _userService.GetActiveEmployeesAndManagersAsync(Search, positionId, departmentId, companyId, currentUserId, currentUserRoles, pageIndex, pageSize);
+
+            if (!pagedResult.Items.Any())
+                return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("No result", pagedResult, 200));
+
+            return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("Get list employee and manager success", pagedResult, 200));
+        }
+
+
+        /// <summary>
         /// Lấy user theo id, employee ko được phép dùng
         /// </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin, Employee")]

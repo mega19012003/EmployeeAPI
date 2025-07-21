@@ -28,15 +28,15 @@ namespace EmployeeAPI.Services.PayrollServices
             public string Note { get; set; }
         }
 
-        //public class PaidPayrollDto
-        //{
-        //    public Guid Id { get; set; }
-        //    public Guid UserId { get; set; }
-        //    public double Salary { get; set; }
-        //    public string Note { get; set; }
-        //    public DateTime CreatedDate { get; set; }
-        //    //public bool isPaid { get; set; }
-        //    public int DaysWorked { get; set; } //ngày công
-        //}
+        public class UserWithPayrollDto
+        {
+            public Guid UserId { get; set; }
+            public string Fullname { get; set; } = string.Empty;
+            public string CompanyName { get; set; }
+            public string DepartmentName { get; set; }
+            public string PositionName { get; set; }
+            public List<PayrollResultDto> Payrolls { get; set; } = new();
+        }
+
     }
 }

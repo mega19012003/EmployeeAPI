@@ -40,7 +40,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _logStatusConfigRepository = logStatusConfigRepository;
         }
         
-        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, Guid? companyId, Guid? departmentId, Guid? positionId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
             {
@@ -49,14 +49,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var query = _checkinRepository.GetAll();
 
-
-                if (currentUserRoles.Contains("SystemAdmin"))
-                {
-                    if(companyId.HasValue)
-                    {
-                        query = query.Where(c => c.Users.CompanyId == companyId);
-                    }
-                }
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
@@ -112,6 +104,21 @@ namespace EmployeeAPI.Services.CheckinServices
                     query = query.Where(c => c.Users.Fullname.ToLower().Contains(Name));
                 }
 
+                if (companyId.HasValue)
+                {
+                    query = query.Where(c => c.Users.CompanyId == companyId);
+                }
+
+                if (departmentId.HasValue)
+                {
+                    query = query.Where(c => c.Users.DepartmentId == departmentId);
+                }
+
+                if (positionId.HasValue)
+                {
+                    query = query.Where(c => c.Users.PositionId == positionId);
+                }
+
                 var totalCount = await query.CountAsync();
 
                 var items = await query
@@ -125,7 +132,6 @@ namespace EmployeeAPI.Services.CheckinServices
                         LogStatus = (int?)c.LogStatus,
                         Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
-                        SalaryPerDay = c.SalaryPerDay,
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinResultDto>
@@ -181,7 +187,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     Name = checkin.Users.Fullname,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
-                    SalaryPerDay = checkin.SalaryPerDay,
                 };
             }
             catch (Exception ex)
@@ -280,7 +285,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinTime = now, 
                     CheckoutTime = DateTime.MinValue,
                     LogStatus = logStatus,
-                    SalaryPerDay = 0 
+                    //SalaryPerDay = 0 
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -295,7 +300,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = checkin.CheckoutTime,
                     Status = checkin.LogStatus.ToString(),
                     LogStatus = (int?)checkin.LogStatus,
-                    SalaryPerDay = checkin.SalaryPerDay
+                    //SalaryPerDay = checkin.SalaryPerDay
                 };
             }
             catch (Exception ex)
@@ -454,7 +459,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
 
                 if (normalWorkedHours < 0) normalWorkedHours = 0;
-                checkin.SalaryPerDay = await CalculateSalaryPerDayNew(targetUser, normalWorkedHours, overtimeHours, checkin.LogStatus);
 
                 await _checkinRepository.UpdateAsync(checkin);
                 await _context.SaveChangesAsync();
@@ -468,7 +472,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = checkin.CheckoutTime,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
-                    SalaryPerDay = checkin.SalaryPerDay
                 };
             }
             catch (Exception ex)
@@ -552,9 +555,6 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 existing.LogStatus = dto.LogStatus;
 
-                double salaryPerDay = await CalculateSalaryPerDayNew(employee, normalWorkedHours, overtimeHours, dto.LogStatus);
-                existing.SalaryPerDay = salaryPerDay;
-
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -567,7 +567,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = existing.CheckoutTime,
                     LogStatus = (int?)existing.LogStatus,
                     Status = existing.LogStatus.ToString(),
-                    SalaryPerDay = existing.SalaryPerDay
                 };
             }
             catch (Exception ex)
@@ -576,41 +575,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 _logger.LogError(ex, "Error when updating checkin");
                 throw;
             }
-        }
-
-        public async Task<double> CalculateSalaryPerDayNew(User user, double normalHours, double overtimeHours, Enums.LogStatus logStatus)
-        {
-
-            if (user.CompanyId == null)
-                throw new ArgumentException("Người dùng chưa có công ty");
-
-            var logStatusConfigs = await _logStatusConfigRepository.GetAllAsync(user.CompanyId.Value);
-
-            if (logStatusConfigs == null || !logStatusConfigs.Any())
-                throw new Exception("Không tìm thấy cấu hình hệ số lương cho công ty này");
-
-            var currentStatusConfig = logStatusConfigs.FirstOrDefault(c => c.enumId == (int)logStatus);
-            var overtimeConfig = logStatusConfigs.FirstOrDefault(c => c.enumId == (int)Enums.LogStatus.Overtime);
-            var onTimeConfig = logStatusConfigs.FirstOrDefault(c => c.enumId == (int)Enums.LogStatus.OnTime);
-
-            double currentMultiplier = currentStatusConfig?.SalaryMultiplier ?? 1;
-            double overtimeMultiplier = overtimeConfig?.SalaryMultiplier ?? 1;
-            double onTimeMultiplier = onTimeConfig?.SalaryMultiplier ?? 1;
-
-            double salary = 0;
-
-            if (logStatus == Enums.LogStatus.Overtime)
-            {
-                // Khi status là Overtime → tính giờ thường + giờ tăng ca
-                salary = (normalHours * user.SalaryPerHour * onTimeMultiplier)
-                       + (overtimeHours * user.SalaryPerHour * overtimeMultiplier);
-            }
-            else
-            {
-                salary = normalHours * user.SalaryPerHour * currentMultiplier;
-            }
-
-            return Math.Floor(salary);
         }
 
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
@@ -656,5 +620,119 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
+        public async Task<PagedResult<UserWithCheckinsDto>> GetUsersWithCheckinsAsync(string? Name, Guid? companyId, Guid? departmentId, Guid? positionId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
+        {
+            try
+            {
+                pageIndex ??= 1;
+                pageSize ??= 10;
+
+                var userQuery = _userRepository.GetAll();
+
+                if (currentUserRoles.Contains("Administrator"))
+                {
+                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    if (currentUser?.CompanyId == null)
+                        throw new ArgumentException("Administrator chưa có công ty.");
+                    userQuery = userQuery.Where(u => u.CompanyId == currentUser.CompanyId);
+                }
+                else if (currentUserRoles.Contains("Manager"))
+                {
+                    var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
+                    if (currentUser?.DepartmentId == null)
+                        throw new ArgumentException("Manager chưa có phòng ban.");
+                    userQuery = userQuery.Where(u => u.DepartmentId == currentUser.DepartmentId);
+                }
+                else if (currentUserRoles.Contains("Employee"))
+                {
+                    userQuery = userQuery.Where(u => u.UserId == currentUserId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(Name))
+                {
+                    Name = Name.ToLower();
+                    userQuery = userQuery.Where(u => u.Fullname.ToLower().Contains(Name));
+                }
+
+                if (companyId.HasValue)
+                    userQuery = userQuery.Where(u => u.CompanyId == companyId);
+                if (departmentId.HasValue)
+                    userQuery = userQuery.Where(u => u.DepartmentId == departmentId);
+                if (positionId.HasValue)
+                    userQuery = userQuery.Where(u => u.PositionId == positionId);
+
+                var totalCount = await userQuery.CountAsync();
+
+                var users = await userQuery
+                    .OrderBy(u => u.Fullname)
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
+                    .ToListAsync();
+
+                var userIds = users.Select(u => u.UserId).ToList();
+
+                var now = DateTime.Now;
+
+                if (Year == null)
+                    Year = now.Year;
+                else if (Year == 0)
+                    Year = null;
+
+                if (Month == null)
+                    Month = now.Month;
+                else if (Month == 0)
+                    Month = null;
+
+                if (Day == null)
+                    Day = now.Day;
+                else if (Day == 0)
+                    Day = null;
+
+                var checkinQuery = _checkinRepository.GetAll().Where(c => userIds.Contains(c.UserId));
+
+                if (Year.HasValue)
+                    checkinQuery = checkinQuery.Where(c => c.CheckinTime.Year == Year.Value);
+                if (Month.HasValue)
+                    checkinQuery = checkinQuery.Where(c => c.CheckinTime.Month == Month.Value);
+                if (Day.HasValue)
+                    checkinQuery = checkinQuery.Where(c => c.CheckinTime.Day == Day.Value);
+
+                var checkins = await checkinQuery.ToListAsync();
+
+                var result = users.Select(u => new UserWithCheckinsDto
+                {
+                    UserId = u.UserId,
+                    FullName = u.Fullname,
+                    CompanyName = u.Company?.Name ?? string.Empty,
+                    DepartmentName = u.Department?.Name ?? string.Empty,
+                    PositionName = u.Position?.Name ?? string.Empty,
+                    Checkins = checkins
+                        .Where(c => c.UserId == u.UserId)
+                        .Select(c => new CheckinResultDto
+                        {
+                            CheckinId = c.Id,
+                            Name = c.Users.Fullname,
+                            CheckinTime = c.CheckinTime,
+                            CheckoutTime = c.CheckoutTime,
+                            LogStatus = (int?)c.LogStatus ?? 0,
+                            Status = c.LogStatus.ToString(),
+                        }).ToList()
+                }).ToList();
+
+                return new PagedResult<UserWithCheckinsDto>
+                {
+                    Items = result,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
+                    TotalCount = totalCount
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while retrieving users with checkins: {Message}", ex.Message);
+                throw;
+            }
+        }
+
     }
 }

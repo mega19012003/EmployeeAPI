@@ -19,7 +19,7 @@ namespace EmployeeAPI.Repositories.Checkins
             return _context.Checkins
                 .AsNoTracking()
                 .Include(c => c.Users)
-                .Where(c => !c.IsDeleted && !c.Users.IsDeleted);
+                .Where(c => !c.IsDeleted);
         }
 
         public IQueryable<Checkin> GetAll()
@@ -27,7 +27,7 @@ namespace EmployeeAPI.Repositories.Checkins
             return _context.Checkins
                 .AsNoTracking()
                 .Include(c => c.Users)
-                .Where(c => !c.IsDeleted && !c.Users.IsDeleted);
+                .Where(c => !c.IsDeleted);
         }
 
         public async Task<Checkin> GetByIdAsync(Guid id)

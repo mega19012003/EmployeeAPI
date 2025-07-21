@@ -17,7 +17,6 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime CheckoutTime { get; set; }
             public string Status { get; set; }
             public int? LogStatus { get; set; }
-            public double SalaryPerDay { get; set; }
         }
 
         public class CreateCheckinDto
@@ -49,7 +48,17 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime CheckoutTime { get; set; }
             public int? LogStatus { get; set; }
             public string Status { get; set; }
-            public double SalaryPerDay { get; set; }
+        }
+
+        public class UserWithCheckinsDto
+        {
+            public Guid UserId { get; set; }
+            public string FullName { get; set; } = null!;
+            public string CompanyName { get; set; }
+            public string DepartmentName { get; set; }
+            public string PositionName { get; set; }
+
+            public List<CheckinResultDto> Checkins { get; set; } = new();
         }
     }
 }
