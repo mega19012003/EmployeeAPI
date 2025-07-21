@@ -368,6 +368,9 @@ namespace EmployeeAPI.Services.UserService
         {
             try
             {
+                pageIndex ??= 10;
+                pageSize ??= 10;
+
                 var query = _userRepository.GetAll().Where(u => !u.IsDeleted && u.IsActive && (u.Role == RoleType.Employee || u.Role == RoleType.Manager));
 
                 var isAdmin = currentUserRoles.Contains("Administrator");
@@ -380,30 +383,23 @@ namespace EmployeeAPI.Services.UserService
                     query = query.Where(u => u.Fullname.ToLower().Contains(keyword) || u.Username.ToLower().Contains(keyword));
                 }
 
-                if (isSystemAdmin)
-                {
-                    if (companyId.HasValue)
-                        query = query.Where(u => u.CompanyId == companyId.Value);
 
-                    if (departmentId.HasValue)
-                        query = query.Where(u => u.DepartmentId == departmentId.Value);
+                if (companyId.HasValue)
+                    query = query.Where(u => u.CompanyId == companyId.Value);
 
-                    if (positionId.HasValue)
-                        query = query.Where(u => u.PositionId == positionId.Value);
-                }
-                else if (isAdmin)
+                if (departmentId.HasValue)
+                    query = query.Where(u => u.DepartmentId == departmentId.Value);
+
+                if (positionId.HasValue)
+                    query = query.Where(u => u.PositionId == positionId.Value);
+
+                if (isAdmin)
                 {
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser?.CompanyId == null)
                         throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
 
                     query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
-
-                    if (departmentId.HasValue)
-                        query = query.Where(u => u.DepartmentId == departmentId.Value);
-
-                    if (positionId.HasValue)
-                        query = query.Where(u => u.PositionId == positionId.Value);
                 }
                 else if (isManager)
                 {
@@ -412,16 +408,13 @@ namespace EmployeeAPI.Services.UserService
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
 
                     query = query.Where(u => u.DepartmentId == currentUser.DepartmentId.Value);
-
-                    if (positionId.HasValue)
-                        query = query.Where(u => u.PositionId == positionId.Value);
                 }
 
                 var totalCount = await query.CountAsync();
 
                 var items = await query
-                    .Skip((pageIndex ?? 1 - 1) * (pageSize ?? 10))
-                    .Take(pageSize ?? 10)
+                    .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .Take(pageSize.Value)
                     .Select(u => new ResponseModel.UserResultDto
                     {
                         UserId = u.UserId,
@@ -445,8 +438,8 @@ namespace EmployeeAPI.Services.UserService
                 return new PagedResult<ResponseModel.UserResultDto>
                 {
                     TotalCount = totalCount,
-                    PageIndex = pageIndex ?? 1,
-                    PageSize = pageSize ?? 10,
+                    PageIndex = pageIndex.Value,
+                    PageSize = pageSize.Value,
                     Items = items
                 };
             }

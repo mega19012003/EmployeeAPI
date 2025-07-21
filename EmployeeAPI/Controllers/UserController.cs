@@ -92,7 +92,7 @@ namespace EmployeeAPI.Controllers
         /// </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet("employee-manager")]
-        public async Task<IActionResult> GetAllEmployeeAndManagerAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, [FromQuery] int? pageIndex = 1, [FromQuery] int? pageSize = 10)
+        public async Task<IActionResult> GetAllEmployeeAndManagerAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, int? pageIndex = 1, int? pageSize = 10)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))

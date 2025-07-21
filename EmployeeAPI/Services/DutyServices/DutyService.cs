@@ -558,18 +558,16 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (detail.IsCompleted)
                     throw new ArgumentException("Công việc đã được đánh dấu hoàn thành trước đó");
+                else if (detail.Duty.EndDate < DateOnly.FromDateTime(DateTime.UtcNow) && detail.IsCompleted == false)
+                {
+                    throw new ArgumentException("Bạn đã quá trễ để hoàn thành công việc");
+                }
 
                 if (isEmployee)
                 {
-                    if (detail.Duty.EndDate < DateOnly.FromDateTime(DateTime.UtcNow) && detail.IsCompleted == false)
-                    {
-                        throw new ArgumentException("Bạn đã quá trễ để hoàn thành công việc");
-                    }
-                    else
-                    {
-                        if (detail.UserId != currentUserId)
-                            throw new UnauthorizedAccessException("Bạn chỉ có thể đánh dấu hoàn thành cho công việc của bản thân");
-                    }
+
+                    if (detail.UserId != currentUserId)
+                        throw new UnauthorizedAccessException("Bạn chỉ có thể đánh dấu hoàn thành cho công việc của bản thân");
                 }
 
                 if (isAdmin)
