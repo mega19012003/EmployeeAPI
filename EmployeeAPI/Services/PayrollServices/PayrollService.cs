@@ -326,7 +326,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 // Update payroll
                 existingPayroll.Salary = totalSalary;
                 existingPayroll.DaysWorked = totalDayWorked;
-                existingPayroll.Note = $"Cập nhật bảng lương cho tháng {month}/{year}";
+                existingPayroll.Note = $"Cập nhật chấm công cho tháng {month}/{year}";
                 //existingPayroll.CreatedDate = DateTime.Now; 
                 _context.Payrolls.Update(existingPayroll);
             }
@@ -340,7 +340,7 @@ namespace EmployeeAPI.Services.PayrollServices
                     Salary = totalSalary,
                     DaysWorked = totalDayWorked,
                     CreatedDate = DateTime.Now,
-                    Note = $"Tạo bảng lương cho tháng {month}/{year}"
+                    Note = $"Tạo chấm công cho tháng {month}/{year}"
                 };
                 await _payrollRepository.CreatePayrollAsync(existingPayroll);
             }
