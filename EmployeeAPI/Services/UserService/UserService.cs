@@ -368,7 +368,7 @@ namespace EmployeeAPI.Services.UserService
         {
             try
             {
-                pageIndex ??= 10;
+                pageIndex ??= 1;
                 pageSize ??= 10;
 
                 var query = _userRepository.GetAll().Where(u => !u.IsDeleted && u.IsActive && (u.Role == RoleType.Employee || u.Role == RoleType.Manager));
