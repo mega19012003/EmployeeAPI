@@ -19,7 +19,5 @@ namespace EmployeeAPI.Services.DutyServices
         Task<string> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeleteDutyAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
-        //WTask<ResponseModel.DutyResultDto> GetDutyByName(string name);
-        //Task<ResponseModel.DutyResultDto> GetUnfinishedDuty(string status);
     }
 }

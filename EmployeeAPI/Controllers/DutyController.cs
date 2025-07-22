@@ -1,7 +1,6 @@
 ﻿using System.Security.Claims;
 using EmployeeAPI.Attributes;
 using EmployeeAPI.Base;
-using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Services.DutyServices;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;

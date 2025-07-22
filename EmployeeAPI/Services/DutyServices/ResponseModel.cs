@@ -13,9 +13,15 @@ namespace EmployeeAPI.Services.DutyServices
             public string Name { get; set; }
             public DateOnly StartDate { get; set; }
             public DateOnly EndDate { get; set; }
+            [JsonIgnore]
+            public Guid AssignedById { get; set; }
             public string AssignedBy { get; set; }
             public bool IsCompleted { get; set; }
+            [JsonIgnore]
+            public bool IsDeleted { get; set; }
             public List<DutyDetailResultDto> DutyDetails { get; set; } = new List<DutyDetailResultDto>();
+            [JsonIgnore]
+            public Guid CompanyId { get; set; }
             public string CompanyName { get; set; }
         }
         public class DutyDetailResultDto

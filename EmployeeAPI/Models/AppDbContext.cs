@@ -15,10 +15,10 @@ namespace EmployeeAPI.Models
 
         public DbSet<User> Users { get; set; }
         public DbSet<Department> Departments { get; set; }
-        public DbSet<Duty> Duties { get; set; }
+        //public DbSet<Duty> Duties { get; set; }
         public DbSet<Checkin> Checkins { get; set; }
         public DbSet<Payroll> Payrolls { get; set; }
-        public DbSet<DutyDetail> DutyDetails { get; set; }
+        //public DbSet<DutyDetail> DutyDetails { get; set; }
         public DbSet<Position> Positions { get; set; }
         public DbSet<ScheduleTime> ScheduleTimes { get; set; }
         public DbSet<LogStatusConfig> LogStatusConfigs { get; set; }

@@ -8,7 +8,7 @@ using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
 using EmployeeAPI.Repositories.LogStatusConfigs;
 using EmployeeAPI.Repositories.Departments;
-using EmployeeAPI.Repositories.Duties;
+//using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Holidays;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
@@ -61,12 +61,14 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
 var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
-
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.Configure<GoogleSheetSettings>(builder.Configuration.GetSection("GoogleSheets"));
+builder.Services.AddScoped<GoogleSheetHelper>();
 
 //builder.Services.AddHostedService<AbsentBackgroundService>();//////////////////////////background serrvice
 
-builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
+//builder.Services.AddScoped<IDutyRepository, EFDutyRepository>();
 builder.Services.AddScoped<IDepartmentRepository, EFDepartmentRepository>();
 builder.Services.AddScoped<IPositionRepository, EFPositionRepository>();
 builder.Services.AddScoped<IAuthRepository, EFAuthRepository>();
