@@ -399,7 +399,7 @@ namespace EmployeeAPI.Services.UserService
                     if (currentUser?.CompanyId == null)
                         throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
 
-                    query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
+                    query = query.Where(u => (u.Role == RoleType.Employee || u.Role == RoleType.Manager) && u.CompanyId == currentUser.CompanyId.Value);
                 }
                 else if (isManager)
                 {
@@ -407,7 +407,7 @@ namespace EmployeeAPI.Services.UserService
                     if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
 
-                    query = query.Where(u => u.DepartmentId == currentUser.DepartmentId.Value);
+                    query = query.Where(u => u.Role == RoleType.Employee && u.DepartmentId == currentUser.DepartmentId.Value);
                 }
 
                 var totalCount = await query.CountAsync();
