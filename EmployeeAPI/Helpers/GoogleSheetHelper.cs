@@ -18,11 +18,37 @@ public class GoogleSheetHelper
     private readonly string _spreadsheetId;
     private readonly AppDbContext _context;
 
-    public GoogleSheetHelper(IOptions<GoogleSheetSettings> settings, AppDbContext context)
+    //public GoogleSheetHelper(IOptions<GoogleSheetSettings> settings, AppDbContext context)
+    //{
+    //    _settings = settings.Value;
+
+    //    var credential = GoogleCredential.FromFile(_settings.CredentialFilePath).CreateScoped(SheetsService.Scope.Spreadsheets);
+
+    //    _sheetsService = new SheetsService(new BaseClientService.Initializer()
+    //    {
+    //        HttpClientInitializer = credential,
+    //        ApplicationName = _settings.ApplicationName
+    //    });
+
+    //    _spreadsheetId = _settings.SpreadsheetId;
+    //    _context = context;
+    //}
+    public GoogleSheetHelper(IOptions<GoogleSheetSettings> settings, AppDbContext context, IWebHostEnvironment env)
     {
         _settings = settings.Value;
 
-        var credential = GoogleCredential.FromFile(_settings.CredentialFilePath).CreateScoped(SheetsService.Scope.Spreadsheets);
+        // Chuyển relative path sang absolute path
+        var fullPath = Path.Combine(env.ContentRootPath, _settings.CredentialFilePath);
+
+        // Kiểm tra có file không
+        if (!File.Exists(fullPath))
+        {
+            throw new FileNotFoundException("Không tìm thấy file Google Credential JSON", fullPath);
+        }
+
+        var credential = GoogleCredential
+            .FromFile(fullPath)
+            .CreateScoped(SheetsService.Scope.Spreadsheets);
 
         _sheetsService = new SheetsService(new BaseClientService.Initializer()
         {
