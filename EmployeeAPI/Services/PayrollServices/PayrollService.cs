@@ -421,9 +421,12 @@ namespace EmployeeAPI.Services.PayrollServices
                 {
                     UserId = u.UserId,
                     Fullname = u.Fullname,
-                    CompanyName = u.Company.Name ?? string.Empty,
-                    DepartmentName = u.Department.Name ?? string.Empty,
-                    PositionName = u.Position.Name ?? string.Empty,
+                    //CompanyName = u.Company.Name ?? string.Empty,
+                    //DepartmentName = u.Department.Name ?? string.Empty,
+                    //PositionName = u.Position.Name ?? string.Empty,
+                    PhoneNumber = u.PhoneNumber,
+                    Address = u.Address,
+                    ImageUrl = u.ImageUrl,
                     Payrolls = u.Payrolls
                     .Where(p => !p.IsDeleted &&
                     (!month.HasValue || p.CreatedDate.Month == month.Value) &&

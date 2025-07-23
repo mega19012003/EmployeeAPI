@@ -678,9 +678,12 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     UserId = u.UserId,
                     FullName = u.Fullname,
-                    CompanyName = u.Company?.Name ?? string.Empty,
-                    DepartmentName = u.Department?.Name ?? string.Empty,
-                    PositionName = u.Position?.Name ?? string.Empty,
+                    //CompanyName = u.Company?.Name ?? string.Empty,
+                    //DepartmentName = u.Department?.Name ?? string.Empty,
+                    //PositionName = u.Position?.Name ?? string.Empty,
+                    PhoneNumber = u.PhoneNumber,
+                    Address = u.Address,
+                    ImageUrl = u.ImageUrl,
                     Checkins = checkins
                         .Where(c => c.UserId == u.UserId)
                         .Select(c => new CheckinResultDto
