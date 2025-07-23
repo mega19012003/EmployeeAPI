@@ -73,29 +73,20 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
                 ///////////////////
                 var now = DateTime.Now;
-                if (Year == null)
-                    Year = now.Year;
-                else if (Year == 0)
-                    Year = null; 
 
-                if (Month == null)
-                    Month = now.Month;
-                else if (Month == 0)
-                    Month = null; 
+                // Nếu không truyền Year, lấy năm hiện tại
+                Year ??= now.Year;
 
-                if (Day == null)
-                    Day = now.Day;
-                else if (Day == 0)
-                    Day = null;
+                // Lọc theo năm (luôn luôn lọc theo năm)
+                query = query.Where(c => c.CheckinTime.Year == Year.Value);
 
+                // Chỉ lọc theo tháng nếu được truyền
                 if (Month.HasValue)
                     query = query.Where(c => c.CheckinTime.Month == Month.Value);
 
+                // Chỉ lọc theo ngày nếu được truyền
                 if (Day.HasValue)
                     query = query.Where(c => c.CheckinTime.Day == Day.Value);
-
-                if (Year.HasValue)
-                    query = query.Where(c => c.CheckinTime.Year == Year.Value);
                 ////////////////////
 
                 if (!string.IsNullOrEmpty(Name))

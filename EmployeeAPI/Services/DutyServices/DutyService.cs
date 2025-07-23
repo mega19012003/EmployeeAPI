@@ -312,15 +312,15 @@ namespace EmployeeAPI.Services.DutyServices
 
                 // --- 3. Đọc dữ liệu DutyDetail từ Google Sheet để kiểm tra conflict
                 var allDetailRows = await _googleSheetHelper.ReadSheetAsync("Detail");
-                var conflict = allDetailRows
-                    .Where(r =>
-                        Guid.TryParse(r[2]?.ToString(), out var uid) &&
-                        userIdsToAssign.Contains(uid) &&
-                        bool.TryParse(r[5]?.ToString(), out var isDeleted) && !isDeleted &&
-                        bool.TryParse(r[4]?.ToString(), out var isCompleted) && !isCompleted
-                    )
-                    .Select(r => Guid.Parse(r[2].ToString()))
-                    .FirstOrDefault();
+                //var conflict = allDetailRows
+                //    .Where(r =>
+                //        Guid.TryParse(r[2]?.ToString(), out var uid) &&
+                //        userIdsToAssign.Contains(uid) &&
+                //        bool.TryParse(r[5]?.ToString(), out var isDeleted) && !isDeleted &&
+                //        bool.TryParse(r[4]?.ToString(), out var isCompleted) && !isCompleted
+                //    )
+                //    .Select(r => Guid.Parse(r[2].ToString()))
+                //    .FirstOrDefault();
 
                 // --- 4. Kiểm tra trạng thái người dùng
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
@@ -338,8 +338,8 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Any(u => u.CompanyId != currentUser.CompanyId))
                         throw new ArgumentException("Admin chỉ được chọn nhân viên cùng công ty để thực hiện công việc");
 
-                    if (conflict != Guid.Empty)
-                        throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
+                    //if (conflict != Guid.Empty)
+                    //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
                 }
 
                 if (currentUserRoles.Contains("Manager"))
@@ -353,8 +353,8 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new ArgumentException("Manager chỉ được chọn nhân viên cùng phòng ban để thực hiện công việc");
 
-                    if (conflict != Guid.Empty)
-                        throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
+                    //if (conflict != Guid.Empty)
+                    //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
                 }
 
                 // --- 6. Kiểm tra ngày tháng hợp lệ
@@ -445,11 +445,11 @@ namespace EmployeeAPI.Services.DutyServices
 
                 // Lấy tất cả DutyDetails từ Google Sheets
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
-                var conflict = allDutyDetails
-                    .FirstOrDefault(dd =>
-                        userIdsToAssign.Contains(dd.UserId) &&
-                        !dd.IsDeleted &&
-                        !dd.IsCompleted);
+                //var conflict = allDutyDetails
+                //    .FirstOrDefault(dd =>
+                //        userIdsToAssign.Contains(dd.UserId) &&
+                //        !dd.IsDeleted &&
+                //        !dd.IsCompleted);
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
@@ -462,8 +462,8 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Any(u => u.CompanyId != currentUser.CompanyId))
                         throw new ArgumentException("Admin chỉ gán nhân viên cùng công ty");
 
-                    if (conflict != null)
-                        throw new InvalidOperationException("Một hoặc nhiều nhân viên đang có công việc chưa hoàn thành");
+                    //if (conflict != null)
+                    //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang có công việc chưa hoàn thành");
                 }
                 else if (currentUserRoles.Contains("Manager"))
                 {
@@ -476,8 +476,8 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new Exception("Manager chỉ gán nhân viên cùng phòng ban");
 
-                    if (conflict != null)
-                        throw new InvalidOperationException("Một hoặc nhiều nhân viên đang có công việc chưa hoàn thành");
+                    //if (conflict != null)
+                    //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang có công việc chưa hoàn thành");
                 }
 
                 // Thêm DutyDetail vào Google Sheets
