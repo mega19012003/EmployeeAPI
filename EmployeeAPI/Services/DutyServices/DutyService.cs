@@ -4,6 +4,8 @@ using EmployeeAPI.Models;
 
 using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
+using System.ComponentModel.Design;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using static EmployeeAPI.Services.DutyServices.ResponseModel;
@@ -17,12 +19,14 @@ namespace EmployeeAPI.Services.DutyServices
         private readonly AppDbContext _context;
         private readonly ILogger<DutyService> _logger;
         private readonly GoogleSheetHelper _googleSheetHelper;
-        public DutyService(/*IDutyRepository dutyRepository, */IUserRepository userRepository, AppDbContext context, ILogger<DutyService> logger, GoogleSheetHelper googleSheetHelper)
+        private readonly IMemoryCache _cache;
+        public DutyService(IMemoryCache cache, IUserRepository userRepository, AppDbContext context, ILogger<DutyService> logger, GoogleSheetHelper googleSheetHelper)
         {
             _userRepository = userRepository;
             _context = context;
             _logger = logger;
             _googleSheetHelper = googleSheetHelper;
+            _cache = cache;
         }
 
         public async Task<PagedResult<DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
@@ -30,8 +34,20 @@ namespace EmployeeAPI.Services.DutyServices
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            var dutyRows = await _googleSheetHelper.ReadSheetAsync("Duty!A2:H");
-            var detailRows = await _googleSheetHelper.ReadSheetAsync("Detail!A2:F");
+            //var dutyRows = await _googleSheetHelper.ReadSheetAsync("Duty!A2:H");
+            //var detailRows = await _googleSheetHelper.ReadSheetAsync("Detail!A2:F");
+
+            var dutyRows = await _cache.GetOrCreateAsync("CachedDutyRows", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5); // Cache 5 phút
+                return await _googleSheetHelper.ReadSheetAsync("Duty!A2:H");
+            });
+
+            var detailRows = await _cache.GetOrCreateAsync("CachedDetailRows", async entry =>
+            {
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5); // Cache 5 phút
+                return await _googleSheetHelper.ReadSheetAsync("Detail!A2:F");
+            });
 
             var users = await _context.Users.ToListAsync();
             var companies = await _context.Companies.ToListAsync();
