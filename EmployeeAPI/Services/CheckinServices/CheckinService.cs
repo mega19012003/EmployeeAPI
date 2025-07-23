@@ -16,6 +16,7 @@ using System.Runtime.CompilerServices;
 using System.Security.Claims;
 using System.Transactions;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
+using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 using static System.Net.Mime.MediaTypeNames;
 
 namespace EmployeeAPI.Services.CheckinServices
@@ -74,11 +75,9 @@ namespace EmployeeAPI.Services.CheckinServices
                 ///////////////////
                 var now = DateTime.Now;
 
-                // Nếu không truyền Year, lấy năm hiện tại
-                Year ??= now.Year;
-
-                // Lọc theo năm (luôn luôn lọc theo năm)
-                query = query.Where(c => c.CheckinTime.Year == Year.Value);
+                // Lọc theo năm 
+                if (Year.HasValue)
+                    query = query.Where(c => c.CheckinTime.Year == Year.Value);
 
                 // Chỉ lọc theo tháng nếu được truyền
                 if (Month.HasValue)
@@ -663,21 +662,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 var userIds = users.Select(u => u.UserId).ToList();
 
                 var now = DateTime.Now;
-
-                if (Year == null)
-                    Year = now.Year;
-                else if (Year == 0)
-                    Year = null;
-
-                if (Month == null)
-                    Month = now.Month;
-                else if (Month == 0)
-                    Month = null;
-
-                if (Day == null)
-                    Day = now.Day;
-                else if (Day == 0)
-                    Day = null;
 
                 var checkinQuery = _checkinRepository.GetAll().Where(c => userIds.Contains(c.UserId));
 
