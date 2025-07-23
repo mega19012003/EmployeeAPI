@@ -19,17 +19,19 @@ namespace EmployeeAPI.Services.UserService
     public class UserService : IUserService
     {
         private readonly IUserRepository _userRepository;
+        private readonly GoogleSheetHelper _googleSheetHelper;
         private readonly IDepartmentRepository _departmentRepository;
         private readonly ICloudImageService _cloudImageService;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public UserService(IUserRepository userRepository, ICloudImageService cloudImageService, AppDbContext context, ILogger<AuthService> logger, IDepartmentRepository departmentRepository)
+        public UserService(IUserRepository userRepository, ICloudImageService cloudImageService, AppDbContext context, ILogger<AuthService> logger, IDepartmentRepository departmentRepository, GoogleSheetHelper googleSheetHelper)
         {
             _userRepository = userRepository;
             _departmentRepository = departmentRepository;
             _cloudImageService = cloudImageService;
             _context = context;
             _logger = logger;
+            _googleSheetHelper = googleSheetHelper;
         }
 
         public async Task<ResponseModel.UserResultDto> UpdateStaffAsync(ResponseModel.UpdateDto dto, Guid currentUserId, IList<string> currentUserRole)
@@ -264,8 +266,106 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-       
-        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+
+        //public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        //{
+        //    try
+        //    {
+        //        var query = _userRepository.GetAll();
+
+        //        var isAdmin = currentUserRoles.Contains("Administrator");
+        //        var isSystemAdmin = currentUserRoles.Contains("SystemAdmin");
+        //        var isManager = currentUserRoles.Contains("Manager");
+
+        //        if (!string.IsNullOrWhiteSpace(SearchTerm))
+        //        {
+        //            var keyword = SearchTerm.Trim().ToLower();
+        //            query = query.Where(u => u.Fullname.ToLower().Contains(keyword) || u.Username.ToLower().Contains(keyword));
+        //        }
+
+        //        if (isSystemAdmin)
+        //        {
+        //            // SystemAdmin: có thể lọc tất cả theo companyId, departmentId, positionId
+        //            if (companyId.HasValue)
+        //                query = query.Where(u => u.CompanyId == companyId.Value);
+
+        //            if (departmentId.HasValue)
+        //                query = query.Where(u => u.DepartmentId == departmentId.Value);
+
+        //            if (positionId.HasValue)
+        //                query = query.Where(u => u.PositionId == positionId.Value);
+        //        }
+        //        else if (isAdmin)
+        //        {
+        //            // Admin: chỉ xem user trong cùng công ty của mình
+        //            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+        //            if (currentUser?.CompanyId == null)
+        //                throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
+
+        //            query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
+
+        //            // Thêm lọc theo department và position nếu client có gửi
+        //            if (departmentId.HasValue)
+        //                query = query.Where(u => u.DepartmentId == departmentId.Value);
+
+        //            if (positionId.HasValue)
+        //                query = query.Where(u => u.PositionId == positionId.Value);
+        //        }
+        //        else if (isManager)
+        //        {
+        //            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+        //            if (currentUser == null || currentUser.DepartmentId == null)
+        //                throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
+
+        //            // Manager: chỉ xem user trong cùng phòng ban
+        //            query = query.Where(u => u.DepartmentId.HasValue && u.DepartmentId.Value == currentUser.DepartmentId.Value);
+
+        //            // Có thể thêm lọc theo position
+        //            if (positionId.HasValue)
+        //                query = query.Where(u => u.PositionId == positionId.Value);
+        //        }
+
+
+        //        var totalCount = await query.CountAsync();
+
+        //        var items = await query
+        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
+        //            .Take(pageSize.Value)
+        //            .Select(f => new ResponseModel.UserResultDto
+        //            {
+        //                UserId = f.UserId,
+        //                Fullname = f.Fullname,
+        //                Username = f.Username,
+        //                RoleName = f.Role.ToString(),
+        //                Address = f.Address,
+        //                PhoneNumber = f.PhoneNumber,
+        //                DepartmentName = f.Department.Name ?? string.Empty,
+        //                DepartmentId = f.Department.Id,
+        //                PositionName = f.Position.Name ?? string.Empty,
+        //                PositionId = f.PositionId,
+        //                CompanyName = f.Company.Name ?? string.Empty,
+        //                CompanyId = f.CompanyId,
+        //                IsActive = f.IsActive,
+        //                SalaryPerHour = f.SalaryPerHour,
+        //                ImageUrl = f.ImageUrl,
+        //            })
+        //            .ToListAsync();
+
+        //        return new PagedResult<ResponseModel.UserResultDto>
+        //        {
+        //            TotalCount = totalCount,
+        //            PageIndex = pageIndex.Value,
+        //            PageSize = pageSize.Value,
+        //            Items = items
+        //        };
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Error occurred while retrieving all employee. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+        //        throw;  
+        //    }
+        //}
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize, int? Month)
         {
             try
             {
@@ -283,7 +383,6 @@ namespace EmployeeAPI.Services.UserService
 
                 if (isSystemAdmin)
                 {
-                    // SystemAdmin: có thể lọc tất cả theo companyId, departmentId, positionId
                     if (companyId.HasValue)
                         query = query.Where(u => u.CompanyId == companyId.Value);
 
@@ -295,14 +394,12 @@ namespace EmployeeAPI.Services.UserService
                 }
                 else if (isAdmin)
                 {
-                    // Admin: chỉ xem user trong cùng công ty của mình
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                     if (currentUser?.CompanyId == null)
                         throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty.");
 
                     query = query.Where(u => u.CompanyId == currentUser.CompanyId.Value);
 
-                    // Thêm lọc theo department và position nếu client có gửi
                     if (departmentId.HasValue)
                         query = query.Where(u => u.DepartmentId == departmentId.Value);
 
@@ -315,18 +412,39 @@ namespace EmployeeAPI.Services.UserService
                     if (currentUser == null || currentUser.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
 
-                    // Manager: chỉ xem user trong cùng phòng ban
                     query = query.Where(u => u.DepartmentId.HasValue && u.DepartmentId.Value == currentUser.DepartmentId.Value);
 
-                    // Có thể thêm lọc theo position
                     if (positionId.HasValue)
                         query = query.Where(u => u.PositionId == positionId.Value);
                 }
 
+                // Gán giá trị mặc định nếu không có
+                var now = DateTime.Now;
+                int Year = now.Year;
 
-                var totalCount = await query.CountAsync();
+                var users = await query.ToListAsync();
+                var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsWithDutiesAsync();
 
-                var items = await query
+                // Lọc công việc hoàn thành theo tháng/năm
+                var completedDutyDetails = allDutyDetails.Where(d => d.IsCompleted && d.Duty != null && d.Duty.StartDate.Year == Year);
+
+                if (Month.HasValue)
+                {
+                    completedDutyDetails = completedDutyDetails.Where(d => d.Duty != null && d.Duty.StartDate.Month == Month.Value);
+                }
+
+                var completedGrouped = completedDutyDetails
+                    .GroupBy(d => d.UserId)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                var inProgressGrouped = allDutyDetails
+                    .Where(d => !d.IsCompleted)
+                    .GroupBy(d => d.UserId)
+                    .ToDictionary(g => g.Key, g => g.Count());
+
+                var totalCount = users.Count;
+
+                var items = users
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
                     .Select(f => new ResponseModel.UserResultDto
@@ -337,17 +455,19 @@ namespace EmployeeAPI.Services.UserService
                         RoleName = f.Role.ToString(),
                         Address = f.Address,
                         PhoneNumber = f.PhoneNumber,
-                        DepartmentName = f.Department.Name ?? string.Empty,
-                        DepartmentId = f.Department.Id,
-                        PositionName = f.Position.Name ?? string.Empty,
+                        DepartmentName = f.Department?.Name ?? string.Empty,
+                        DepartmentId = f.DepartmentId,
+                        PositionName = f.Position?.Name ?? string.Empty,
                         PositionId = f.PositionId,
-                        CompanyName = f.Company.Name ?? string.Empty,
+                        CompanyName = f.Company?.Name ?? string.Empty,
                         CompanyId = f.CompanyId,
                         IsActive = f.IsActive,
                         SalaryPerHour = f.SalaryPerHour,
                         ImageUrl = f.ImageUrl,
+                        CompletedDuties = completedGrouped.TryGetValue(f.UserId, out var completed) ? completed : 0,
+                        InProgressDuties = inProgressGrouped.TryGetValue(f.UserId, out var inProgress) ? inProgress : 0
                     })
-                    .ToListAsync();
+                    .ToList();
 
                 return new PagedResult<ResponseModel.UserResultDto>
                 {
@@ -359,8 +479,8 @@ namespace EmployeeAPI.Services.UserService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred while retrieving all employee. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-                throw;  
+                _logger.LogError(ex, "Error occurred while retrieving all users. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                throw;
             }
         }
 

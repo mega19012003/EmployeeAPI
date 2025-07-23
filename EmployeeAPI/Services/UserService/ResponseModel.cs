@@ -23,7 +23,9 @@ namespace EmployeeAPI.Services.UserService
             public Guid? CompanyId { get; set; }
             public double? SalaryPerHour { get; set; }
             public string ImageUrl { get; set; }
-            public bool IsActive { get; set; } 
+            public bool IsActive { get; set; }
+            public int CompletedDuties { get; set; }
+            public int InProgressDuties { get; set; }
         }
         public class UpdateDto 
         {

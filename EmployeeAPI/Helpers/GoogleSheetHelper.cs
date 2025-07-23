@@ -260,7 +260,23 @@ public class GoogleSheetHelper
 
         return result;
     }
+    public async Task<List<DutyDetail>> GetAllDutyDetailsWithDutiesAsync()
+    {
+        var dutyDetails = await GetAllDutyDetailsAsync();
+        var duties = await GetAllDutiesAsync(); // Hàm này bạn phải có, trả về List<Duty>
 
+        var dutyDict = duties.ToDictionary(d => d.Id, d => d);
+
+        foreach (var detail in dutyDetails)
+        {
+            if (dutyDict.TryGetValue(detail.DutyId, out var duty))
+            {
+                detail.Duty = duty;
+            }
+        }
+
+        return dutyDetails;
+    }
     public async Task AddDutyDetailAsync(DutyDetail dutyDetail)
     {
         var range = $"Detail!A2"; // Thêm vào cuối sheet
