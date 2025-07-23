@@ -17,6 +17,8 @@ public class GoogleSheetHelper
     private readonly SheetsService _sheetsService;
     private readonly string _spreadsheetId;
     private readonly AppDbContext _context;
+    private static DateTime _lastFetchTime = DateTime.MinValue;
+    private static List<DutyDetail> _cachedDutyDetails;
 
     //public GoogleSheetHelper(IOptions<GoogleSheetSettings> settings, AppDbContext context)
     //{
@@ -260,23 +262,33 @@ public class GoogleSheetHelper
 
         return result;
     }
-    public async Task<List<DutyDetail>> GetAllDutyDetailsWithDutiesAsync()
+
+    // Hàm có cache
+    public async Task<List<DutyDetail>> GetAllDutyDetailsWithDutiesCachedAsync()
     {
-        var dutyDetails = await GetAllDutyDetailsAsync();
-        var duties = await GetAllDutiesAsync(); // Hàm này bạn phải có, trả về List<Duty>
-
-        var dutyDict = duties.ToDictionary(d => d.Id, d => d);
-
-        foreach (var detail in dutyDetails)
+        // Nếu chưa cache hoặc đã quá 5 phút thì gọi lại
+        if (_cachedDutyDetails == null || (DateTime.Now - _lastFetchTime).TotalMinutes > 5)
         {
-            if (dutyDict.TryGetValue(detail.DutyId, out var duty))
+            var dutyDetails = await GetAllDutyDetailsAsync();    // từ Google Sheets
+            var duties = await GetAllDutiesAsync();               // từ Google Sheets
+
+            var dutyDict = duties.ToDictionary(d => d.Id, d => d);
+
+            foreach (var detail in dutyDetails)
             {
-                detail.Duty = duty;
+                if (dutyDict.TryGetValue(detail.DutyId, out var duty))
+                {
+                    detail.Duty = duty;
+                }
             }
+
+            _cachedDutyDetails = dutyDetails;
+            _lastFetchTime = DateTime.Now;
         }
 
-        return dutyDetails;
+        return _cachedDutyDetails;
     }
+
     public async Task AddDutyDetailAsync(DutyDetail dutyDetail)
     {
         var range = $"Detail!A2"; // Thêm vào cuối sheet

@@ -423,7 +423,7 @@ namespace EmployeeAPI.Services.UserService
                 int Year = now.Year;
 
                 var users = await query.ToListAsync();
-                var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsWithDutiesAsync();
+                var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsWithDutiesCachedAsync();
 
                 // Lọc công việc hoàn thành theo tháng/năm
                 var completedDutyDetails = allDutyDetails.Where(d => d.IsCompleted && d.Duty != null && d.Duty.StartDate.Year == Year);
