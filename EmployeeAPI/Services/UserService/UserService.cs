@@ -96,7 +96,6 @@ namespace EmployeeAPI.Services.UserService
                     if (isAdmin && currentUser.CompanyId == null)
                         throw new Exception("Bạn chưa có công ty. Vui lòng liên hệ người quản trị hệ thống để cập nhật công ty.");
 
-                    if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
                     if (dto.Role.HasValue)
                     {
@@ -147,7 +146,6 @@ namespace EmployeeAPI.Services.UserService
                 }
                 else if (isManager) // sửa dc tt cơ bản và positionId
                 {
-                    if (dto.SalaryPerHour.HasValue) existingUser.SalaryPerHour = dto.SalaryPerHour.Value;
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
 
                     var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
@@ -189,7 +187,6 @@ namespace EmployeeAPI.Services.UserService
                     RoleName = existingUser.Role.ToString(),
                     Address = existingUser.Address,
                     PhoneNumber = existingUser.PhoneNumber,
-                    SalaryPerHour = existingUser.SalaryPerHour,
                     DepartmentId = existingUser.DepartmentId,
                     DepartmentName = existingUser.Department?.Name,
                     PositionId = existingUser.PositionId,
@@ -462,7 +459,6 @@ namespace EmployeeAPI.Services.UserService
                         CompanyName = f.Company?.Name ?? string.Empty,
                         CompanyId = f.CompanyId,
                         IsActive = f.IsActive,
-                        SalaryPerHour = f.SalaryPerHour,
                         ImageUrl = f.ImageUrl,
                         CompletedDuties = completedGrouped.TryGetValue(f.UserId, out var completed) ? completed : 0,
                         InProgressDuties = inProgressGrouped.TryGetValue(f.UserId, out var inProgress) ? inProgress : 0
@@ -550,7 +546,6 @@ namespace EmployeeAPI.Services.UserService
                         CompanyName = u.Company.Name ?? string.Empty,
                         CompanyId = u.CompanyId,
                         IsActive = u.IsActive,
-                        SalaryPerHour = u.SalaryPerHour,
                         ImageUrl = u.ImageUrl,
                     })
                     .ToListAsync();
@@ -617,7 +612,6 @@ namespace EmployeeAPI.Services.UserService
                 PositionId = results.Position?.Id,
                 CompanyName = results.Company?.Name ?? string.Empty,
                 CompanyId = results.Company?.Id,
-                SalaryPerHour = results.SalaryPerHour,
                 ImageUrl = results.ImageUrl,
                 IsActive = results.IsActive,
             };
