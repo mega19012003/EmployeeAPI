@@ -8,6 +8,7 @@ namespace EmployeeAPI.Services.PayrollServices
         public class PayrollResultDto
         {
             public Guid Id { get; set; }
+            public Guid UserId { get; set; }
             public string Name { get; set; }
             public double Salary { get; set; }
             public DateTime CreatedDate { get; set; }

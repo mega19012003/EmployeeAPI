@@ -125,6 +125,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 .Select(c => new ResponseModel.PayrollResultDto
                 {
                     Id = c.Id,
+                    UserId = c.UserId,
                     Name = c.Users.Fullname,
                     Salary = c.Salary,
                     DaysWorked = c.DaysWorked,
@@ -176,6 +177,7 @@ namespace EmployeeAPI.Services.PayrollServices
             return new ResponseModel.PayrollResultDto
             {
                 Id = payroll.Id,
+                UserId = payroll.UserId,
                 Name = payroll.Users.Fullname,
                 Salary = payroll.Salary,
                 DaysWorked = payroll.DaysWorked,
@@ -350,6 +352,7 @@ namespace EmployeeAPI.Services.PayrollServices
             return new PayrollResultDto
             {
                 Id = existingPayroll.Id,
+                UserId = existingPayroll.UserId,
                 Name = staff.Fullname,
                 DaysWorked = totalDayWorked,
                 Salary = totalSalary,
