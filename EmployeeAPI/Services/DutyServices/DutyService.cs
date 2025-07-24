@@ -149,7 +149,7 @@ namespace EmployeeAPI.Services.DutyServices
                     EndDate = d.EndDate,
                     IsCompleted = d.IsCompleted,
                     AssignedBy = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.Fullname ?? "",
-                    AssignImageUrl = users.FirstOrDefault(u => u.UserId != d.AssignedById)?.ImageUrl ?? "",
+                    AssignImageUrl = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.ImageUrl ?? "",
                     CompanyName = companies.FirstOrDefault(c => c.Id == d.CompanyId)?.Name ?? "",
                     DutyDetails = d.DutyDetails.Select(dd => new DutyDetailResultDto
                     {
