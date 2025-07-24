@@ -207,7 +207,7 @@ namespace EmployeeAPI.Services.DutyServices
                 if (!isAssignedToUser)
                     throw new UnauthorizedAccessException("Nhân viên không thể truy cập công việc của người khác");
             }
-
+            var assignedUser = await _context.Users.FindAsync(duty.AssignedById);
             // Mapping dữ liệu trả về
             var dutyResult = new ResponseModel.DutyResultDto
             {
@@ -217,6 +217,7 @@ namespace EmployeeAPI.Services.DutyServices
                 EndDate = duty.EndDate,
                 IsCompleted = duty.IsCompleted,
                 AssignedBy = (await _context.Users.FindAsync(duty.AssignedById))?.Fullname,
+                AssignImageUrl = assignedUser?.ImageUrl,
                 CompanyName = (await _context.Companies.FindAsync(duty.CompanyId))?.Name,
                 DutyDetails = new List<ResponseModel.DutyDetailResultDto>()
             };
@@ -230,6 +231,7 @@ namespace EmployeeAPI.Services.DutyServices
                     UserId = detail.UserId,
                     Description = detail.Description,
                     Name = user?.Fullname,
+                    UserImageUrl = user?.ImageUrl,
                     IsCompleted = detail.IsCompleted
                 });
             }
@@ -304,7 +306,8 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = dutyDetailId,
                     UserId = userId,
                     Description = description,
-                    Name = user?.Fullname ?? "(Không tìm thấy tên)",
+                    Name = user?.Fullname ?? "",
+                    UserImageUrl = user?.ImageUrl ?? "",
                     IsCompleted = isCompleted
                 };
             }
@@ -422,15 +425,17 @@ namespace EmployeeAPI.Services.DutyServices
                     IsCompleted = duty.IsCompleted,
                     AssignedById = currentUser.UserId,
                     AssignedBy = currentUser.Fullname,
+                    AssignImageUrl = currentUser.ImageUrl ?? "",
                     CompanyId = duty.CompanyId?? Guid.Empty,
-                    CompanyName = currentUser.Company?.Name ?? duty.CompanyId.ToString(),
+                    CompanyName = currentUser.Company?.Name ?? duty.CompanyId.ToString() ?? "",
                     DutyDetails = dutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
                     {
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Description = d.Description,
                         IsCompleted = d.IsCompleted,
-                        Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname
+                        Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
+                        UserImageUrl = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.ImageUrl ?? ""
                     }).ToList()
                 };
             }
@@ -534,7 +539,8 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = d.UserId,
                         Description = d.Description,
                         IsCompleted = d.IsCompleted,
-                        Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname
+                        Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
+                        UserImageUrl = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.ImageUrl ?? "",
                     }).ToList()
                 };
             }
@@ -606,7 +612,8 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = existingDuty.StartDate,
                     EndDate = existingDuty.EndDate,
                     IsCompleted = existingDuty.IsCompleted,
-                    AssignedBy = (await _context.Users.FindAsync(existingDuty.AssignedById))?.Fullname,
+                    AssignedBy = (await _context.Users.FindAsync(existingDuty.AssignedById))?.Fullname ?? "",
+                    AssignImageUrl = (await _context.Users.FindAsync(existingDuty.AssignedById))?.ImageUrl ?? "",
                     DutyDetails = dutyDetailResults
                 };
             }
@@ -669,6 +676,7 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = existingDutyDetail.DutyDetailId,
                     UserId = existingDutyDetail.UserId,
                     Name = userToAssign.Fullname,
+                    UserImageUrl = userToAssign.ImageUrl ?? "",
                     Description = existingDutyDetail.Description,
                     IsCompleted = existingDutyDetail.IsCompleted
                 };
