@@ -16,6 +16,7 @@ namespace EmployeeAPI.Services.DutyServices
             [JsonIgnore]
             public Guid AssignedById { get; set; }
             public string AssignedBy { get; set; }
+            public string AssignImageUrl { get; set; }
             public bool IsCompleted { get; set; }
             [JsonIgnore]
             public bool IsDeleted { get; set; }
@@ -29,6 +30,7 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid DutyDetailId { get; set; }
             public Guid UserId { get; set; }
             public string Name { get; set; }
+            public string UserImageUrl { get; set; }
             public bool IsCompleted { get; set; }
             public string Description { get; set; }
         }

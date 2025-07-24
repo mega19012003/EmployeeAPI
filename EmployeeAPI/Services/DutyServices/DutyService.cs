@@ -149,6 +149,7 @@ namespace EmployeeAPI.Services.DutyServices
                     EndDate = d.EndDate,
                     IsCompleted = d.IsCompleted,
                     AssignedBy = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.Fullname ?? "",
+                    AssignImageUrl = users.FirstOrDefault(u => u.UserId != d.AssignedById)?.ImageUrl ?? "",
                     CompanyName = companies.FirstOrDefault(c => c.Id == d.CompanyId)?.Name ?? "",
                     DutyDetails = d.DutyDetails.Select(dd => new DutyDetailResultDto
                     {
@@ -156,6 +157,7 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = dd.UserId,
                         Description = dd.Description,
                         Name = users.FirstOrDefault(u => u.UserId == dd.UserId)?.Fullname ?? "",
+                        UserImageUrl = users.FirstOrDefault(u => u.UserId == dd.UserId)?.ImageUrl ?? "",
                         IsCompleted = dd.IsCompleted
                     }).ToList()
                 }).ToList();
