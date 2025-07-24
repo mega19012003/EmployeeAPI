@@ -12,6 +12,7 @@ namespace EmployeeAPI.Services.CheckinServices
         public class CheckinResultDto
         {
             public Guid CheckinId { get; set; }
+            public Guid UserId { get; set; }
             public string Name { get; set; }
             public DateTime CheckinTime { get; set; }
             public DateTime CheckoutTime { get; set; }

@@ -285,6 +285,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 return new CheckinResultDto
                 {
                     CheckinId = checkin.Id,
+                    UserId = targetUserId,
                     Name = targetUser.Fullname,
                     CheckinTime = checkin.CheckinTime,
                     CheckoutTime = checkin.CheckoutTime,
@@ -457,6 +458,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 return new CheckinResultDto
                 {
                     CheckinId = checkin.Id,
+                    UserId = targetUserId,
                     Name = targetUser.Fullname,
                     CheckinTime = checkin.CheckinTime,
                     CheckoutTime = checkin.CheckoutTime,
@@ -552,6 +554,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 return new ResponseModel.CheckinResultDto
                 {
                     CheckinId = existing.Id,
+                    UserId = employee.UserId,
                     Name = employee.Fullname,
                     CheckinTime = existing.CheckinTime,
                     CheckoutTime = existing.CheckoutTime,
