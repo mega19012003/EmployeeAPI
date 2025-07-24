@@ -341,7 +341,7 @@ namespace EmployeeAPI.Services.PayrollServices
                     UserId = staffId,
                     Salary = totalSalary,
                     DaysWorked = totalDayWorked,
-                    CreatedDate = DateTime.Now,
+                    CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")),
                     Note = $"Tạo chấm công cho tháng {month}/{year}"
                 };
                 await _payrollRepository.CreatePayrollAsync(existingPayroll);
