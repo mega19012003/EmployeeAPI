@@ -122,6 +122,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         LogStatus = (int?)c.LogStatus,
                         Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
+                        UserId = c.UserId,
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinResultDto>
@@ -175,6 +176,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinTime = checkin.CheckinTime,
                     CheckoutTime = checkin.CheckoutTime,
                     Name = checkin.Users.Fullname,
+                    UserId = checkin.UserId,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
                 };
