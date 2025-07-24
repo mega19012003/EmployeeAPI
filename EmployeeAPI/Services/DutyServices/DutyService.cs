@@ -593,13 +593,14 @@ namespace EmployeeAPI.Services.DutyServices
 
                 // Load thông tin user cho từng detail
                 var userIds = details.Select(d => d.UserId).Distinct().ToList();
-                var users = await _context.Users.Where(u => userIds.Contains(u.UserId)).ToDictionaryAsync(u => u.UserId, u => u.Fullname);
+                var users = await _context.Users.Where(u => userIds.Contains(u.UserId)).ToDictionaryAsync(u => u.UserId, u => new { u.Fullname, u.ImageUrl });
 
                 var dutyDetailResults = details.Select(d => new ResponseModel.DutyDetailResultDto
                 {
                     DutyDetailId = d.DutyDetailId,
                     UserId = d.UserId,
-                    Name = users.GetValueOrDefault(d.UserId),
+                    Name = users.GetValueOrDefault(d.UserId)?.Fullname ?? "",
+                    UserImageUrl = users.GetValueOrDefault(d.UserId)?.ImageUrl ?? "",
                     Description = d.Description,
                     IsCompleted = d.IsCompleted
                 }).ToList();
