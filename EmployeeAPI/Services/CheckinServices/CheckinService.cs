@@ -264,7 +264,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
 
                 var existingCheckin = await _context.Checkins
-                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay);
+                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && !c.IsDeleted);
 
                 if (existingCheckin != null)
                     throw new ArgumentException("Đã check-in hôm nay");
@@ -340,7 +340,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 var endOfDay = startOfDay.AddDays(1).AddTicks(-1);
 
                 var checkin = await _context.Checkins
-                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay);
+                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && !c.IsDeleted);
 
                 if (checkin == null)
                     throw new ArgumentException("Không tìm thấy bản ghi checkin hôm nay");
