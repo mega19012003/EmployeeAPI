@@ -121,7 +121,6 @@ namespace EmployeeAPI.Services.Dashboards
                 payrollQuery = payrollQuery.Where(p => p.Users.CompanyId == companyId.Value);
             }
             var totalPayrollThisMonth = await payrollQuery.SumAsync(p => (decimal?)p.Salary) ?? 0;
-
             // Ngày lễ sắp tới: SystemAdmin/Admin/Manager đều xem được tất cả
             var todayDateOnly = DateOnly.FromDateTime(now);
             var holidayQuery = _context.Holidays
@@ -152,7 +151,8 @@ namespace EmployeeAPI.Services.Dashboards
                 TotalDepartments = totalDepartments,
                 TotalPositions = totalPositions,
                 TotalCheckinsToday = totalCheckinsToday,
-                TotalPayrollThisMonth = totalPayrollThisMonth,
+                //TotalPayrollThisMonth = totalPayrollThisMonth,
+                TotalPayrollThisMonth = totalPayrollThisMonth % 1 == 0 ? $"{(long)totalPayrollThisMonth:N0} VNĐ" : $"{totalPayrollThisMonth:N2} VNĐ",
                 UpcomingHolidays = upcomingHolidays
             };
         }

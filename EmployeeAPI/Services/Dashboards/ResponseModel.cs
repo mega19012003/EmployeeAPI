@@ -11,7 +11,8 @@
             public int TotalPositions { get; set; }
             //public int CheckinLateCountToday { get; set; }
             public int TotalCheckinsToday { get; set; }
-            public decimal TotalPayrollThisMonth { get; set; }
+            //public decimal TotalPayrollThisMonth { get; set; }
+            public string TotalPayrollThisMonth { get; set; }
             public List<UpcomingHolidayDto> UpcomingHolidays { get; set; }
         }
 
