@@ -110,17 +110,17 @@ namespace EmployeeAPI.Services.Dashboards
 
             // Tổng lương tháng này
             var now = DateTime.Now;
-            var payrollQuery = _context.Payrolls
-                .Where(p => p.CreatedDate.Month == now.Month && p.CreatedDate.Year == now.Year);
-            if (isManager && departmentId.HasValue)
-            {
-                payrollQuery = payrollQuery.Where(p => p.Users.DepartmentId == departmentId.Value);
-            }
-            else if (isAdmin && companyId.HasValue)
-            {
-                payrollQuery = payrollQuery.Where(p => p.Users.CompanyId == companyId.Value);
-            }
-            var totalPayrollThisMonth = await payrollQuery.SumAsync(p => (decimal?)p.Salary) ?? 0;
+            //var payrollQuery = _context.Payrolls
+            //    .Where(p => p.CreatedDate.Month == now.Month && p.CreatedDate.Year == now.Year);
+            //if (isManager && departmentId.HasValue)
+            //{
+            //    payrollQuery = payrollQuery.Where(p => p.Users.DepartmentId == departmentId.Value);
+            //}
+            //else if (isAdmin && companyId.HasValue)
+            //{
+            //    payrollQuery = payrollQuery.Where(p => p.Users.CompanyId == companyId.Value);
+            //}
+            //var totalPayrollThisMonth = await payrollQuery.SumAsync(p => (decimal?)p.Salary) ?? 0;
             // Ngày lễ sắp tới: SystemAdmin/Admin/Manager đều xem được tất cả
             var todayDateOnly = DateOnly.FromDateTime(now);
             var holidayQuery = _context.Holidays
@@ -152,7 +152,7 @@ namespace EmployeeAPI.Services.Dashboards
                 TotalPositions = totalPositions,
                 TotalCheckinsToday = totalCheckinsToday,
                 //TotalPayrollThisMonth = totalPayrollThisMonth,
-                TotalPayrollThisMonth = totalPayrollThisMonth % 1 == 0 ? $"{(long)totalPayrollThisMonth:N0} VNĐ" : $"{totalPayrollThisMonth:N2} VNĐ",
+                //TotalPayrollThisMonth = totalPayrollThisMonth % 1 == 0 ? $"{(long)totalPayrollThisMonth:N0} VNĐ" : $"{totalPayrollThisMonth:N2} VNĐ",
                 UpcomingHolidays = upcomingHolidays
             };
         }
