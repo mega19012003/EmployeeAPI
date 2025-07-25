@@ -269,7 +269,7 @@ namespace EmployeeAPI.Services.DutyServices
                 if (matchingDutyRow == null)
                     throw new ArgumentException("Không tìm thấy nhiệm vụ cha (Duty) tương ứng");
 
-                var assignedById = Guid.TryParse(matchingDutyRow[4]?.ToString(), out var assignBy) ? assignBy : Guid.Empty;
+                var assignedById = Guid.TryParse(matchingDutyRow[2]?.ToString(), out var assignBy) ? assignBy : Guid.Empty;
                 var dutyCompanyId = Guid.TryParse(matchingDutyRow[7]?.ToString(), out var companyId) ? companyId : Guid.Empty;
 
                 var isAdmin = currentUserRoles.Contains("Admin");

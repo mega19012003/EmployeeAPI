@@ -565,7 +565,6 @@ namespace EmployeeAPI.Services.UserService
             }
         }
 
-
         public async Task<ResponseModel.UserResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             var isAdmin = currentUserRoles.Contains("Administrator");
