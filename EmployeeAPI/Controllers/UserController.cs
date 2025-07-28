@@ -90,9 +90,9 @@ namespace EmployeeAPI.Controllers
         // <summary>
         /// SystemAdmin có thể lấy danh sách Employee và Manager theo công ty, Admin theo công ty, Manager theo phòng ban.
         // </summary>
-        [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
+        [Authorize(Roles = "Administrator, Manager")]
         [HttpGet("employee-manager")]
-        public async Task<IActionResult> GetAllEmployeeAndManagerAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllEmployeeAndManagerAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, bool? employeeOnly, int? pageIndex, int? pageSize)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
@@ -100,7 +100,7 @@ namespace EmployeeAPI.Controllers
 
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var pagedResult = await _userService.GetActiveEmployeesAndManagersAsync(Search, positionId, departmentId, companyId, currentUserId, currentUserRoles, pageIndex, pageSize);
+            var pagedResult = await _userService.GetActiveEmployeesAndManagersAsync(Search, positionId, departmentId, companyId, employeeOnly, currentUserId, currentUserRoles, pageIndex, pageSize);
 
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("No result", pagedResult, 200));

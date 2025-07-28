@@ -19,17 +19,18 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime CheckoutTime { get; set; }
             public string Status { get; set; }
             public int? LogStatus { get; set; }
-            public string DeviceId { get; set; }
+            public string DeviceInfo { get; set; } = string.Empty;
             public string CheckinIP { get; set; }
-            public string CheckoutIP { get; set; }
+            public string CheckoutIP { get; set; } = string.Empty;
             public double TotalTime { get; set; }
-            public string UpdateNote { get; set; } = string.Empty;
+            public string Note { get; set; } = string.Empty;
         }
 
         public class CreateCheckinDto
         {
             public Guid? userId { get; set; }
-            public string DeviceId { get; set; }
+            public string? DeviceInfo { get; set; }
+            public string? Note { get; set; }
             //public Enums.LogStatus? LogStatus { get; set; }
             //public DateTime CheckinTime { get; set; } = DateTime.Now;
         }
@@ -38,7 +39,8 @@ namespace EmployeeAPI.Services.CheckinServices
         {
          
             public Guid? userId { get; set; }
-            public string DeviceId { get; set; }
+            public string? DeviceInfo { get; set; }
+            public string? Note { get; set; }
             //public Enums.LogStatus? CheckoutAfternoonStatus { get; set; } 
             //public DateTime CheckoutTime { get; set; } = DateTime.Now;
         }
@@ -48,7 +50,7 @@ namespace EmployeeAPI.Services.CheckinServices
             public Guid CheckinId { get; set; }
             public DateTime? CheckinTime { get; set; }
             public DateTime? CheckoutTime { get; set; }
-            public string UpdateNote { get; set; } = string.Empty;
+            public string UpdateNote { get; set; }
         }
 
         public class CheckinDetailDto

@@ -479,13 +479,13 @@ namespace EmployeeAPI.Services.UserService
                 throw;
             }
         }
-
-        public async Task<PagedResult<ResponseModel.UserResultDto>> GetActiveEmployeesAndManagersAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetActiveEmployeesAndManagersAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, bool? employeeOnly, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize)
         {
             try
             {
                 pageIndex ??= 1;
                 pageSize ??= 10;
+                employeeOnly ??= false;
 
                 var query = _userRepository.GetAll().Where(u => !u.IsDeleted && u.IsActive && (u.Role == RoleType.Employee || u.Role == RoleType.Manager));
 
@@ -523,8 +523,10 @@ namespace EmployeeAPI.Services.UserService
                     if (currentUser?.DepartmentId == null)
                         throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
 
-                    query = query.Where(u => u.Role == RoleType.Employee && u.DepartmentId == currentUser.DepartmentId.Value);
+                    query = query.Where(u => (u.Role == RoleType.Employee || u.Role == RoleType.Manager) && u.DepartmentId == currentUser.DepartmentId.Value);
                 }
+
+                if(employeeOnly == true) query = query.Where(u => u.Role == RoleType.Employee);
 
                 var totalCount = await query.CountAsync();
 

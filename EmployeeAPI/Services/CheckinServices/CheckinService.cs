@@ -125,7 +125,7 @@ namespace EmployeeAPI.Services.CheckinServices
                         Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
                         UserId = c.UserId,
-                        DeviceId = c.DeviceInfo ?? "",
+                        DeviceInfo = c.DeviceInfo ?? "",
                         CheckinIP = c.CheckinIP,
                         CheckoutIP = c.CheckoutIP,
                         TotalTime = c.TotalTime
@@ -145,7 +145,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         public async Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             try
@@ -185,10 +184,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     UserId = checkin.UserId,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
-                    DeviceId = checkin.DeviceInfo ?? "",
+                    DeviceInfo = checkin.DeviceInfo ?? "",
                     CheckinIP = checkin.CheckinIP,
                     CheckoutIP = checkin.CheckoutIP,
                     TotalTime = checkin.TotalTime,
+                    Note = checkin.Note
                 };
             }
             catch (Exception ex)
@@ -197,19 +197,11 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
-        public async Task<CheckinResultDto> CheckinAsync(Guid? userId, string deviceId, string ip, Guid currentUserId, IList<string> roles)
+        public async Task<CheckinResultDto> CheckinAsync(Guid? userId, string DeviceInfo, string ip, string Note, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if (string.IsNullOrWhiteSpace(deviceId))
-                    throw new ArgumentException("Không tìm thấy thiết bị");
-
-                if (string.IsNullOrWhiteSpace(ip))
-                    throw new ArgumentException("Không tìm thấy ip");
-
-
                 var isAdmin = roles.Contains("Administrator");
                 var isManager = roles.Contains("Manager");
                 var isEmployee = roles.Contains("Employee");
@@ -218,13 +210,20 @@ namespace EmployeeAPI.Services.CheckinServices
                 Guid targetUserId = userId ?? currentUserId;
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
+
+                if (currentUserId == targetUser.UserId && string.IsNullOrWhiteSpace(DeviceInfo))
+                    throw new ArgumentException("Không tìm thấy thiết bị");
+                else if (string.IsNullOrWhiteSpace(ip))
+                    throw new ArgumentException("Không tìm thấy ip");
 
                 if (isAdmin && currentUser.CompanyId == null)
                     throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
                 else if (isManager && currentUser.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
 
-                    var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
+                if ((isAdmin || isManager) && string.IsNullOrEmpty(Note) && targetUser.UserId != currentUserId)
+                    throw new ArgumentException("Khi checkin hộ, Admin hoặc Manager phải nhập lý do.");
 
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
@@ -286,7 +285,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (existingCheckin != null)
                     throw new ArgumentException("Đã check-in hôm nay");
 
-
                 var checkin = new Checkin
                 {
                     Id = Guid.NewGuid(),
@@ -295,10 +293,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = DateTime.MinValue,
                     LogStatus = logStatus,
                     //SalaryPerDay = 0 
-                    DeviceInfo = deviceId,
+                    DeviceInfo = DeviceInfo ?? "",
                     CheckinIP = ip,
                     CheckoutIP = null,
                     TotalTime = 0,
+                    Note = Note ?? string.Empty,
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -314,10 +313,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = checkin.CheckoutTime,
                     Status = checkin.LogStatus.ToString(),
                     LogStatus = (int?)checkin.LogStatus,
-                    DeviceId = deviceId,
+                    DeviceInfo = DeviceInfo,
                     CheckinIP = checkin.CheckinIP,
                     CheckoutIP = checkin.CheckoutIP ?? null,
-                    TotalTime = checkin.TotalTime
+                    TotalTime = checkin.TotalTime,
+                    Note = Note
                     //SalaryPerDay = checkin.SalaryPerDay
                 };
             }
@@ -328,18 +328,11 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
-        public async Task<CheckinResultDto> CheckoutAsync(Guid? userId, string deviceId, string ip, Guid currentUserId, IList<string> roles)
+        public async Task<CheckinResultDto> CheckoutAsync(Guid? userId, string DeviceInfo, string ip, string Note, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
-                if (string.IsNullOrWhiteSpace(deviceId))
-                    throw new ArgumentException("Không tìm thấy thiết bị");
-
-                if (string.IsNullOrWhiteSpace(ip))
-                    throw new ArgumentException("Không tìm thấy ip");
-
                 var isAdmin = roles.Contains("Administrator");
                 var isManager = roles.Contains("Manager");
                 var isEmployee = roles.Contains("Employee");
@@ -347,12 +340,18 @@ namespace EmployeeAPI.Services.CheckinServices
                 Guid targetUserId = userId ?? currentUserId;
 
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+                var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
+
+                if (currentUserId == targetUser.UserId && string.IsNullOrWhiteSpace(DeviceInfo))
+                    throw new ArgumentException("Không tìm thấy thiết bị");
+                else if (string.IsNullOrWhiteSpace(ip))
+                    throw new ArgumentException("Không tìm thấy ip");
+
                 if (isAdmin && currentUser.CompanyId == null)
                     throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
                 else if (isManager && currentUser.DepartmentId == null)
                     throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-
-                var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
+                
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
@@ -373,10 +372,16 @@ namespace EmployeeAPI.Services.CheckinServices
                 var checkin = await _context.Checkins
                     .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && !c.IsDeleted);
 
+                if ((isAdmin || isManager) && string.IsNullOrWhiteSpace(Note) && string.IsNullOrWhiteSpace(checkin.Note) && targetUser.UserId != currentUserId)
+                    throw new ArgumentException("Khi checkout hộ, Admin hoặc Manager phải nhập lý do.");
+                if (!string.IsNullOrWhiteSpace(Note))
+                {
+                    checkin.Note = Note;
+                }
                 if (checkin == null)
                     throw new ArgumentException("Không tìm thấy bản ghi checkin hôm nay");
 
-                if(deviceId != checkin.DeviceInfo)
+                if(DeviceInfo != checkin.DeviceInfo && checkin.DeviceInfo != null)
                     throw new ArgumentException("Thiết bị hiện tại không khớp với thiết bị lúc checkin");
 
                 if (checkin.CheckoutTime != DateTime.MinValue)
@@ -478,7 +483,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 checkin.TotalTime = normalWorkedHours;
                 checkin.CheckoutIP = ip;
 
-
                 await _checkinRepository.UpdateAsync(checkin);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
@@ -492,10 +496,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = checkin.CheckoutTime,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
-                    DeviceId = deviceId ?? "",
+                    DeviceInfo = DeviceInfo ?? "",
                     CheckinIP = checkin.CheckinIP,
                     CheckoutIP = checkin.CheckoutIP,
-                    TotalTime = checkin.TotalTime
+                    TotalTime = checkin.TotalTime,
+                    Note = checkin.Note
                 };
             }
             catch (Exception ex)
@@ -505,7 +510,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         private async Task<(DateTime nowUtc, DateTime vnTime, TimeOnly currentTime, ScheduleTime schedule, bool isHoliday, bool isSunday)> GetTimeAndScheduleInfoAsync(Guid companyId)
         {
             var nowUtc = DateTime.UtcNow;
@@ -529,6 +533,13 @@ namespace EmployeeAPI.Services.CheckinServices
                 var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
                 if (existing == null)
                     throw new ArgumentException("Không tìm thấy bản ghi checkin này");
+
+                if (dto.CheckinTime.HasValue)
+                    existing.CheckinTime = dto.CheckinTime.Value;
+                if (dto.CheckoutTime.HasValue)
+                    existing.CheckoutTime = dto.CheckoutTime.Value;
+                if(!string.IsNullOrWhiteSpace(dto.UpdateNote))
+                    existing.Note = dto.UpdateNote;
 
                 var employee = await _userRepository.GetActiveUserIdAsync(existing.UserId);
                 //if (employee == null)
@@ -639,10 +650,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = existing.CheckoutTime,
                     LogStatus = (int?)existing.LogStatus,
                     Status = existing.LogStatus.ToString(),
-                    DeviceId = existing.DeviceInfo ?? "",
+                    DeviceInfo = existing.DeviceInfo ?? "",
                     CheckinIP = existing.CheckinIP,
                     CheckoutIP = existing.CheckoutIP,
                     TotalTime = existing.TotalTime,
+                    Note = existing.Note
                 };
             }
             catch (Exception ex)
@@ -652,7 +664,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
         public async Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -780,10 +791,11 @@ namespace EmployeeAPI.Services.CheckinServices
                             CheckoutTime = c.CheckoutTime,
                             LogStatus = (int?)c.LogStatus ?? 0,
                             Status = c.LogStatus.ToString(),
-                            DeviceId = c.DeviceInfo ?? "",
+                            DeviceInfo = c.DeviceInfo ?? "",
                             CheckinIP = c.CheckinIP,
                             CheckoutIP = c.CheckoutIP,
                             TotalTime = c.TotalTime,
+                            Note = c.Note
                         }).ToList()
                 }).ToList();
 
@@ -801,6 +813,5 @@ namespace EmployeeAPI.Services.CheckinServices
                 throw;
             }
         }
-
     }
 }

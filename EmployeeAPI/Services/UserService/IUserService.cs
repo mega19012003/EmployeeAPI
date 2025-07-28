@@ -8,7 +8,7 @@ namespace EmployeeAPI.Services.UserService
     {
         //Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize);
         Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize, int? Month);
-        Task<PagedResult<ResponseModel.UserResultDto>> GetActiveEmployeesAndManagersAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize);
+        Task<PagedResult<ResponseModel.UserResultDto>> GetActiveEmployeesAndManagersAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, bool? employeeOnly, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize);
         Task<ResponseModel.UserResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.UserResultDto> UpdateStaffAsync(ResponseModel.UpdateDto dto, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);

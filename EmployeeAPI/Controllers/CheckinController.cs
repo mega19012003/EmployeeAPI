@@ -82,7 +82,7 @@ namespace EmployeeAPI.Controllers
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
             var httpContext = HttpContext;
-            var deviceId = httpContext?.Request?.Form["DeviceId"].ToString();
+            var DeviceInfo = httpContext?.Request?.Form["DeviceInfo"].ToString();
 
             // Lấy IP client
             var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
@@ -97,7 +97,7 @@ namespace EmployeeAPI.Controllers
                 dto.userId = currentUserId;
             }
 
-            var result = await _checkinService.CheckinAsync(dto.userId, deviceId, ip, currentUserId, currentUserRoles);
+            var result = await _checkinService.CheckinAsync(dto.userId, DeviceInfo, ip, dto.Note, currentUserId, currentUserRoles);
             if (result == null)
                 return BadRequest();
 
@@ -118,7 +118,7 @@ namespace EmployeeAPI.Controllers
             var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
             var httpContext = HttpContext;
-            var deviceId = httpContext?.Request?.Form["DeviceId"].ToString();
+            var DeviceInfo = httpContext?.Request?.Form["DeviceInfo"].ToString();
 
             var ip = HttpContext.Connection.RemoteIpAddress?.MapToIPv4().ToString();
             var isAllowed = await _allowedIPService.IsIPAllowedAsync(ip);
@@ -127,7 +127,7 @@ namespace EmployeeAPI.Controllers
                 return StatusCode(403, new { Message = $"IP Không hợp lệ để checkin", Data = $"IP ({ip}) không nằm trong khoảng cho phép để checkin", StatusCode = 403 });
             }
 
-            var result = await _checkinService.CheckoutAsync(dto.userId, deviceId, ip, currentUserId, currentUserRoles);
+            var result = await _checkinService.CheckoutAsync(dto.userId, DeviceInfo, ip, dto.Note, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.CheckinResultDto>.ReturnResult("Checkout success", result, 200));
         }
 

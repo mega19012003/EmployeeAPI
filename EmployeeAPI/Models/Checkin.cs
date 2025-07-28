@@ -11,10 +11,10 @@ namespace EmployeeAPI.Models
         public DateTime CheckoutTime{ get; set; }
         public Enums.LogStatus LogStatus { get; set; }
         public bool IsDeleted { get; set; }
-        public string DeviceInfo { get; set; }
+        public string DeviceInfo { get; set; } = string.Empty;
         public string CheckinIP { get; set; }
         public string? CheckoutIP { get; set; }
         public double TotalTime { get; set; }
-        public string UpdateNote { get; set; } = string.Empty;
+        public string Note { get; set; } = string.Empty;
     }
 }
