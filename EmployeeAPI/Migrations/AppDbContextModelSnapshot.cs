@@ -39,7 +39,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("AllowedIPs", (string)null);
+                    b.ToTable("AllowedIPs");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Checkin", b =>
@@ -48,11 +48,22 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CheckinIP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckinTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CheckoutIP")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckoutTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceInfo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -60,7 +71,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<int>("LogStatus")
                         .HasColumnType("int");
 
-                    b.Property<double>("SalaryPerDay")
+                    b.Property<double>("TotalTime")
                         .HasColumnType("float");
 
                     b.Property<Guid>("UserId")
@@ -70,7 +81,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Checkins", (string)null);
+                    b.ToTable("Checkins");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Company", b =>
@@ -93,7 +104,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasKey("Id");
 
-                    b.ToTable("Companies", (string)null);
+                    b.ToTable("Companies");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Department", b =>
@@ -116,7 +127,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Departments", (string)null);
+                    b.ToTable("Departments");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Duty", b =>
@@ -158,7 +169,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Duty", (string)null);
+                    b.ToTable("Duty");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
@@ -189,7 +200,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetail", (string)null);
+                    b.ToTable("DutyDetail");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
@@ -218,7 +229,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("Holidays", (string)null);
+                    b.ToTable("Holidays");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.LogStatusConfig", b =>
@@ -247,7 +258,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("LogStatusConfigs", (string)null);
+                    b.ToTable("LogStatusConfigs");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Payroll", b =>
@@ -282,7 +293,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Payrolls", (string)null);
+                    b.ToTable("Payrolls");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Position", b =>
@@ -305,7 +316,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("DepartmentId");
 
-                    b.ToTable("Positions", (string)null);
+                    b.ToTable("Positions");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.ScheduleTime", b =>
@@ -339,7 +350,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("CompanyId");
 
-                    b.ToTable("ScheduleTimes", (string)null);
+                    b.ToTable("ScheduleTimes");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.User", b =>
@@ -417,7 +428,7 @@ namespace EmployeeAPI.Migrations
                     b.HasIndex("Username")
                         .IsUnique();
 
-                    b.ToTable("Users", (string)null);
+                    b.ToTable("Users");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.AllowedIP", b =>

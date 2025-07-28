@@ -34,9 +34,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy danh sách chức vụ, Admin lấy danh sách theo công ty, manager lấy danh sách theo phòng ban của mình
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet]
         public async Task<IActionResult> GetAllPositions(string? Search, Guid? companyId, Guid? departmentId, int? pageIndex, int? pageSize)
@@ -55,9 +55,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ResponseModel.PositionDTO>>.ReturnResult("Get list position success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy chức vụ theo id, Admin lấy chcu71 vụ theo công ty, manager chỉ dc lấy chức vụ theo phòng ban của mình    
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet("{positionId}")]
         public async Task<IActionResult> GetPositionById(Guid positionId)
@@ -73,9 +73,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PositionDTO>.ReturnResult("Get position success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Thêm chức vụ trong phỏng ban, manager ko cần thiết nhập department id, chỉ admin/manager dc phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPost]
         public async Task<IActionResult> AddPosition([FromQuery] ResponseModel.CreatePositionDto dto)
@@ -90,9 +90,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Create position success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// cập nhật chức vụ trong phòng ban, chưa authorize, chỉ admin/manager dc phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpPut]
         public async Task<IActionResult> UpdatePosition([FromQuery] Guid id, [FromQuery] string newName)
@@ -110,9 +110,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.PositionDTO>.ReturnResult("Update position success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Xóa mềm chức vụ trong phòng ban, chỉ admin/manager dc phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager")]
         [HttpDelete("{positionId}")]
         public async Task<IActionResult> SoftDeletePosition(Guid positionId)
@@ -127,9 +127,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Soft delete position success", result, 200));
         }
 
-        ///// <summary>
+        //// <summary>
         ///// Lấy danh sách nhân viên theo chức vụ, manager chỉ dc lấy danh sách nhân viên theo chứ vụ của phòng ban mình
-        ///// </summary>
+        //// </summary>
         //[Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         //[HttpGet("employee")]
         //public async Task<IActionResult> GetEmployeeByPosition(Guid PositionId, int? pageSize, int? pageIndex)

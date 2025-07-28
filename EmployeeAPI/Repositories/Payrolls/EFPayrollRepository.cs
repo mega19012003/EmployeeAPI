@@ -44,9 +44,9 @@ namespace EmployeeAPI.Repositories.Payrolls
             return result;
         }
 
-        /// <summary>
+        // <summary>
         /// ////////////////////////////////////////////////
-        /// </summary>
+        // </summary>
         public async Task<bool> ExistsPayrollForMonth(Guid UserId, int month, int year)
         {
             return await _context.Payrolls.AnyAsync(p => p.UserId == UserId && p.CreatedDate.Month == month && p.CreatedDate.Year == year && !p.IsDeleted);

@@ -3,6 +3,7 @@ using System.Text.Json.Serialization;
 using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
+using Microsoft.EntityFrameworkCore.Storage;
 using static EmployeeAPI.Services.CheckinServices.ResponseModel;
 
 namespace EmployeeAPI.Services.CheckinServices
@@ -18,11 +19,17 @@ namespace EmployeeAPI.Services.CheckinServices
             public DateTime CheckoutTime { get; set; }
             public string Status { get; set; }
             public int? LogStatus { get; set; }
+            public string DeviceId { get; set; }
+            public string CheckinIP { get; set; }
+            public string CheckoutIP { get; set; }
+            public double TotalTime { get; set; }
+            public string UpdateNote { get; set; } = string.Empty;
         }
 
         public class CreateCheckinDto
         {
             public Guid? userId { get; set; }
+            public string DeviceId { get; set; }
             //public Enums.LogStatus? LogStatus { get; set; }
             //public DateTime CheckinTime { get; set; } = DateTime.Now;
         }
@@ -31,6 +38,7 @@ namespace EmployeeAPI.Services.CheckinServices
         {
          
             public Guid? userId { get; set; }
+            public string DeviceId { get; set; }
             //public Enums.LogStatus? CheckoutAfternoonStatus { get; set; } 
             //public DateTime CheckoutTime { get; set; } = DateTime.Now;
         }
@@ -38,7 +46,9 @@ namespace EmployeeAPI.Services.CheckinServices
         public class UpdateCheckinDto
         {
             public Guid CheckinId { get; set; }
-            public Enums.LogStatus LogStatus { get; set; }
+            public DateTime? CheckinTime { get; set; }
+            public DateTime? CheckoutTime { get; set; }
+            public string UpdateNote { get; set; } = string.Empty;
         }
 
         public class CheckinDetailDto

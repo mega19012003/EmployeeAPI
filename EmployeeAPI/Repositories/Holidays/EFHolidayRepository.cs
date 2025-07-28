@@ -41,7 +41,7 @@ namespace EmployeeAPI.Repositories.Holidays
         {
             return await _context.Holidays.Where(h => !h.IsDeleted).ToListAsync();
         }
-        public async Task<bool> IsHolidayAsync(DateTime utcNow)
+        public async Task<bool> IsHolidayAsync(DateTime utcNow, Guid companyId)
         {
             var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var vnDate = TimeZoneInfo.ConvertTimeFromUtc(utcNow, vnTimeZone);
@@ -49,7 +49,7 @@ namespace EmployeeAPI.Repositories.Holidays
             var targetMonth = vnDate.Month;
 
             return await _context.Holidays
-                .Where(h => !h.IsDeleted)
+                .Where(h => !h.IsDeleted && h.CompanyId == companyId)
                 .Include(h => h.Company)
                 .AnyAsync(h =>
                     (h.startDate.Month < h.endDate.Month || h.startDate.Month == h.endDate.Month) &&

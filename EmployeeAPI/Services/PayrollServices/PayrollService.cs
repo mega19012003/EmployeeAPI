@@ -270,40 +270,17 @@ namespace EmployeeAPI.Services.PayrollServices
                 throw new ArgumentException("Không tìm thấy thời gian làm việc");
 
             double totalSalary = 0;
-            foreach (var checkin in checkinsInMonth)
-            {
-                totalSalary += checkin.SalaryPerDay;
-                _logger.LogInformation("Tien luong {money}", totalSalary);
-            }
 
             var morningHours = (schedule.EndTimeMorning - schedule.StartTimeMorning).TotalHours;
             var afternoonHours = (schedule.EndTimeAfternoon - schedule.StartTimeAfternoon).TotalHours;
-            var fullDayHours = morningHours + afternoonHours;
-            //var halfDayHours = fullDayHours / 2;
+            var fullDayHours = (morningHours + afternoonHours) - schedule.LogAllowtime;
 
             var lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
 
             var totalDayWorked = checkinsInMonth
             .Where(c =>
             {
-                DateTime adjustedCheckinTime;
-
-                //if (c.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
-                //{
-                //    adjustedCheckinTime = schedule.StartTimeMorning;
-                //}
-                if (c.CheckinTime.TimeOfDay >= schedule.StartTimeMorning.ToTimeSpan()
-                 && c.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
-                {
-                    adjustedCheckinTime = c.CheckinTime.Date + schedule.StartTimeMorning.ToTimeSpan();
-                }
-                else
-                {
-                    adjustedCheckinTime = c.CheckinTime;
-                }
-
-                //var totalHours = (adjustedCheckinTime - c.CheckinTime).TotalHours;
-                var totalHours = (c.CheckoutTime - adjustedCheckinTime).TotalHours;
+                var totalHours = (c.CheckoutTime - c.CheckinTime).TotalHours;
 
                 double normalWorkedHours;
                 if (c.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
@@ -317,7 +294,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 }
 
                 return (c.LogStatus != LogStatus.None)
-                    && (normalWorkedHours >= fullDayHours/* * 0.9*/);
+                    && (normalWorkedHours >= fullDayHours);
             })
             .Select(c => c.CheckinTime.Date)
             .Distinct()
@@ -325,16 +302,13 @@ namespace EmployeeAPI.Services.PayrollServices
 
             if (existingPayroll != null)
             {
-                // Update payroll
                 existingPayroll.Salary = totalSalary;
                 existingPayroll.DaysWorked = totalDayWorked;
                 existingPayroll.Note = $"Cập nhật chấm công cho tháng {month}/{year}";
-                //existingPayroll.CreatedDate = DateTime.Now; 
                 _context.Payrolls.Update(existingPayroll);
             }
             else
             {
-                // Tạo mới payroll
                 existingPayroll = new Payroll
                 {
                     Id = Guid.NewGuid(),
@@ -371,12 +345,6 @@ namespace EmployeeAPI.Services.PayrollServices
 
             var query = _userRepository.GetAll().Where(p => p.Role == RoleType.Manager || p.Role == RoleType.Employee);
 
-            /*if (currentUserRoles.Contains("SystemAdmin"))
-            {
-                if (companyId.HasValue)
-                    query = usersQuery.Where(u => u.CompanyId == companyId.Value);
-            }
-            else*/
             if (currentUserRoles.Contains("Administrator"))
             {
                 var currentUser = await _context.Users.FindAsync(currentUserId);
@@ -424,9 +392,6 @@ namespace EmployeeAPI.Services.PayrollServices
                 {
                     UserId = u.UserId,
                     Fullname = u.Fullname,
-                    //CompanyName = u.Company.Name ?? string.Empty,
-                    //DepartmentName = u.Department.Name ?? string.Empty,
-                    //PositionName = u.Position.Name ?? string.Empty,
                     PhoneNumber = u.PhoneNumber,
                     Address = u.Address,
                     ImageUrl = u.ImageUrl,
@@ -455,6 +420,5 @@ namespace EmployeeAPI.Services.PayrollServices
                 TotalCount = totalCount
             };
         }
-
     }
 }

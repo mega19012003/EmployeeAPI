@@ -21,9 +21,9 @@ namespace EmployeeAPI.Controllers
             _allowedIPService = allowedIPService;
             _logger = logger;
         }
-        /// <summary>
+        // <summary>
         ///  Lấy danh sách ip, system admin dc phép lấy toàn bộ cấu hình IP, admin/manager/employee chỉ dc phép lấy cấu hình theo công ty
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? Search, Guid? companyId, int? pageIndex, int? pageSize)
@@ -37,9 +37,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ResponseModel.IPDto>>.ReturnResult("Get ip success", pageResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         ///  Lấy ip, system admin dc phép lấy toàn bộ cấu hình IP, admin/manager/employee chỉ dc phép lấy cấu hình theo công ty
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet("{IPAddressId}")]
         public async Task<IActionResult> GetById(Guid IPAddressId)
@@ -53,9 +53,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.IPDto>.ReturnResult("Get ip success", pageResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         ///  Chỉ có admin dc phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
         public async Task<IActionResult> Create([FromQuery] string IPAddress)
@@ -68,9 +68,9 @@ namespace EmployeeAPI.Controllers
             var result = await _allowedIPService.AddAsync(IPAddress, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ResponseModel.IPDto>.ReturnResult("Add new IP success", result, 200));
         }
-        /// <summary>
+        // <summary>
         ///  Chỉ có admin dc phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpDelete("{ipId}")]
         public async Task<IActionResult> Delete(Guid ipId)

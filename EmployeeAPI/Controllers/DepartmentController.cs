@@ -34,9 +34,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy danh sách phòng ban, manager/employee ko dc phép truy cập
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, SystemAdmin")]
         [HttpGet]
         public async Task<IActionResult> GetAll(string? Search, Guid? companyId, int? pageIndex, int? pageSize)
@@ -54,9 +54,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ResponseModel.DepartmentResultDto>>.ReturnResult("Get list department success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy phòng ban theo Id, manager/employee ko dc phép truy cập
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, SystemAdmin")]
         [HttpGet("{departmentId}")]
         public async Task<IActionResult> GetById(Guid departmentId)
@@ -71,9 +71,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Get department by Id success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Thêm phòng ban, do admin xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
         public async Task<IActionResult> AddDepartment([FromQuery] string name)
@@ -88,9 +88,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Department added success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Cập nhật phòng ban,  do admin xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPut]
         public async Task<IActionResult> UpdateDepartment([FromQuery] Guid id, [FromQuery] string newName)
@@ -105,9 +105,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.DepartmentResultDto>.ReturnResult("Updated Department Success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Xóa phòng ban, do admin xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpDelete("{departmentId}")]
         public async Task<IActionResult> SoftDeleteDepartment(Guid departmentId)
@@ -123,9 +123,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete department success", result, 200));
         }
 
-        ///// <summary>
+        //// <summary>
         ///// Lấy danh sách nhân viên theo phòng ban, manager sẽ lấy nhan viên theo phòng ban của mình
-        ///// </summary>
+        //// </summary>
         //[Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         //[HttpGet("employee")]
         //public async Task<IActionResult> GetEmployeeByDepartment(Guid departmentId, int? pageSize, int? pageIndex)
@@ -144,9 +144,9 @@ namespace EmployeeAPI.Controllers
         //    return Ok(ApiResponse<PagedResult<ResponseModel.UserFilterDto>>.ReturnResult("Get list User by department success", pagedResult, 200));
         //}
 
-        ///// <summary>
+        //// <summary>
         ///// Lấy danh sách chức vụ có trong phòng ban, manager sẽ lấy chức vụ theo phòng ban của mình
-        ///// </summary>
+        //// </summary>
         //[Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         //[HttpGet("position")]
         //public async Task<IActionResult> GetPositionsByDepartmentAsync(Guid DepartmentId, int? pageSize, int? pageIndex)

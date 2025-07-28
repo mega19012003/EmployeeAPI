@@ -19,7 +19,7 @@ namespace EmployeeAPI.Controllers
             _holidayService = holidayService;
             _logger = logger;
         }
-        /// <summary>
+        // <summary>
         /// Xem danh sách ngày nghỉ lễ, systeamAdmin xem đươc toàn bộ cấu hình
         ///</summary>
         [Authorize]
@@ -38,7 +38,7 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ResponseModel.HolidayResultDto>>.ReturnResult("Get list holiday success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Xem ngày nghỉ lễ theo id, do admin/systemAdmin 
         ///</summary>
         [Authorize(Roles = "Administrator")]
@@ -55,9 +55,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.HolidayResultDto>.ReturnResult("Get holiday success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Thêm ngày nghỉ lễ, dùng checkin để kiểm tra xem người dùng có đi làm vào ngày nghỉ ko, do admin xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPost]
         public async Task<IActionResult> CreateHoliday(ResponseModel.CreateHolidayDto dto)
@@ -76,9 +76,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.HolidayResultDto>.ReturnResult("Holiday added success", result, 200));
         }
         
-        /// <summary>
+        // <summary>
         /// Cập nhật ngày nghỉ lễ, do admin xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpPut]
         public async Task<IActionResult> UpdateHoliday(ResponseModel.UpdateHolidayDto dto)
@@ -97,9 +97,9 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        /// <summary>
+        // <summary>
         /// Xóa ngày nghỉ lễ, do admin xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator")]
         [HttpDelete("{holidayId}")]
         public async Task<IActionResult> SoftDeleteHoliday(Guid holidayId)

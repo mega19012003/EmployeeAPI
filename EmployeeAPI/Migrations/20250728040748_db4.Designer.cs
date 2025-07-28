@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250719084347_update-db1")]
-    partial class updatedb1
+    [Migration("20250728040748_db4")]
+    partial class db4
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,20 +51,28 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CheckinIP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckinTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CheckoutIP")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckoutTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceInfo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<int>("LogStatus")
                         .HasColumnType("int");
-
-                    b.Property<double>("SalaryPerDay")
-                        .HasColumnType("float");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -161,7 +169,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Duties");
+                    b.ToTable("Duty");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
@@ -192,7 +200,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetails");
+                    b.ToTable("DutyDetail");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>

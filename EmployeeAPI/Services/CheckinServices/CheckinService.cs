@@ -30,7 +30,8 @@ namespace EmployeeAPI.Services.CheckinServices
         private readonly AppDbContext _context;
         private readonly ILogger<CheckinService> _logger;
         private readonly ILogStatusConfigRepository _logStatusConfigRepository;
-        public CheckinService(ICheckinRepository checkinRepository, ILogStatusConfigRepository logStatusConfigRepository, IUserRepository userRepository, IHolidayRepository holidayRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger)
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public CheckinService(ICheckinRepository checkinRepository, ILogStatusConfigRepository logStatusConfigRepository, IUserRepository userRepository, IHolidayRepository holidayRepository, IAllowedIPRepository allowedIPRepository, AppDbContext context, ILogger<CheckinService> logger, IHttpContextAccessor httpContextAccessor)
         {
             _checkinRepository = checkinRepository;
             _userRepository = userRepository;
@@ -39,6 +40,7 @@ namespace EmployeeAPI.Services.CheckinServices
             _context = context;
             _logger = logger;
             _logStatusConfigRepository = logStatusConfigRepository;
+            _httpContextAccessor = httpContextAccessor;
         }
         
         public async Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? Name, Guid? companyId, Guid? departmentId, Guid? positionId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize, Guid currentUserId, IList<string> currentUserRoles)
@@ -123,6 +125,10 @@ namespace EmployeeAPI.Services.CheckinServices
                         Status = c.LogStatus.ToString(),
                         Name = c.Users.Fullname,
                         UserId = c.UserId,
+                        DeviceId = c.DeviceInfo ?? "",
+                        CheckinIP = c.CheckinIP,
+                        CheckoutIP = c.CheckoutIP,
+                        TotalTime = c.TotalTime
                     }).ToListAsync();
 
                 return new PagedResult<ResponseModel.CheckinResultDto>
@@ -179,6 +185,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     UserId = checkin.UserId,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
+                    DeviceId = checkin.DeviceInfo ?? "",
+                    CheckinIP = checkin.CheckinIP,
+                    CheckoutIP = checkin.CheckoutIP,
+                    TotalTime = checkin.TotalTime,
                 };
             }
             catch (Exception ex)
@@ -188,11 +198,18 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<CheckinResultDto> CheckinAsync(Guid? userId, Guid currentUserId, IList<string> roles)
+        public async Task<CheckinResultDto> CheckinAsync(Guid? userId, string deviceId, string ip, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                if (string.IsNullOrWhiteSpace(deviceId))
+                    throw new ArgumentException("Không tìm thấy thiết bị");
+
+                if (string.IsNullOrWhiteSpace(ip))
+                    throw new ArgumentException("Không tìm thấy ip");
+
+
                 var isAdmin = roles.Contains("Administrator");
                 var isManager = roles.Contains("Manager");
                 var isEmployee = roles.Contains("Employee");
@@ -278,6 +295,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = DateTime.MinValue,
                     LogStatus = logStatus,
                     //SalaryPerDay = 0 
+                    DeviceInfo = deviceId,
+                    CheckinIP = ip,
+                    CheckoutIP = null,
+                    TotalTime = 0,
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -293,6 +314,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = checkin.CheckoutTime,
                     Status = checkin.LogStatus.ToString(),
                     LogStatus = (int?)checkin.LogStatus,
+                    DeviceId = deviceId,
+                    CheckinIP = checkin.CheckinIP,
+                    CheckoutIP = checkin.CheckoutIP ?? null,
+                    TotalTime = checkin.TotalTime
                     //SalaryPerDay = checkin.SalaryPerDay
                 };
             }
@@ -304,11 +329,17 @@ namespace EmployeeAPI.Services.CheckinServices
             }
         }
 
-        public async Task<CheckinResultDto> CheckoutAsync(Guid? userId, Guid currentUserId, IList<string> roles)
+        public async Task<CheckinResultDto> CheckoutAsync(Guid? userId, string deviceId, string ip, Guid currentUserId, IList<string> roles)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                if (string.IsNullOrWhiteSpace(deviceId))
+                    throw new ArgumentException("Không tìm thấy thiết bị");
+
+                if (string.IsNullOrWhiteSpace(ip))
+                    throw new ArgumentException("Không tìm thấy ip");
+
                 var isAdmin = roles.Contains("Administrator");
                 var isManager = roles.Contains("Manager");
                 var isEmployee = roles.Contains("Employee");
@@ -344,6 +375,9 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 if (checkin == null)
                     throw new ArgumentException("Không tìm thấy bản ghi checkin hôm nay");
+
+                if(deviceId != checkin.DeviceInfo)
+                    throw new ArgumentException("Thiết bị hiện tại không khớp với thiết bị lúc checkin");
 
                 if (checkin.CheckoutTime != DateTime.MinValue)
                     throw new ArgumentException("Đã checkout rồi");
@@ -426,22 +460,11 @@ namespace EmployeeAPI.Services.CheckinServices
                     }
                 }
 
-                DateTime adjustedCheckinTime;
-                if (checkin.CheckinTime.TimeOfDay >= schedule.StartTimeMorning.ToTimeSpan()
-                    && checkin.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan())
-                {
-                    adjustedCheckinTime = checkin.CheckinTime.Date + schedule.StartTimeMorning.ToTimeSpan();
-                }
-                else
-                {
-                    adjustedCheckinTime = checkin.CheckinTime;
-                }
-
-                var totalWorkedHours = (checkin.CheckoutTime - adjustedCheckinTime).TotalHours;
+                var totalWorkedHours = (checkin.CheckoutTime - checkin.CheckinTime).TotalHours;
                 var lunchBreak = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
                 double normalWorkedHours;
 
-                if (adjustedCheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
+                if (checkin.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan()
                     && checkin.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
                 {
                     normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreak);
@@ -452,6 +475,9 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
 
                 if (normalWorkedHours < 0) normalWorkedHours = 0;
+                checkin.TotalTime = normalWorkedHours;
+                checkin.CheckoutIP = ip;
+
 
                 await _checkinRepository.UpdateAsync(checkin);
                 await _context.SaveChangesAsync();
@@ -466,6 +492,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = checkin.CheckoutTime,
                     LogStatus = (int?)checkin.LogStatus,
                     Status = checkin.LogStatus.ToString(),
+                    DeviceId = deviceId ?? "",
+                    CheckinIP = checkin.CheckinIP,
+                    CheckoutIP = checkin.CheckoutIP,
+                    TotalTime = checkin.TotalTime
                 };
             }
             catch (Exception ex)
@@ -486,7 +516,7 @@ namespace EmployeeAPI.Services.CheckinServices
             var schedule = await _context.ScheduleTimes.FirstOrDefaultAsync(s => s.CompanyId == companyId);
             if (schedule == null) throw new Exception("Không tìm thấy cấu hình giờ làm việc cho công ty");
 
-            var isHoliday = await _holidayRepository.IsHolidayAsync(vnTime);
+            var isHoliday = await _holidayRepository.IsHolidayAsync(vnTime, companyId);
             var isSunday = vnTime.DayOfWeek == DayOfWeek.Sunday;
 
             return (nowUtc, vnTime, currentTime, schedule, isHoliday, isSunday);
@@ -523,31 +553,78 @@ namespace EmployeeAPI.Services.CheckinServices
                         throw new ArgumentException("Manager chỉ có thể cập nhật checkin cho user cùng phòng ban");
                 }
 
-                var (_, vnTime, currentTime, schedule, _, _) = await GetTimeAndScheduleInfoAsync((Guid)existing.Users.CompanyId);
+                var (_, vnTime, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync((Guid)currentUser.CompanyId);
 
-                double overtimeHours = 0;
-                var endTimeAfternoon = schedule.EndTimeAfternoon; // TimeOnly
-                if (currentTime > endTimeAfternoon)
+                if(dto.CheckoutTime < dto.CheckinTime)
+                    throw new ArgumentException("Thời gian checkout không thể trước thời gian checkin");
+
+                Enums.LogStatus logStatus;
+
+                if (existing.CheckoutTime == DateTime.MinValue)
                 {
-                    overtimeHours = (currentTime - endTimeAfternoon).TotalHours;
-                }
-
-                double lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
-
-                double totalWorkedHours = (existing.CheckoutTime - existing.CheckinTime).TotalHours;
-                var normalWorkedHours = 0.0;
-                if (existing.CheckinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan() && existing.CheckoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
-                {
-                    normalWorkedHours = Math.Floor(totalWorkedHours - lunchBreakHours);
+                    if (isHoliday || isSunday)
+                    {
+                        logStatus = currentTime <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime) ? Enums.LogStatus.OnHoliday : Enums.LogStatus.OnHolidayLate;
+                    }
+                    else
+                    {
+                        logStatus = existing.CheckinTime.TimeOfDay <= schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan() ? Enums.LogStatus.OnTime : Enums.LogStatus.Late;
+                    }
+                    existing.LogStatus = logStatus;
+                    existing.TotalTime = 0;
                 }
                 else
                 {
-                    normalWorkedHours = Math.Floor(totalWorkedHours);
+                    double lunchBreakHours = (schedule.StartTimeAfternoon - schedule.EndTimeMorning).TotalHours;
+                    var checkinTime = existing.CheckinTime;
+                    var checkoutTime = existing.CheckoutTime;
+                    var totalWorkedHours = (checkoutTime - checkinTime).TotalHours;
+
+                    if (checkinTime.TimeOfDay < schedule.EndTimeMorning.ToTimeSpan() && checkoutTime.TimeOfDay > schedule.StartTimeAfternoon.ToTimeSpan())
+                        totalWorkedHours -= lunchBreakHours;
+
+                    if (totalWorkedHours < 0) totalWorkedHours = 0;
+
+                    existing.TotalTime = totalWorkedHours;
+
+                    bool isLate = checkinTime.TimeOfDay > schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan();
+                    bool leaveEarly = checkoutTime.TimeOfDay < schedule.EndTimeAfternoon.ToTimeSpan();
+                    bool isOvertime = checkoutTime.TimeOfDay > schedule.EndTimeAfternoon.ToTimeSpan();
+
+                    if (isHoliday || isSunday)
+                    {
+                        if (isLate && isOvertime)
+                            logStatus = Enums.LogStatus.OnHolidayLateAndOvertime;
+                        else if (isLate && leaveEarly)
+                            logStatus = Enums.LogStatus.OnHolidayLateAndLeaveEarly;
+                        else if (isLate)
+                            logStatus = Enums.LogStatus.OnHolidayLate;
+                        else if (leaveEarly)
+                            logStatus = Enums.LogStatus.OnHolidayLeaveEarly;
+                        else if (isOvertime)
+                            logStatus = Enums.LogStatus.OnHolidayOvertime;
+                        else
+                            logStatus = Enums.LogStatus.OnHoliday;
+                    }
+                    else
+                    {
+                        if (isLate && isOvertime)
+                            logStatus = Enums.LogStatus.LateAndOvertime;
+                        else if (isLate && leaveEarly)
+                            logStatus = Enums.LogStatus.LateAndLeaveEarly;
+                        else if (isLate)
+                            logStatus = Enums.LogStatus.Late;
+                        else if (leaveEarly)
+                            logStatus = Enums.LogStatus.LeaveEarly;
+                        else if (isOvertime)
+                            logStatus = Enums.LogStatus.Overtime;
+                        else
+                            logStatus = Enums.LogStatus.OnTime;
+                    }
+
+                    existing.LogStatus = logStatus;
                 }
 
-                if (normalWorkedHours < 0) normalWorkedHours = 0;
-
-                existing.LogStatus = dto.LogStatus;
 
                 await _checkinRepository.UpdateAsync(existing);
                 await _context.SaveChangesAsync();
@@ -562,6 +639,10 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutTime = existing.CheckoutTime,
                     LogStatus = (int?)existing.LogStatus,
                     Status = existing.LogStatus.ToString(),
+                    DeviceId = existing.DeviceInfo ?? "",
+                    CheckinIP = existing.CheckinIP,
+                    CheckoutIP = existing.CheckoutIP,
+                    TotalTime = existing.TotalTime,
                 };
             }
             catch (Exception ex)
@@ -699,6 +780,10 @@ namespace EmployeeAPI.Services.CheckinServices
                             CheckoutTime = c.CheckoutTime,
                             LogStatus = (int?)c.LogStatus ?? 0,
                             Status = c.LogStatus.ToString(),
+                            DeviceId = c.DeviceInfo ?? "",
+                            CheckinIP = c.CheckinIP,
+                            CheckoutIP = c.CheckoutIP,
+                            TotalTime = c.TotalTime,
                         }).ToList()
                 }).ToList();
 

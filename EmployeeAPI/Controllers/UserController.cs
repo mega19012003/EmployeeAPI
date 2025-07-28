@@ -31,9 +31,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
+        // <summary>
         /// Cập nhật thông tin người dùng, sẽ do SystemAdmin/admin/manager chỉnh sửa 1 số thông tin quan trọng, employee chỉ dc sửa thông tin cá nhân
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "SystemAdmin, Administrator, Manager, Employee")]
         [HttpPut]
         //[Consumes("multipart/form-data")]
@@ -49,9 +49,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.UserResultDto>.ReturnResult("Update user success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Xóa người dùng, sẽ do systemAdmin/admin/manager xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "SystemAdmin, Administrator, Manager")]
         [HttpDelete("{userId}")]
         public async Task<IActionResult> SoftDeleteAsync(Guid userId)
@@ -66,9 +66,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete user success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// SystemAdmin có thể lấy danh sách thông tin của người dùng, ADmin lấy ds user của cty, manager lấy danh sách theo phòng ban
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet]
         public async Task<IActionResult> GetAllUserAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, int? Month, [FromQuery] int? pageIndex = 1, [FromQuery] int? pageSize = 10)
@@ -87,9 +87,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<UserResultDto>>.ReturnResult("Get list user success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// SystemAdmin có thể lấy danh sách Employee và Manager theo công ty, Admin theo công ty, Manager theo phòng ban.
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpGet("employee-manager")]
         public async Task<IActionResult> GetAllEmployeeAndManagerAsync(string? Search, Guid? positionId, Guid? departmentId, Guid? companyId, int? pageIndex, int? pageSize)
@@ -109,9 +109,9 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        /// <summary>
+        // <summary>
         /// Lấy user theo id, employee ko được phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin, Employee")]
         [HttpGet("{userId}")] 
         public async Task<IActionResult> GetUserByIdAsync(Guid userId)

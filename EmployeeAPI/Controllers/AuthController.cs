@@ -28,9 +28,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
+        // <summary>
         /// Đăng ký người dùng, sẽ do admin/manager tạo, Manager chỉ dc phep tạo user với role là employee
-        /// </summary>
+        // </summary>
         /// <remarks>         
         /// RoleType enum values:
         /// - 1 = Administrator
@@ -45,9 +45,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.AuthDto>.ReturnResult("Register success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Đăng nhập người dùng
-        /// </summary>
+        // </summary>
         /// <remarks>
         /// - Admin: {"username": "Admin123", "password": "Administrator!23"}
         /// - Manager - Thu ngân: {"username": "Manager123", "password": "ManagerUser!2345"}
@@ -108,9 +108,9 @@ namespace EmployeeAPI.Controllers
             });
         }
 
-        /// <summary>
+        // <summary>
         /// Đăng xuất
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpPost, Route("logout")]
         public async Task<IActionResult> Logout()
@@ -139,9 +139,9 @@ namespace EmployeeAPI.Controllers
             });
         }
 
-        /// <summary>
+        // <summary>
         /// Làm mới token
-        /// </summary>
+        // </summary>
         [HttpPost, Route("refresh-token")]
         public async Task<IActionResult> Refresh([FromBody] RefreshTokenDto request)
         {
@@ -155,9 +155,9 @@ namespace EmployeeAPI.Controllers
             });
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy thông tin user đang đăng nhập
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet("current")]
         public async Task<IActionResult> GetCurrentUser()
@@ -215,9 +215,9 @@ namespace EmployeeAPI.Controllers
             });
         }
 
-        /// <summary>
+        // <summary>
         /// Thay đổi password
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpPut("change-password")]
         public async Task<IActionResult> ChangePassword([FromBody] ResponseModel.ChangePasswordDto dto)
@@ -233,9 +233,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Change password success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Reset password, chỉ có admin/manager dc phép dùng
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator, Manager, SystemAdmin")]
         [HttpPut("reset-password")]
         public async Task<IActionResult> ResetPassword([FromForm] Guid id)

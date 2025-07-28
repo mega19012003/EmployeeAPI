@@ -25,9 +25,9 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        /// <summary>
+        // <summary>
         /// Lấy thông tin công ty, SystemAdmin lấy dc toàn bộ công ty, Admin/manager/employee chỉ dc phép lấy công ty của mình
-        /// </summary>
+        // </summary>
         [HttpGet("{companyId}")]
         [Authorize/*(Roles = "Administrator, Manager")*/]
         public async Task<IActionResult> GetCompanyById(Guid companyId)
@@ -44,9 +44,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<CompanyResultDto>.ReturnResult("Get company success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy danh sách công ty, chỉ system admin được phép dùng 
-        /// </summary>
+        // </summary>
         [HttpGet]
         [Authorize(Roles = "SystemAdmin")]
         public async Task<IActionResult> GetAllCompanies(string? Search, int? pageIndex, int? pageSize)
@@ -60,9 +60,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<CompanyResultDto>>.ReturnResult("Get list company success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Thêm công ty mới, chỉ system admin được phép dùng
-        /// </summary>
+        // </summary>
         [HttpPost]
         [Authorize(Roles = "SystemAdmin")]
         public async Task<IActionResult> CreateCompany([FromForm]CreateCompanyDto dto)
@@ -71,9 +71,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<CompanyResultDto>.ReturnResult("Create company success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Cập nhật công ty, chỉ system admin được phép dùng
-        /// </summary>
+        // </summary>
         [HttpPut]
         [Authorize(Roles = "SystemAdmin")]
         public async Task<IActionResult> UpdateCompany([FromForm]UpdateCompanyDto dto)
@@ -82,9 +82,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<CompanyResultDto>.ReturnResult("Update company success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Xóa công ty, chỉ system admin được phép dùng
-        /// </summary>
+        // </summary>
         [HttpDelete("{companyId}")]
         [Authorize(Roles = "SystemAdmin")]
         public async Task<IActionResult> DeleteCompany(Guid companyId)

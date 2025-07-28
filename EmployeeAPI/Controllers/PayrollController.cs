@@ -25,9 +25,9 @@ namespace EmployeeAPI.Controllers
             _logger = logger;
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy toàn bộ danh sách chấm công, manager chỉ dc phép lấy danh sách theo phòng ban của mình, employee lấy danh sách của bản thân
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllPayrolls(string? Search, Guid? companyId, int? Month, int? Year, int? pageIndex, int? pageSize)
@@ -46,9 +46,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ResponseModel.PayrollResultDto>>.ReturnResult("Get list payroll success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy chấm công
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet("{payrollId}")]
         public async Task<IActionResult> GetPayrollById(Guid payrollId)
@@ -64,9 +64,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.PayrollResultDto>.ReturnResult("Get list payroll success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Tình chấm công cho nhân viên, do admin/manager xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("calculate")]
         public async Task<IActionResult> CalculatePayroll(Guid userId)
@@ -81,9 +81,9 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        ///// <summary>
+        //// <summary>
         ///// Tình chấm công cho toàn bộ nhân viên, do admin/manager xử lý
-        ///// </summary>
+        //// </summary>
         //[Authorize(Roles = "Administrator,Manager")]
         //[HttpPost("calculateAll")]
         //public async Task<IActionResult> CalculateAllUserPayroll()
@@ -97,9 +97,9 @@ namespace EmployeeAPI.Controllers
         //    return Ok(ApiResponse<List<ResponseModel.PayrollResultDto>>.ReturnResult("Calculate payroll success", pagedResult, 200));
         //}
 
-        /// <summary>
+        // <summary>
         /// Xóa chấm công, do admin/manager xử lý
-        /// </summary>
+        // </summary>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpDelete("{payrollId}")]
         public async Task<IActionResult> DeletePayroll(Guid payrollId)
@@ -114,11 +114,11 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<string>.ReturnResult("Delete payroll success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy toàn bộ danh sách người dùng kèm payroll của họ.
         /// Manager chỉ được thấy người trong phòng ban.
         /// Employee chỉ thấy chính mình.
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet("user-payrolls")]
         public async Task<IActionResult> GetAllUsersWithPayrolls(string? Search, Guid? companyId, Guid? departmentId, Guid? positionId, int? Month, int? Year, int? pageIndex, int? pageSize)

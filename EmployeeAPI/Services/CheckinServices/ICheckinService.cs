@@ -11,8 +11,8 @@ namespace EmployeeAPI.Services.CheckinServices
         Task<PagedResult<ResponseModel.CheckinResultDto>> GetAllAsync(string? StaffName, Guid? companyId, Guid? departmentId, Guid? positionId, int? day, int? month, int? year, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles);
         //Task AutoMarkAbsentAsync(TimeOnly EndTimeAfternoon);
         Task<ResponseModel.CheckinResultDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
-        Task<ResponseModel.CheckinResultDto> CheckinAsync(Guid? userId, Guid currentUserId, IList<string> roles);
-        Task<ResponseModel.CheckinResultDto> CheckoutAsync(Guid? userId, Guid currentUserId, IList<string> roles);
+        Task<ResponseModel.CheckinResultDto> CheckinAsync(Guid? userId, string deviceId, string ip, Guid currentUserId, IList<string> roles);
+        Task<ResponseModel.CheckinResultDto> CheckoutAsync(Guid? userId, string deviceId, string ip, Guid currentUserId, IList<string> roles);
         Task<ResponseModel.CheckinResultDto> UpdateAsync(ResponseModel.UpdateCheckinDto dto, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         //Task<PagedResult<ResponseModel.CheckinDetailDto>> GetCheckinByUserAsync(Guid currentUserId, IList<string> currentUserRoles, Guid? staffId, int? day, int? month, int? year, int? pageIndex, int? pageSize);

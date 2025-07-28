@@ -10,6 +10,6 @@ namespace EmployeeAPI.Repositories.Holidays
         Task<Holiday> CreateAsync(Holiday holiday);
         Task<Holiday> UpdateAsync(Holiday holiday);
         Task<Holiday> SoftDeleteAsync(Holiday holiday);
-        Task<bool> IsHolidayAsync(DateTime date);
+        Task<bool> IsHolidayAsync(DateTime date, Guid companyId);
     }
 }

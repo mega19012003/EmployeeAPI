@@ -26,9 +26,9 @@ namespace EmployeeAPI.Controllers
         }
 
 
-        /// <summary>
+        // <summary>
         /// Lấy toàn bộ schedule time, chỉ system Admin lấy dc toàn bộ danh sách
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet]
         public async Task<IActionResult> GetAllScheduleTime(Guid? companyId, int? pageIndex, int? pageSize)
@@ -45,9 +45,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ScheduleDto>>.ReturnResult("Get Schedule time Success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy thời gian biểu hiện tại, bổ hợ cho api checkin để kiểm tra việc nhân viên đi đúng giờ hay trễ, chỉ systeam admin lấy được theo toàn bộ id
-        /// </summary>
+        // </summary>
         [Authorize]
         [HttpGet("{scheduleId}")]
         public async Task<IActionResult> GetScheduleByIdTime(Guid scheduleId)
@@ -60,9 +60,9 @@ namespace EmployeeAPI.Controllers
             var result = await _scheduleTimeService.GetScheduleTimeByIdAsync(scheduleId, currentUserId, currentUserRoles);
             return Ok(ApiResponse<ScheduleDto>.ReturnResult("Get Schedule time Success", result, 200));
         }
-        /// <summary>
+        // <summary>
         /// Cập nhật gian biểu, chỉ có admin dc phép dùng
-        /// </summary>
+        // </summary>
         /// <remarks>
         /// { "StartTimeMorning": "08:00:00",
         /// "EndTimeMorning": "12:00:00",
@@ -83,9 +83,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ScheduleDto>.ReturnResult("Update Schedule time Success", result, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Test code Tự động chấm công
-        /// </summary>
+        // </summary>
         /*[HttpGet("test-absent")]
         public async Task<IActionResult> TestAbsent()
         {

@@ -21,9 +21,9 @@ namespace EmployeeAPI.Controllers
             _service = service;
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy tất cả cấu hình trạng thái checkin, dùng để tính lương, systemAdmin lấy được mọi cấu hình
-        /// </summary>
+        // </summary>
         /// <returns></returns>
         [Authorize]
         [HttpGet]
@@ -40,9 +40,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<PagedResult<ResponseModel.LogStatusDto>>.ReturnResult("Get all configs success", pagedResult, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Lấy cấu hình trạng thái checkin theo id, systemAdmin lấy được mọi cấu hình, Admin lấy cấu hình của công ty
-        /// </summary>
+        // </summary>
         /// <returns></returns>
         [Authorize(Roles = "Administrator, SystemAdmin")]
         [HttpGet("{StatusId}")]
@@ -57,9 +57,9 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.LogStatusDto>.ReturnResult("Get status configs success", configs, 200));
         }
 
-        /// <summary>
+        // <summary>
         /// Cập nhật cấu hình, chỉ có admin dc phép dùng
-        /// </summary>
+        // </summary>
         /// <returns></returns>
         [Authorize(Roles = "Administrator")]
         [HttpPut]

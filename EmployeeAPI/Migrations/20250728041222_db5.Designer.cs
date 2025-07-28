@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250714073116_sua-log-status1")]
-    partial class sualogstatus1
+    [Migration("20250728041222_db5")]
+    partial class db5
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,11 +51,22 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CheckinIP")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckinTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("CheckoutIP")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckoutTime")
                         .HasColumnType("datetime2");
+
+                    b.Property<string>("DeviceInfo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -63,7 +74,7 @@ namespace EmployeeAPI.Migrations
                     b.Property<int>("LogStatus")
                         .HasColumnType("int");
 
-                    b.Property<double>("SalaryPerDay")
+                    b.Property<double>("TotalTime")
                         .HasColumnType("float");
 
                     b.Property<Guid>("UserId")
@@ -131,6 +142,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid>("AssignedById")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<Guid?>("CompanyId")
+                        .HasColumnType("uniqueidentifier");
+
                     b.Property<DateOnly>("EndDate")
                         .HasColumnType("date");
 
@@ -154,9 +168,11 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("AssignedById");
 
+                    b.HasIndex("CompanyId");
+
                     b.HasIndex("UserId");
 
-                    b.ToTable("Duties");
+                    b.ToTable("Duty");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
@@ -187,7 +203,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetails");
+                    b.ToTable("DutyDetail");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
@@ -228,9 +244,6 @@ namespace EmployeeAPI.Migrations
                     b.Property<Guid?>("CompanyId")
                         .HasColumnType("uniqueidentifier");
 
-                    b.Property<string>("CompanyName")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<bool>("IsSystemDefault")
                         .HasColumnType("bit");
 
@@ -240,9 +253,6 @@ namespace EmployeeAPI.Migrations
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("SalaryMultiplier")
-                        .HasColumnType("float");
 
                     b.Property<int>("enumId")
                         .HasColumnType("int");
@@ -376,6 +386,9 @@ namespace EmployeeAPI.Migrations
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
+                    b.Property<bool>("IsResetPassword")
+                        .HasColumnType("bit");
+
                     b.Property<string>("Password")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -406,9 +419,6 @@ namespace EmployeeAPI.Migrations
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
-
-                    b.Property<bool>("isResetPass")
-                        .HasColumnType("bit");
 
                     b.HasKey("UserId");
 
@@ -465,11 +475,17 @@ namespace EmployeeAPI.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("EmployeeAPI.Models.Company", "Company")
+                        .WithMany()
+                        .HasForeignKey("CompanyId");
+
                     b.HasOne("EmployeeAPI.Models.User", null)
                         .WithMany("AssignedDuties")
                         .HasForeignKey("UserId");
 
                     b.Navigation("AssignedBy");
+
+                    b.Navigation("Company");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace EmployeeAPI.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250716043352_test4")]
-    partial class test4
+    [Migration("20250728010910_db")]
+    partial class db
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -51,20 +51,29 @@ namespace EmployeeAPI.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<string>("CheckinMethod")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<DateTime>("CheckinTime")
                         .HasColumnType("datetime2");
 
                     b.Property<DateTime>("CheckoutTime")
                         .HasColumnType("datetime2");
 
+                    b.Property<string>("DeviceInfo")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("IPAddress")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
 
                     b.Property<int>("LogStatus")
                         .HasColumnType("int");
-
-                    b.Property<double>("SalaryPerDay")
-                        .HasColumnType("float");
 
                     b.Property<Guid>("UserId")
                         .HasColumnType("uniqueidentifier");
@@ -161,7 +170,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("Duties");
+                    b.ToTable("Duty");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.DutyDetail", b =>
@@ -192,7 +201,7 @@ namespace EmployeeAPI.Migrations
 
                     b.HasIndex("UserId");
 
-                    b.ToTable("DutyDetails");
+                    b.ToTable("DutyDetail");
                 });
 
             modelBuilder.Entity("EmployeeAPI.Models.Holiday", b =>
@@ -242,9 +251,6 @@ namespace EmployeeAPI.Migrations
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<double>("SalaryMultiplier")
-                        .HasColumnType("float");
 
                     b.Property<int>("enumId")
                         .HasColumnType("int");
