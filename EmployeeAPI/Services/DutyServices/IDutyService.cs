@@ -16,7 +16,7 @@ namespace EmployeeAPI.Services.DutyServices
         Task<ResponseModel.DutyResultDto> UpdateDutyAsync(ResponseModel.UpdateDutyDto dto, Guid currentUserId, IList<string> currentUserRoles);
         //Task<ResponseModel.DutyResultDto> MarkDutyAsCompletedAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.DutyDetailResultDto> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetailDto dto, Guid currentUserId, IList<string> currentUserRoles);
-        Task<string> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
+        //Task<string> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeleteDutyAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> SoftDeleteDutyDetailAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles);
     }

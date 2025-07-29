@@ -153,7 +153,7 @@ namespace EmployeeAPI.Controllers
         // <summary>
         /// Cập nhật chi tiết công việc, do admin/manager xử lý 
         // </summary>
-        [Authorize(Roles = "Administrator, Manager")]
+        [Authorize(Roles = "Administrator, Manager, Employee")]
         [HttpPut("DutyDetail")]
         public async Task<IActionResult> UpdateDutyDetailAsync(ResponseModel.UpdateDutyDetailDto dto)
         {
@@ -168,23 +168,23 @@ namespace EmployeeAPI.Controllers
             return Ok(ApiResponse<ResponseModel.DutyDetailResultDto>.ReturnResult("Update duty success", result, 200));
         }
 
-        // <summary>
-        /// Đánh dấu là hoàn tất chi tiết công việc, employee có thể đánh dấu công việc của mình miễn là trước hạn, manager có thể đánh dấu bất kể trước hay sau hạn
-        // </summary>
-        [Authorize(Roles = "Administrator, Manager, Employee")]
-        [HttpPut("MarkCompleted/{dutyDetailId}")]
-        public async Task<IActionResult> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId)
-        {
-            var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
-                return Unauthorized("UserId invalid");
+        //// <summary>
+        ///// Đánh dấu là hoàn tất chi tiết công việc, employee có thể đánh dấu công việc của mình miễn là trước hạn, manager có thể đánh dấu bất kể trước hay sau hạn
+        //// </summary>
+        //[Authorize(Roles = "Administrator, Manager, Employee")]
+        //[HttpPut("MarkCompleted/{dutyDetailId}")]
+        //public async Task<IActionResult> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId)
+        //{
+        //    var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        //    if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
+        //        return Unauthorized("UserId invalid");
 
-            var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
+        //    var currentUserRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
 
-            var result = await _dutyService.MarkDutyDetailAsCompletedAsync(dutyDetailId, currentUserId, currentUserRoles);
+        //    var result = await _dutyService.MarkDutyDetailAsCompletedAsync(dutyDetailId, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<string>.ReturnResult("Marked duty detail as completed", result, 200));
-        }
+        //    return Ok(ApiResponse<string>.ReturnResult("Marked duty detail as completed", result, 200));
+        //}
 
         // <summary>
         /// Xóa công việc, do admin/manager xử lý 

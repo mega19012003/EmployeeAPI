@@ -212,38 +212,60 @@ namespace EmployeeAPI.Services.CheckinServices
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 var targetUser = await _userRepository.GetActiveUserIdAsync(targetUserId);
 
-                if (currentUserId == targetUser.UserId && string.IsNullOrWhiteSpace(DeviceInfo))
-                    throw new ArgumentException("Không tìm thấy thiết bị");
-                else if (string.IsNullOrWhiteSpace(ip))
-                    throw new ArgumentException("Không tìm thấy ip");
-
-                if (isAdmin && currentUser.CompanyId == null)
-                    throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
-                else if (isManager && currentUser.DepartmentId == null)
-                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-
-                if ((isAdmin || isManager) && string.IsNullOrEmpty(Note) && targetUser.UserId != currentUserId)
-                    throw new ArgumentException("Khi checkin hộ, Admin hoặc Manager phải nhập lý do.");
-
                 if (targetUser == null)
                     throw new ArgumentException("Không tìm thấy người dùng");
 
-                if(isAdmin && targetUser.CompanyId != currentUser.CompanyId)
-                    throw new ArgumentException("Admin chỉ có thể checkin cho user cùng công ty");
+                if (string.IsNullOrWhiteSpace(ip))
+                    throw new ArgumentException("Không tìm thấy IP");
 
-                else if (isManager && targetUser.DepartmentId != currentUser.DepartmentId)
-                    throw new ArgumentException("Manager chỉ có thể checkin cho user cùng phòng ban");
+                if (targetUserId == currentUserId)
+                {
+                    if (string.IsNullOrWhiteSpace(DeviceInfo))
+                        throw new ArgumentException("Không tìm thấy thiết bị");
+                }
+                else
+                {
+                    if ((isAdmin || isManager) && string.IsNullOrWhiteSpace(Note))
+                        throw new ArgumentException("Khi checkin hộ, Admin hoặc Manager phải nhập lý do.");
 
-                else if (isEmployee && targetUserId != currentUserId)
-                    throw new ArgumentException("Employee không thể checkin cho user khác");
+                    if (isEmployee)
+                        throw new ArgumentException("Employee không thể checkin cho user khác");
+                }
+
+                if (!isSystemAdmin && currentUser.CompanyId == null)
+                    throw new ArgumentException("Người dùng chưa có công ty.");
+
+                if (isAdmin)
+                {
+                    if (currentUser.CompanyId == null)
+                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
+
+                    if (targetUser.CompanyId != currentUser.CompanyId)
+                        throw new ArgumentException("Admin chỉ có thể checkin cho user cùng công ty");
+                }
+                else if (isManager)
+                {
+                    if (currentUser.DepartmentId == null)
+                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
+
+                    if (targetUser.DepartmentId != currentUser.DepartmentId)
+                        throw new ArgumentException("Manager chỉ có thể checkin cho user cùng phòng ban");
+                }
 
                 var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
                 var now = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
 
                 var startOfDay = now.Date;
                 var endOfDay = now.Date.AddDays(1).AddTicks(-1);
-                if (!isSystemAdmin && currentUser.CompanyId == null)
-                    throw new ArgumentException("Người dùng chưa có công ty.");
+
+                if (isEmployee)
+                {
+                    var otherCheckinToday = await _context.Checkins.Where(c => c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && c.UserId != currentUserId && !c.IsDeleted && c.DeviceInfo == DeviceInfo).FirstOrDefaultAsync();
+                    if (otherCheckinToday != null)
+                        throw new ArgumentException("Thiết bị này đã được dùng để checkin cho người khác hôm nay. Nhân viên không được phép sử dụng chung thiết bị để checkin.");
+                }
+
+                string finalDeviceInfo = (targetUserId == currentUserId) ? (DeviceInfo ?? "") : null;
 
                 var (_, _, currentTime, schedule, isHoliday, isSunday) = await GetTimeAndScheduleInfoAsync((Guid)currentUser.CompanyId);
 
@@ -279,8 +301,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     }
                 }
 
-                var existingCheckin = await _context.Checkins
-                    .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && !c.IsDeleted);
+                var existingCheckin = await _context.Checkins.FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && !c.IsDeleted);
 
                 if (existingCheckin != null)
                     throw new ArgumentException("Đã check-in hôm nay");
@@ -292,7 +313,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinTime = now, 
                     CheckoutTime = DateTime.MinValue,
                     LogStatus = logStatus,
-                    //SalaryPerDay = 0 
                     DeviceInfo = DeviceInfo ?? "",
                     CheckinIP = ip,
                     CheckoutIP = null,
@@ -318,7 +338,6 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckoutIP = checkin.CheckoutIP ?? null,
                     TotalTime = checkin.TotalTime,
                     Note = Note
-                    //SalaryPerDay = checkin.SalaryPerDay
                 };
             }
             catch (Exception ex)

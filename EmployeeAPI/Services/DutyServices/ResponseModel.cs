@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
 
 namespace EmployeeAPI.Services.DutyServices
@@ -53,10 +54,10 @@ namespace EmployeeAPI.Services.DutyServices
         public class UpdateDutyDto
         {
             public Guid Id { get; set; }
-
-            public string Name { get; set; }
-            public DateOnly StartDate { get; set; }
-            public DateOnly EndDate { get; set; }
+            public string? Name { get; set; }
+            public DateOnly? StartDate { get; set; }
+            public DateOnly? EndDate { get; set; }
+            public DutyStatus? Status { get; set; }
             //public bool IsCompleted { get; set; }
         }
 
@@ -69,9 +70,10 @@ namespace EmployeeAPI.Services.DutyServices
         public class UpdateDutyDetailDto
         {
             public Guid DutyDetailId { get; set; }
-            public Guid userId { get; set; }
-            public string Description { get; set; }
-            public DateOnly Deadline { get; set; }
+            public Guid? userId { get; set; }
+            public string? Description { get; set; }
+            public DateOnly? Deadline { get; set; }
+            public DutyStatus? Status { get; set; }
         }
 
         //public class MarkAsCompleted 
