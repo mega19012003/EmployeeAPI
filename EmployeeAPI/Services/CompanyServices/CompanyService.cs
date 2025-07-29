@@ -72,7 +72,6 @@ namespace EmployeeAPI.Services.CompanyServices
                 throw;
             }
         }
-
         public async Task<CompanyResultDto> GetCompanyByIdAsync(Guid companyId, Guid currentUserId, IList<string> curretnUserRole)
         {
             if (curretnUserRole == null)
@@ -108,8 +107,6 @@ namespace EmployeeAPI.Services.CompanyServices
                 IsActive = result.IsActive
             };
         }
-
-
         public async Task<CompanyResultDto> CreateCompanyAsync(CreateCompanyDto dto)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
@@ -194,8 +191,6 @@ namespace EmployeeAPI.Services.CompanyServices
                 throw;
             }
         }
-
-
         public async Task<CompanyResultDto> UpdateCompanyAsync(UpdateCompanyDto dto)
         {
             using var Transaction = await _context.Database.BeginTransactionAsync();
@@ -232,7 +227,8 @@ namespace EmployeeAPI.Services.CompanyServices
                     Name = existingCompany.Name,
                     Address = existingCompany.Address,
                     LogoUrl = existingCompany.LogoUrl,
-                    CompanyId = existingCompany.Id
+                    CompanyId = existingCompany.Id,
+                    IsActive = existingCompany.IsActive,
                 };
             }
             catch (Exception ex)
@@ -242,7 +238,6 @@ namespace EmployeeAPI.Services.CompanyServices
                 throw;
             }
         }
-
         public async Task<string> DeleteCompanyAsync(Guid companyId)
         {
             using var Transaction = await _context.Database.BeginTransactionAsync();
