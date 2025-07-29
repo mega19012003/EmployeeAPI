@@ -279,8 +279,8 @@ public class GoogleSheetHelper
 
     public async Task<List<DutyDetail>> GetAllDutyDetailsWithDutiesCachedAsync()
     {
-        // Nếu chưa cache hoặc đã quá 1 phút thì gọi lại
-        if (_cachedDutyDetails == null || (DateTime.Now - _lastFetchTime).TotalMinutes > 1)
+        // Nếu chưa cache hoặc đã quá 5 phút thì gọi lại
+        if (_cachedDutyDetails == null || (DateTime.Now - _lastFetchTime).TotalMinutes > 5)
         {
             var dutyDetails = await GetAllDutyDetailsAsync();    
             var duties = await GetAllDutiesAsync();               
