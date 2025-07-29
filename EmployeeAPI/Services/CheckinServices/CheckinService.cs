@@ -554,9 +554,17 @@ namespace EmployeeAPI.Services.CheckinServices
                     throw new ArgumentException("Không tìm thấy bản ghi checkin này");
 
                 if (dto.CheckinTime.HasValue)
+                {
+                    if(existing.CheckinTime.Date != dto.CheckinTime.Value.Date)
+                        throw new ArgumentException("Không thể cập nhật checkin vào ngày khác");
                     existing.CheckinTime = dto.CheckinTime.Value;
+                }
                 if (dto.CheckoutTime.HasValue)
+                {
+                    if(existing.CheckoutTime.Date != dto.CheckoutTime.Value.Date)
+                        throw new ArgumentException("Không thể cập nhật checkout vào ngày khác");
                     existing.CheckoutTime = dto.CheckoutTime.Value;
+                }
                 if(!string.IsNullOrWhiteSpace(dto.UpdateNote))
                     existing.Note = dto.UpdateNote;
 
