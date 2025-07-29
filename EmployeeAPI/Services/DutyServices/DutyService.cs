@@ -46,7 +46,7 @@ namespace EmployeeAPI.Services.DutyServices
             var detailRows = await _cache.GetOrCreateAsync("CachedDetailRows", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
-                return await _googleSheetHelper.ReadSheetAsync("Detail!A2:F");
+                return await _googleSheetHelper.ReadSheetAsync("Detail!A2:G");
             });
 
             var users = await _context.Users.ToListAsync();
@@ -72,7 +72,7 @@ namespace EmployeeAPI.Services.DutyServices
 
             var dutyDetails = detailRows
                 .Where(row => !string.IsNullOrWhiteSpace(row[0]?.ToString()))
-                .Select(row => new
+                .Select(row => new // dòng 75
                 {
                     DutyDetailId = Guid.Parse(row[0].ToString()),
                     DutyId = Guid.Parse(row[1].ToString()),
