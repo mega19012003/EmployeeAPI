@@ -1,10 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Text.Json.Serialization;
-using EmployeeAPI.Base;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using Microsoft.EntityFrameworkCore;
+using System.ComponentModel.DataAnnotations;
+using System.Text.Json.Serialization;
 namespace EmployeeAPI.Models
 {
-    public class DutyDetail //: BaseEntity
+    public class DutyDetail 
     {
         [Key]
         public Guid DutyDetailId { get; set; } = Guid.NewGuid();
@@ -12,10 +13,9 @@ namespace EmployeeAPI.Models
         public Duty Duty { get; set; }
         public Guid UserId { get; set; }
         public User Users { get; set; }
-        public bool IsCompleted { get; set; } = false;
-        //public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateOnly Deadline { get; set; }
+        public DutyStatus Status { get; set; } = DutyStatus.NotStarted;
         public bool IsDeleted { get; set; } = false;
         public string Description { get; set; }
-        //public string note { get; set; } = string.Empty;
     }
 }

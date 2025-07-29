@@ -19,7 +19,7 @@ namespace EmployeeAPI.Repositories.LogStatusConfigs
 
         public async Task<List<LogStatusConfig>> GetAllAsync(Guid companyId)
         {
-            return await _context.LogStatusConfigs.Where(p => p.CompanyId == companyId && !p.IsSystemDefault).ToListAsync();
+            return await _context.LogStatusConfigs.Where(p => p.CompanyId == companyId && !p.IsSystemDefault && (p.Company.IsActive && !p.Company.IsDeleted)).ToListAsync();
         }
 
         public async Task<LogStatusConfig?> GetByIdAsync(Guid id)

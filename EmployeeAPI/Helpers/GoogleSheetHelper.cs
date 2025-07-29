@@ -79,7 +79,8 @@ public class GoogleSheetHelper
                 duty.AssignedById.ToString(),
                 duty.StartDate.ToString("yyyy-MM-dd"),
                 duty.EndDate.ToString("yyyy-MM-dd"),
-                duty.IsCompleted.ToString(),
+                //duty.IsCompleted.ToString(),
+                duty.Status.ToString(),
                 duty.IsDeleted.ToString(),
                 duty.CompanyId.ToString()
             }
@@ -102,7 +103,8 @@ public class GoogleSheetHelper
             detail.DutyId.ToString(),
             detail.UserId.ToString(),
             detail.Description,
-            detail.IsCompleted.ToString(),
+            //detail.IsCompleted.ToString(),
+            detail.Status.ToString(),
             detail.IsDeleted.ToString(),
         }).ToList<IList<object>>();
 
@@ -130,7 +132,8 @@ public class GoogleSheetHelper
         var assignedById = Guid.TryParse(row[2]?.ToString(), out var assignBy) ? assignBy : Guid.Empty;
         var startDate = DateOnly.Parse(row[3]?.ToString());
         var endDate = DateOnly.Parse(row[4]?.ToString());
-        var isCompleted = bool.TryParse(row[5]?.ToString(), out var comp) && comp;
+        //var isCompleted = bool.TryParse(row[5]?.ToString(), out var comp) && comp;
+        var status = Enum.TryParse<DutyStatus>(row[5]?.ToString(), out var dutyStatus) ? dutyStatus : DutyStatus.NotStarted;
         var isDeleted = bool.TryParse(row[6]?.ToString(), out var del) && del;
         var companyId = Guid.TryParse(row[7]?.ToString(), out var compId) ? compId : Guid.Empty;
 
@@ -142,7 +145,8 @@ public class GoogleSheetHelper
                 DutyDetailId = Guid.TryParse(r[0]?.ToString(), out var detailId) ? detailId : Guid.Empty,
                 UserId = Guid.TryParse(r[2]?.ToString(), out var uid) ? uid : Guid.Empty,
                 Description = r[3]?.ToString(),
-                IsCompleted = bool.TryParse(r[4]?.ToString(), out var comp2) && comp2
+                //IsCompleted = bool.TryParse(r[4]?.ToString(), out var comp2) && comp2
+                Status = r[4]?.ToString(),
             })
             .ToList();
 
@@ -158,7 +162,8 @@ public class GoogleSheetHelper
             DutyDetailId = d.DutyDetailId,
             UserId = d.UserId,
             Description = d.Description,
-            IsCompleted = d.IsCompleted,
+            //IsCompleted = d.IsCompleted,
+            Status = d.Status,
             Name = users.TryGetValue(d.UserId, out var user) ? user.Fullname : null
         }).ToList();
 
@@ -167,12 +172,13 @@ public class GoogleSheetHelper
             Id = dutyId,
             Name = name,
             AssignedById = assignedById,
-            AssignedBy = assignedById.ToString(), // bạn có thể dùng _context.Users.FindAsync để lấy Fullname nếu cần
+            AssignedBy = assignedById.ToString(), 
             StartDate = startDate,
             EndDate = endDate,
-            IsCompleted = isCompleted,
+            //IsCompleted = isCompleted,
+            Status = status.ToString(),
             CompanyId = companyId,
-            CompanyName = companyId.ToString(), // tương tự, có thể dùng _context.Companies.FindAsync để lấy tên
+            CompanyName = companyId.ToString(), 
             DutyDetails = dutyDetailResults
         };
     }
@@ -187,7 +193,8 @@ public class GoogleSheetHelper
                 DutyDetailId = Guid.TryParse(r[0]?.ToString(), out var detailId) ? detailId : Guid.Empty,
                 UserId = Guid.TryParse(r[2]?.ToString(), out var uid) ? uid : Guid.Empty,
                 Description = r[3]?.ToString(),
-                IsCompleted = bool.TryParse(r[4]?.ToString(), out var comp2) && comp2,
+                //IsCompleted = bool.TryParse(r[4]?.ToString(), out var comp2) && comp2,
+                Status = r[4]?.ToString(),
                 Name = r[2]?.ToString() // hoặc lấy tên từ DB nếu cần
             }).ToList();
     }
@@ -213,7 +220,8 @@ public class GoogleSheetHelper
                     AssignedById = Guid.Parse(row.ElementAtOrDefault(2)?.ToString() ?? ""),
                     StartDate = DateOnly.Parse(row.ElementAtOrDefault(3)?.ToString() ?? DateOnly.MinValue.ToString()),
                     EndDate = DateOnly.Parse(row.ElementAtOrDefault(4)?.ToString() ?? DateOnly.MinValue.ToString()),
-                    IsCompleted = bool.TryParse(row.ElementAtOrDefault(5)?.ToString(), out var completed) && completed,
+                    //IsCompleted = bool.TryParse(row.ElementAtOrDefault(5)?.ToString(), out var completed) && completed,
+                    Status = Enum.TryParse<DutyStatus>(row.ElementAtOrDefault(5)?.ToString() ?? "", out var status) ? status : DutyStatus.NotStarted,
                     IsDeleted = bool.TryParse(row.ElementAtOrDefault(6)?.ToString(), out var isDeleted) && isDeleted,
                     CompanyId = Guid.Parse(row.ElementAtOrDefault(7)?.ToString() ?? ""),
                 };
@@ -249,7 +257,8 @@ public class GoogleSheetHelper
                     DutyId = Guid.Parse(row[1]?.ToString() ?? ""),
                     UserId = Guid.Parse(row[2]?.ToString() ?? ""),
                     Description = row.ElementAtOrDefault(3)?.ToString() ?? "",
-                    IsCompleted = bool.TryParse(row.ElementAtOrDefault(4)?.ToString(), out var completed) && completed,
+                    //IsCompleted = bool.TryParse(row.ElementAtOrDefault(4)?.ToString(), out var completed) && completed,
+                    Status = Enum.TryParse<DutyStatus>(row.ElementAtOrDefault(4)?.ToString() ?? "", out var status) ? status : DutyStatus.NotStarted,
                     IsDeleted = bool.TryParse(row.ElementAtOrDefault(5)?.ToString(), out var deleted) && deleted,
                 };
                 result.Add(detail);
@@ -263,14 +272,13 @@ public class GoogleSheetHelper
         return result;
     }
 
-    // Hàm có cache
     public async Task<List<DutyDetail>> GetAllDutyDetailsWithDutiesCachedAsync()
     {
-        // Nếu chưa cache hoặc đã quá 5 phút thì gọi lại
-        if (_cachedDutyDetails == null || (DateTime.Now - _lastFetchTime).TotalMinutes > 5)
+        // Nếu chưa cache hoặc đã quá 1 phút thì gọi lại
+        if (_cachedDutyDetails == null || (DateTime.Now - _lastFetchTime).TotalMinutes > 1)
         {
-            var dutyDetails = await GetAllDutyDetailsAsync();    // từ Google Sheets
-            var duties = await GetAllDutiesAsync();               // từ Google Sheets
+            var dutyDetails = await GetAllDutyDetailsAsync();    
+            var duties = await GetAllDutiesAsync();               
 
             var dutyDict = duties.ToDictionary(d => d.Id, d => d);
 
@@ -301,7 +309,8 @@ public class GoogleSheetHelper
                     dutyDetail.DutyId.ToString(),
                     dutyDetail.UserId.ToString(),
                     dutyDetail.Description,
-                    dutyDetail.IsCompleted.ToString(),
+                   // dutyDetail.IsCompleted.ToString(),
+                    dutyDetail.Status.ToString(),
                     dutyDetail.IsDeleted.ToString(),
                 }
             }
@@ -319,14 +328,15 @@ public class GoogleSheetHelper
         if (duty == null)
             return;
 
-        // Lấy tất cả DutyDetails thuộc duty này
         var allDetails = await GetAllDutyDetailsAsync();
         var dutyDetails = allDetails.Where(d => d.DutyId == dutyId && !d.IsDeleted).ToList();
 
-        bool isCompleted = dutyDetails.Count > 0 && dutyDetails.All(d => d.IsCompleted);
+        //bool isCompleted = dutyDetails.Count > 0 && dutyDetails.All(d => d.IsCompleted);
+        string status = dutyDetails.Count > 0 && dutyDetails.All(d => d.Status == DutyStatus.Completed) 
+            ? DutyStatus.Completed.ToString() 
+            : DutyStatus.InProgress.ToString();
 
-        // Cập nhật ô IsCompleted trong Duty Sheet
-        var range = $"Duty!A2:H"; // Đọc toàn bộ sheet để tìm dòng cần cập nhật
+        var range = $"Duty!A2:H"; 
         var request = _sheetsService.Spreadsheets.Values.Get(_settings.SpreadsheetId, range);
         var response = await request.ExecuteAsync();
 
@@ -338,11 +348,11 @@ public class GoogleSheetHelper
             var row = response.Values[i];
             if (row.Count > 0 && Guid.TryParse(row[0]?.ToString(), out var rowId) && rowId == dutyId)
             {
-                // Cập nhật cột IsCompleted (ví dụ cột G = index 6 nếu A=0)
                 var updateRange = $"Duty!F{(i + 2)}";
                 var valueRange = new ValueRange
                 {
-                    Values = new List<IList<object>> { new List<object> { isCompleted.ToString() } }
+                    //Values = new List<IList<object>> { new List<object> { isCompleted.ToString() } }
+                    Values = new List<IList<object>> { new List<object> { status } }
                 };
 
                 var updateRequest = _sheetsService.Spreadsheets.Values.Update(valueRange, _settings.SpreadsheetId, updateRange);
@@ -355,7 +365,7 @@ public class GoogleSheetHelper
 
     public async Task UpdateDutyRowAsync(DutyResultDto duty)
     {
-        var range = "Duty!A2:H"; // Dòng dữ liệu bắt đầu từ dòng 2
+        var range = "Duty!A2:H"; 
         var request = _sheetsService.Spreadsheets.Values.Get(_spreadsheetId, range);
         var response = await request.ExecuteAsync();
         var rows = response.Values;
@@ -378,7 +388,8 @@ public class GoogleSheetHelper
                     duty.AssignedBy ?? "",                 // C - AssignById
                     duty.StartDate.ToString("yyyy-MM-dd"), // D - StartDate
                     duty.EndDate.ToString("yyyy-MM-dd"),   // E - EndDate
-                    duty.IsCompleted.ToString().ToUpper(), // F - IsCompleted
+                    //duty.IsCompleted.ToString().ToUpper(), // F - IsCompleted
+                    duty.Status.ToString(),               // F - Status
                     duty.IsDeleted.ToString().ToUpper(),   // G - IsDeleted 
                     duty.CompanyId.ToString() ?? ""       // H - CompanyId
                 }
@@ -403,7 +414,7 @@ public class GoogleSheetHelper
 
     public async Task UpdateDutyDetailRowAsync(DutyDetail dutyDetail)
     {
-        var range = "Detail!A2:F"; // Bỏ qua header
+        var range = "Detail!A2:F";
         var request = _sheetsService.Spreadsheets.Values.Get(_spreadsheetId, range);
         var response = await request.ExecuteAsync();
         var values = response.Values;
@@ -421,7 +432,7 @@ public class GoogleSheetHelper
             var row = values[i];
             if (row.Count > 0 && row[0]?.ToString() == dutyDetail.DutyDetailId.ToString())
             {
-                rowIndex = i + 2; // +2 vì i=0 tương ứng dòng 2
+                rowIndex = i + 2; 
                 break;
             }
         }
@@ -439,8 +450,9 @@ public class GoogleSheetHelper
             dutyDetail.DutyId.ToString(),
             dutyDetail.UserId.ToString(),
             dutyDetail.Description ?? "",
-            dutyDetail.IsCompleted.ToString().ToUpper(), // TRUE/FALSE
-            dutyDetail.IsDeleted.ToString().ToUpper(),   // TRUE/FALSE
+            // dutyDetail.IsCompleted.ToString().ToUpper(), 
+            dutyDetail.Status.ToString(),
+            dutyDetail.IsDeleted.ToString().ToUpper(),   
         };
 
         var valueRange = new ValueRange

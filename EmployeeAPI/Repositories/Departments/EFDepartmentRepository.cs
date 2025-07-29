@@ -15,7 +15,7 @@ namespace EmployeeAPI.Repositories.Departments
         }
         public async Task<IEnumerable<Department>> GetAllAsync()
         {
-            return await _context.Departments.Where(p => p.isDeleted).Include(d => d.Positions).Include(p => p.Company).AsNoTracking().ToListAsync();
+            return await _context.Departments.Where(p => p.isDeleted).Include(p => p.Positions).Include(p => p.Company)./*Where(p => p.Company.IsActive && !p.Company.IsDeleted).*/AsNoTracking().ToListAsync();
         }
 
         public async Task<Department> GetByIdAsync(Guid id)

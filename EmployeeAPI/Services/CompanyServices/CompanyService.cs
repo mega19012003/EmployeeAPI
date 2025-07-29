@@ -31,7 +31,7 @@ namespace EmployeeAPI.Services.CompanyServices
             _scheduleTimeRepository = scheduleTimeRepository;
         }
 
-        public async Task<PagedResult<CompanyResultDto>> GetAllCompaniesAsync(string? Name, int? pageIndex, int? pagesize)
+        public async Task<PagedResult<CompanyResultDto>> GetAllCompaniesAsync(string? Name, bool? IsActive, int? pageIndex, int? pagesize)
         {
             try
             {
@@ -39,11 +39,11 @@ namespace EmployeeAPI.Services.CompanyServices
                 pagesize ??= 10;
                 var companies = await _companyRepository.GetAllCompaniesAsync();
                 if (!string.IsNullOrEmpty(Name))
-                {
                     companies = companies.Where(c => c.Name.ToLower().Contains(Name.ToLower()) && !c.IsDeleted);
-                }
+                if (IsActive.HasValue)
+                    companies = companies.Where(c => c.IsActive == IsActive.Value);
 
-                var totalCount = companies.Count();
+                    var totalCount = companies.Count();
 
                 var items = companies
                     .Skip((pageIndex.Value - 1) * pagesize.Value)
@@ -55,6 +55,7 @@ namespace EmployeeAPI.Services.CompanyServices
                         LogoUrl = c.LogoUrl,
                         CompanyId = c.Id,
                         IsDeleted = c.IsDeleted,
+                        IsActive = c.IsActive
                     });
 
                 return new PagedResult<CompanyResultDto>
@@ -104,6 +105,7 @@ namespace EmployeeAPI.Services.CompanyServices
                 LogoUrl = result.LogoUrl ?? string.Empty,
                 CompanyId = result.Id,
                 IsDeleted = result.IsDeleted,
+                IsActive = result.IsActive
             };
         }
 
@@ -130,7 +132,8 @@ namespace EmployeeAPI.Services.CompanyServices
                     Name = dto.Name,
                     Address = dto.Address,
                     LogoUrl = image,
-                    IsDeleted = false
+                    IsDeleted = false,
+                    IsActive = true,
                 };
 
                 await _companyRepository.AddCompanyAsync(newCompany);
@@ -207,8 +210,9 @@ namespace EmployeeAPI.Services.CompanyServices
                 if (!string.IsNullOrEmpty(dto.Address)) existingCompany.Address = dto.Address;
                 //if (!string.IsNullOrEmpty(dto.LogoUrl)) existingCompany.LogoUrl = dto.LogoUrl;
                 if (!string.IsNullOrEmpty(dto.Name)) existingCompany.Name = dto.Name;
+                if (dto.IsActive) existingCompany.IsActive = dto.IsActive;
 
-                if( dto.LogoUrl != null )
+                if ( dto.LogoUrl != null )
                 {
                     if(!string.IsNullOrEmpty(existingCompany.LogoUrl))
                     {

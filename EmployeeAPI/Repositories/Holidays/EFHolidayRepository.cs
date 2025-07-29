@@ -13,7 +13,7 @@ namespace EmployeeAPI.Repositories.Holidays
         }
         public IQueryable<Holiday> GetAll()
         {
-            return _context.Holidays.Where(h => !h.IsDeleted).Include(h => h.Company).AsQueryable();
+            return _context.Holidays.Where(h => !h.IsDeleted && (!h.Company.IsDeleted || h.Company.IsActive)).Include(h => h.Company).AsQueryable();
         }
         public async Task<Holiday> GetByIdAsync(Guid id)
         {

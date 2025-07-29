@@ -17,7 +17,8 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid AssignedById { get; set; }
             public string AssignedBy { get; set; }
             public string AssignImageUrl { get; set; }
-            public bool IsCompleted { get; set; }
+            public string Status { get; set; }
+            //public bool IsCompleted { get; set; }
             [JsonIgnore]
             public bool IsDeleted { get; set; }
             public List<DutyDetailResultDto> DutyDetails { get; set; } = new List<DutyDetailResultDto>();
@@ -31,7 +32,8 @@ namespace EmployeeAPI.Services.DutyServices
             public Guid UserId { get; set; }
             public string Name { get; set; }
             public string UserImageUrl { get; set; }
-            public bool IsCompleted { get; set; }
+            public string Status { get; set; }
+            //public bool IsCompleted { get; set; }
             public string Description { get; set; }
         }
         public class CreateDutyDto

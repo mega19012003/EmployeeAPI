@@ -1,10 +1,11 @@
-﻿using System.Text.Json.Serialization;
-using EmployeeAPI.Base;
+﻿using EmployeeAPI.Base;
+using EmployeeAPI.Enums;
 using EmployeeAPI.Models;
+using System.Text.Json.Serialization;
 
 namespace EmployeeAPI.Models
 {
-    public class Duty //: BaseEntity
+    public class Duty 
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
@@ -14,12 +15,11 @@ namespace EmployeeAPI.Models
         public Guid AssignedById { get; set; } 
         public User AssignedBy { get; set; }
 
-        public bool IsCompleted { get; set; } = false; 
+        public DutyStatus Status { get; set; } = DutyStatus.NotStarted;
         public bool IsDeleted { get; set; } = false;
         public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
 
         public Company Company { get; set; }
         public Guid? CompanyId { get; set; }
-        //public string note { get; set; } = string.Empty;
     }
 }

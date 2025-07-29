@@ -49,12 +49,12 @@ namespace EmployeeAPI.Controllers
         // </summary>
         [HttpGet]
         [Authorize(Roles = "SystemAdmin")]
-        public async Task<IActionResult> GetAllCompanies(string? Search, int? pageIndex, int? pageSize)
+        public async Task<IActionResult> GetAllCompanies(string? Search, bool? IsActive, int? pageIndex, int? pageSize)
         {
             //var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             //if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
             //    return Unauthorized("User invalid");
-            var pagedResult = await _companyService.GetAllCompaniesAsync(Search, pageIndex, pageSize);
+            var pagedResult = await _companyService.GetAllCompaniesAsync(Search, IsActive, pageIndex, pageSize);
             if (!pagedResult.Items.Any())
                 return Ok(ApiResponse<PagedResult<CompanyResultDto>>.ReturnResult("No result", pagedResult, 200));
             return Ok(ApiResponse<PagedResult<CompanyResultDto>>.ReturnResult("Get list company success", pagedResult, 200));

@@ -18,12 +18,12 @@ namespace EmployeeAPI.Repositories.AllowedIPs
         {
             return _context.AllowedIPs
                 .AsNoTracking()
-                .Include(c => c.Company);
+                .Include(c => c.Company).Where(c => !c.Company.IsDeleted && c.Company.IsActive);
         }
 
         public async Task<IEnumerable<AllowedIP>> GetAllAsync()
         {
-            return await _context.AllowedIPs.ToListAsync();
+            return await _context.AllowedIPs.Include(c => c.Company).Where(c => !c.Company.IsDeleted && c.Company.IsActive).ToListAsync();
         }
 
         public async Task<AllowedIP> GetByIdAsync(Guid id)

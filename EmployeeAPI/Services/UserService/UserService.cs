@@ -362,7 +362,7 @@ namespace EmployeeAPI.Services.UserService
         //        throw;  
         //    }
         //}
-        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize, int? Month)
+        public async Task<PagedResult<ResponseModel.UserResultDto>> GetAllAsync(string? SearchTerm, bool? IsActive, Guid? positionId, Guid? departmentId, Guid? companyId, Guid currentUserId, IList<string> currentUserRoles, int? pageIndex, int? pageSize, int? Month)
         {
             try
             {
@@ -377,6 +377,8 @@ namespace EmployeeAPI.Services.UserService
                     var keyword = SearchTerm.Trim().ToLower();
                     query = query.Where(u => u.Fullname.ToLower().Contains(keyword) || u.Username.ToLower().Contains(keyword));
                 }
+                if( IsActive.HasValue)
+                    query = query.Where(u => u.IsActive == IsActive.Value);
 
                 if (isSystemAdmin)
                 {
@@ -423,21 +425,21 @@ namespace EmployeeAPI.Services.UserService
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsWithDutiesCachedAsync();
 
                 // Lọc công việc hoàn thành theo tháng/năm
-                var completedDutyDetails = allDutyDetails.Where(d => d.IsCompleted && d.Duty != null && d.Duty.StartDate.Year == Year);
+                //var completedDutyDetails = allDutyDetails.Where(d => d.IsCompleted && d.Duty != null && d.Duty.StartDate.Year == Year);
 
-                if (Month.HasValue)
-                {
-                    completedDutyDetails = completedDutyDetails.Where(d => d.Duty != null && d.Duty.StartDate.Month == Month.Value);
-                }
+                //if (Month.HasValue)
+                //{
+                //    completedDutyDetails = completedDutyDetails.Where(d => d.Duty != null && d.Duty.StartDate.Month == Month.Value);
+                //}
 
-                var completedGrouped = completedDutyDetails
-                    .GroupBy(d => d.UserId)
-                    .ToDictionary(g => g.Key, g => g.Count());
+                //var completedGrouped = completedDutyDetails
+                //    .GroupBy(d => d.UserId)
+                //    .ToDictionary(g => g.Key, g => g.Count());
 
-                var inProgressGrouped = allDutyDetails
-                    .Where(d => !d.IsCompleted)
-                    .GroupBy(d => d.UserId)
-                    .ToDictionary(g => g.Key, g => g.Count());
+                //var inProgressGrouped = allDutyDetails
+                //    .Where(d => !d.IsCompleted)
+                //    .GroupBy(d => d.UserId)
+                //    .ToDictionary(g => g.Key, g => g.Count());
 
                 var totalCount = users.Count;
 
@@ -460,8 +462,8 @@ namespace EmployeeAPI.Services.UserService
                         CompanyId = f.CompanyId,
                         IsActive = f.IsActive,
                         ImageUrl = f.ImageUrl,
-                        CompletedDuties = completedGrouped.TryGetValue(f.UserId, out var completed) ? completed : 0,
-                        InProgressDuties = inProgressGrouped.TryGetValue(f.UserId, out var inProgress) ? inProgress : 0
+                        //CompletedDuties = completedGrouped.TryGetValue(f.UserId, out var completed) ? completed : 0,
+                        //InProgressDuties = inProgressGrouped.TryGetValue(f.UserId, out var inProgress) ? inProgress : 0
                     })
                     .ToList();
 

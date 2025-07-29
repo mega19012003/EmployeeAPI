@@ -39,13 +39,13 @@ namespace EmployeeAPI.Services.DutyServices
 
             var dutyRows = await _cache.GetOrCreateAsync("CachedDutyRows", async entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 5 phút
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
                 return await _googleSheetHelper.ReadSheetAsync("Duty!A2:H");
             });
 
             var detailRows = await _cache.GetOrCreateAsync("CachedDetailRows", async entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 5 phút
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
                 return await _googleSheetHelper.ReadSheetAsync("Detail!A2:F");
             });
 
@@ -62,7 +62,8 @@ namespace EmployeeAPI.Services.DutyServices
                     AssignedById = Guid.Parse(row[2].ToString()),
                     StartDate = DateOnly.Parse(row[3].ToString()),
                     EndDate = DateOnly.Parse(row[4].ToString()),
-                    IsCompleted = bool.Parse(row[5].ToString()),
+                    //IsCompleted = bool.Parse(row[5].ToString()),
+                    Status = row[5].ToString(),
                     IsDeleted = bool.Parse(row[6].ToString()),
                     CompanyId = string.IsNullOrEmpty(row[7].ToString()) ? (Guid?)null : Guid.Parse(row[7].ToString())
                 })
@@ -77,7 +78,8 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyId = Guid.Parse(row[1].ToString()),
                     UserId = Guid.Parse(row[2].ToString()),
                     Description = row[3].ToString(),
-                    IsCompleted = bool.Parse(row[4].ToString()),
+                    //IsCompleted = bool.Parse(row[4].ToString()),
+                    Status = row[4].ToString(),
                     IsDeleted = bool.TryParse(row[5]?.ToString(), out var deleted) && deleted
                 })
                 .Where(dd => !dd.IsDeleted) // ❗ Lọc bỏ detail bị xóa
@@ -92,7 +94,7 @@ namespace EmployeeAPI.Services.DutyServices
                     d.AssignedById,
                     d.StartDate,
                     d.EndDate,
-                    d.IsCompleted,
+                    d.Status,
                     d.CompanyId,
                     DutyDetails = dutyDetails
                         .Where(dd => dd.DutyId == d.Id)
@@ -147,7 +149,8 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = d.Name,
                     StartDate = d.StartDate,
                     EndDate = d.EndDate,
-                    IsCompleted = d.IsCompleted,
+                    //IsCompleted = d.IsCompleted,
+                    Status = d.Status,
                     AssignedBy = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.Fullname ?? "",
                     AssignImageUrl = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.ImageUrl ?? "",
                     CompanyName = companies.FirstOrDefault(c => c.Id == d.CompanyId)?.Name ?? "",
@@ -158,7 +161,8 @@ namespace EmployeeAPI.Services.DutyServices
                         Description = dd.Description,
                         Name = users.FirstOrDefault(u => u.UserId == dd.UserId)?.Fullname ?? "",
                         UserImageUrl = users.FirstOrDefault(u => u.UserId == dd.UserId)?.ImageUrl ?? "",
-                        IsCompleted = dd.IsCompleted
+                        //IsCompleted = dd.IsCompleted
+                        Status = dd.Status
                     }).ToList()
                 }).ToList();
 
@@ -172,11 +176,10 @@ namespace EmployeeAPI.Services.DutyServices
         }
         public async Task<ResponseModel.DutyResultDto> GetDutyByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles)
         {
-            // Lấy từ Google Sheets thay vì DB
-            var duty = await _googleSheetHelper.GetDutyByIdAsync(id); // trả về DutyDto
+            var duty = await _googleSheetHelper.GetDutyByIdAsync(id); 
             if (duty.CompanyId == null || duty.CompanyId == Guid.Empty)
                 throw new Exception("Thiếu CompanyId từ duty, kiểm tra dữ liệu Google Sheet.");
-            var currentUser = await _context.Users.FindAsync(currentUserId); // vẫn lấy từ DB để xác định công ty/phòng ban
+            var currentUser = await _context.Users.FindAsync(currentUserId); 
             if (duty.CompanyId != currentUser.CompanyId)
                 throw new UnauthorizedAccessException("Không cùng công ty");
 
@@ -198,7 +201,6 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new UnauthorizedAccessException("Manager chỉ có thể truy cập công việc do mình tạo ra");
             }
 
-            // Lấy danh sách duty details từ Sheet
             var dutyDetails = await _googleSheetHelper.GetDutyDetailsByDutyIdAsync(id);
 
             if (currentUserRoles.Contains("Employee"))
@@ -208,14 +210,14 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new UnauthorizedAccessException("Nhân viên không thể truy cập công việc của người khác");
             }
             var assignedUser = await _context.Users.FindAsync(duty.AssignedById);
-            // Mapping dữ liệu trả về
             var dutyResult = new ResponseModel.DutyResultDto
             {
                 Id = duty.Id,
                 Name = duty.Name,
                 StartDate = duty.StartDate,
                 EndDate = duty.EndDate,
-                IsCompleted = duty.IsCompleted,
+                //IsCompleted = duty.IsCompleted,
+                Status = duty.Status,
                 AssignedBy = (await _context.Users.FindAsync(duty.AssignedById))?.Fullname,
                 AssignImageUrl = assignedUser?.ImageUrl,
                 CompanyName = (await _context.Companies.FindAsync(duty.CompanyId))?.Name,
@@ -232,7 +234,8 @@ namespace EmployeeAPI.Services.DutyServices
                     Description = detail.Description,
                     Name = user?.Fullname,
                     UserImageUrl = user?.ImageUrl,
-                    IsCompleted = detail.IsCompleted
+                    //IsCompleted = detail.IsCompleted
+                    Status = detail.Status
                 });
             }
 
@@ -252,7 +255,8 @@ namespace EmployeeAPI.Services.DutyServices
                 var dutyId = Guid.TryParse(row[1]?.ToString(), out var parsedDutyId) ? parsedDutyId : Guid.Empty;
                 var userId = Guid.TryParse(row[2]?.ToString(), out var uId) ? uId : Guid.Empty;
                 var description = row[3]?.ToString() ?? "";
-                var isCompleted = bool.TryParse(row[4]?.ToString(), out var comp) && comp;
+                //var isCompleted = bool.TryParse(row[4]?.ToString(), out var comp) && comp;
+                var status = row[4]?.ToString() ?? "";
                 var isDeleted = bool.TryParse(row[5]?.ToString(), out var del) && del;
 
                 if (isDeleted)
@@ -298,7 +302,6 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new UnauthorizedAccessException("Nhân viên chỉ có thể truy cập công việc của bản thân");
                 }
 
-                // Lấy fullname từ userId
                 var user = await _context.Users.FindAsync(userId);
 
                 return new ResponseModel.DutyDetailResultDto
@@ -308,7 +311,8 @@ namespace EmployeeAPI.Services.DutyServices
                     Description = description,
                     Name = user?.Fullname ?? "",
                     UserImageUrl = user?.ImageUrl ?? "",
-                    IsCompleted = isCompleted
+                    //IsCompleted = isCompleted
+                    Status = status
                 };
             }
 
@@ -319,19 +323,18 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
-                // --- 1. Kiểm tra người dùng hiện tại
-                var currentUser = await _context.Users.FindAsync(currentUserId);
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
 
-                // --- 2. Lấy thông tin người dùng được gán nhiệm vụ
+                // Lấy thông tin người dùng được gán nhiệm vụ
                 var assignedUsers = await _context.Users
                     .Where(u => userIdsToAssign.Contains(u.UserId))
                     .ToListAsync();
 
-                // --- 3. Đọc dữ liệu DutyDetail từ Google Sheet để kiểm tra conflict
+                // Đọc dữ liệu DutyDetail từ Google Sheet để kiểm tra conflict
                 var allDetailRows = await _googleSheetHelper.ReadSheetAsync("Detail");
                 //var conflict = allDetailRows
                 //    .Where(r =>
@@ -343,11 +346,9 @@ namespace EmployeeAPI.Services.DutyServices
                 //    .Select(r => Guid.Parse(r[2].ToString()))
                 //    .FirstOrDefault();
 
-                // --- 4. Kiểm tra trạng thái người dùng
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new ArgumentException("Không tìm thấy người dùng hoặc người dùng đã bị vô hiệu hóa");
 
-                // --- 5. Logic phân quyền theo role
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     if (currentUser.CompanyId == null)
@@ -378,14 +379,12 @@ namespace EmployeeAPI.Services.DutyServices
                     //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
                 }
 
-                // --- 6. Kiểm tra ngày tháng hợp lệ
                 if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
                     throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
 
                 if (dto.StartDate > dto.EndDate)
                     throw new ArgumentException("Ngày bắt đầu không được sau ngày kết thúc");
 
-                // --- 7. Tạo đối tượng Duty
                 var duty = new Duty
                 {
                     Id = Guid.NewGuid(),
@@ -394,11 +393,11 @@ namespace EmployeeAPI.Services.DutyServices
                     EndDate = dto.EndDate,
                     AssignedById = currentUserId,
                     CompanyId = (Guid)currentUser.CompanyId!,
-                    IsCompleted = false,
+                    //IsCompleted = false,
+                    Status = Enums.DutyStatus.InProgress,
                     IsDeleted = false
                 };
 
-                // --- 8. Tạo danh sách DutyDetails
                 var dutyDetails = dto.DutyDetails.Select(d => new DutyDetail
                 {
                     DutyDetailId = Guid.NewGuid(),
@@ -406,23 +405,24 @@ namespace EmployeeAPI.Services.DutyServices
                     UserId = d.userId,
                     Description = d.Description,
                     IsDeleted = false,
-                    IsCompleted = false
+                    //IsCompleted = false
+                    Status = Enums.DutyStatus.NotStarted
                 }).ToList();
 
                 duty.DutyDetails = dutyDetails;
 
-                // --- 9. Ghi vào Google Sheets
+                // Ghi vào Google Sheets
                 await _googleSheetHelper.AppendDutyAsync(duty);
                 await _googleSheetHelper.AppendDutyDetailsAsync(dutyDetails);
 
-                // --- 10. Trả kết quả
                 return new ResponseModel.DutyResultDto
                 {
                     Id = duty.Id,
                     Name = duty.Name,
                     StartDate = duty.StartDate,
                     EndDate = duty.EndDate,
-                    IsCompleted = duty.IsCompleted,
+                    //IsCompleted = duty.IsCompleted,
+                    Status = duty.Status.ToString(),
                     AssignedById = currentUser.UserId,
                     AssignedBy = currentUser.Fullname,
                     AssignImageUrl = currentUser.ImageUrl ?? "",
@@ -433,7 +433,8 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Description = d.Description,
-                        IsCompleted = d.IsCompleted,
+                        //IsCompleted = d.IsCompleted,
+                        Status = d.Status.ToString(),
                         Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
                         UserImageUrl = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.ImageUrl ?? ""
                     }).ToList()
@@ -453,7 +454,6 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
-                // Lấy Duty từ Google Sheets
                 var duty = await _googleSheetHelper.GetDutyByIdAsync(dutyId);
                 if (duty == null)
                     throw new Exception("Không tìm thấy công việc");
@@ -466,7 +466,6 @@ namespace EmployeeAPI.Services.DutyServices
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new ArgumentException("Không tìm thấy người dùng hợp lệ");
 
-                // Lấy tất cả DutyDetails từ Google Sheets
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
                 //var conflict = allDutyDetails
                 //    .FirstOrDefault(dd =>
@@ -512,7 +511,8 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = detailDto.userId,
                         DutyId = dutyId,
                         Description = detailDto.Description,
-                        IsCompleted = false,
+                        // IsCompleted = false,
+                        Status = Enums.DutyStatus.NotStarted,
                         IsDeleted = false
                     };
 
@@ -533,12 +533,13 @@ namespace EmployeeAPI.Services.DutyServices
                     EndDate = updatedDuty.EndDate,
                     AssignedBy = currentUser.Fullname,
                     CompanyName = (await _context.Companies.FindAsync(updatedDuty.CompanyId))?.Name ?? "",
-                    DutyDetails = updatedDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto
+                    DutyDetails = updatedDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto //// dòng 539
                     {
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Description = d.Description,
-                        IsCompleted = d.IsCompleted,
+                        //IsCompleted = d.IsCompleted,
+                        Status = d.Status.ToString(),
                         Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
                         UserImageUrl = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.ImageUrl ?? "",
                     }).ToList()
@@ -602,7 +603,8 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = users.GetValueOrDefault(d.UserId)?.Fullname ?? "",
                     UserImageUrl = users.GetValueOrDefault(d.UserId)?.ImageUrl ?? "",
                     Description = d.Description,
-                    IsCompleted = d.IsCompleted
+                    //IsCompleted = d.IsCompleted
+                    Status = d.Status.ToString()
                 }).ToList();
 
                 // Trả về
@@ -612,7 +614,8 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = existingDuty.Name,
                     StartDate = existingDuty.StartDate,
                     EndDate = existingDuty.EndDate,
-                    IsCompleted = existingDuty.IsCompleted,
+                    //IsCompleted = existingDuty.IsCompleted,
+                    Status = existingDuty.Status.ToString(),
                     AssignedBy = (await _context.Users.FindAsync(existingDuty.AssignedById))?.Fullname ?? "",
                     AssignImageUrl = (await _context.Users.FindAsync(existingDuty.AssignedById))?.ImageUrl ?? "",
                     DutyDetails = dutyDetailResults
@@ -632,14 +635,12 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
-                // Lấy danh sách tất cả DutyDetail từ Google Sheet
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
 
                 var existingDutyDetail = allDutyDetails.FirstOrDefault(d => d.DutyDetailId == dto.DutyDetailId && !d.IsDeleted);
                 if (existingDutyDetail == null)
                     throw new ArgumentException("Không tìm thấy chi tiết công việc");
 
-                //// Lấy danh sách tất cả Duties từ Google Sheet
                 var allDuties = await _googleSheetHelper.GetAllDutiesAsync();
                 var relatedDuty = allDuties.FirstOrDefault(d => d.Id == existingDutyDetail.DutyId);
                 if (relatedDuty == null)
@@ -665,7 +666,6 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new UnauthorizedAccessException("Manager chỉ được chọn nhân viên cùng phòng ban để thực hiện công việc");
                 }
 
-                // Cập nhật nội dung
                 existingDutyDetail.UserId = dto.userId;
                 existingDutyDetail.Description = dto.Description;
 
@@ -679,7 +679,8 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = userToAssign.Fullname,
                     UserImageUrl = userToAssign.ImageUrl ?? "",
                     Description = existingDutyDetail.Description,
-                    IsCompleted = existingDutyDetail.IsCompleted
+                    //IsCompleted = existingDutyDetail.IsCompleted
+                    Status = existingDutyDetail.Status.ToString()
                 };
             }
             catch (Exception ex)
@@ -697,7 +698,8 @@ namespace EmployeeAPI.Services.DutyServices
                 if (existingDutyDetail == null)
                     throw new ArgumentException("Không tìm thấy chi tiết công việc");
 
-                if (existingDutyDetail.IsCompleted)
+                //if (existingDutyDetail.IsCompleted)
+                if(existingDutyDetail.Status == Enums.DutyStatus.Completed)
                     throw new ArgumentException("Công việc đã được đánh dấu hoàn thành trước đó");
 
                 var allDuties = await _googleSheetHelper.GetAllDutiesAsync();
@@ -742,10 +744,9 @@ namespace EmployeeAPI.Services.DutyServices
                     }
                 }
 
-                existingDutyDetail.IsCompleted = true;
+                //existingDutyDetail.IsCompleted = true;
+                existingDutyDetail.Status = Enums.DutyStatus.Completed;
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
-
-                // (Optional) Cập nhật lại trạng thái Duty nếu tất cả detail đã xong
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
 
                 return "Đã hoàn thành công việc: " + existingDutyDetail.Description;
@@ -782,10 +783,6 @@ namespace EmployeeAPI.Services.DutyServices
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa công việc do mình tạo ra");
                 }
-                else
-                {
-                    throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được phép xóa công việc");
-                }
 
                 // Đánh dấu Duty là đã xóa mềm
                 duty.IsDeleted = true;
@@ -797,7 +794,8 @@ namespace EmployeeAPI.Services.DutyServices
                     EndDate = duty.EndDate,
                     AssignedBy = duty.AssignedById.ToString(),
                     CompanyId = duty.CompanyId ?? Guid.Empty,
-                    IsCompleted = duty.IsCompleted,
+                    //IsCompleted = duty.IsCompleted,
+                    Status = duty.Status.ToString(),
                     IsDeleted = duty.IsDeleted
                 });
 
