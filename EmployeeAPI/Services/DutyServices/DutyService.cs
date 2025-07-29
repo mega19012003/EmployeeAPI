@@ -77,10 +77,11 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = Guid.Parse(row[0].ToString()),
                     DutyId = Guid.Parse(row[1].ToString()),
                     UserId = Guid.Parse(row[2].ToString()),
-                    Description = row[3].ToString(),
+                    Deadline = DateOnly.Parse(row[3].ToString()),
+                    Description = row[4].ToString(),
                     //IsCompleted = bool.Parse(row[4].ToString()),
-                    Status = row[4].ToString(),
-                    IsDeleted = bool.TryParse(row[5]?.ToString(), out var deleted) && deleted
+                    Status = row[5].ToString(),
+                    IsDeleted = bool.TryParse(row[6]?.ToString(), out var deleted) && deleted
                 })
                 .Where(dd => !dd.IsDeleted) // ❗ Lọc bỏ detail bị xóa
                 .ToList();
@@ -159,6 +160,7 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyDetailId = dd.DutyDetailId,
                         UserId = dd.UserId,
                         Description = dd.Description,
+                        Deadline = dd.Deadline,
                         Name = users.FirstOrDefault(u => u.UserId == dd.UserId)?.Fullname ?? "",
                         UserImageUrl = users.FirstOrDefault(u => u.UserId == dd.UserId)?.ImageUrl ?? "",
                         //IsCompleted = dd.IsCompleted
@@ -232,6 +234,7 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = detail.DutyDetailId,
                     UserId = detail.UserId,
                     Description = detail.Description,
+                    Deadline = detail.Deadline,
                     Name = user?.Fullname,
                     UserImageUrl = user?.ImageUrl,
                     //IsCompleted = detail.IsCompleted
@@ -254,10 +257,11 @@ namespace EmployeeAPI.Services.DutyServices
 
                 var dutyId = Guid.TryParse(row[1]?.ToString(), out var parsedDutyId) ? parsedDutyId : Guid.Empty;
                 var userId = Guid.TryParse(row[2]?.ToString(), out var uId) ? uId : Guid.Empty;
-                var description = row[3]?.ToString() ?? "";
+                var deadline = DateOnly.TryParse(row[3]?.ToString(), out var parsedDeadline) ? parsedDeadline : DateOnly.MinValue;
+                var description = row[4]?.ToString() ?? "";
                 //var isCompleted = bool.TryParse(row[4]?.ToString(), out var comp) && comp;
-                var status = row[4]?.ToString() ?? "";
-                var isDeleted = bool.TryParse(row[5]?.ToString(), out var del) && del;
+                var status = row[5]?.ToString() ?? "";
+                var isDeleted = bool.TryParse(row[6]?.ToString(), out var del) && del;
 
                 if (isDeleted)
                     throw new ArgumentException("Công việc chi tiết này đã bị xóa");
@@ -309,6 +313,7 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyDetailId = dutyDetailId,
                     UserId = userId,
                     Description = description,
+                    Deadline = deadline,
                     Name = user?.Fullname ?? "",
                     UserImageUrl = user?.ImageUrl ?? "",
                     //IsCompleted = isCompleted
@@ -404,6 +409,7 @@ namespace EmployeeAPI.Services.DutyServices
                     DutyId = duty.Id,
                     UserId = d.userId,
                     Description = d.Description,
+                    Deadline = d.Deadline,
                     IsDeleted = false,
                     //IsCompleted = false
                     Status = Enums.DutyStatus.NotStarted
@@ -433,6 +439,7 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Description = d.Description,
+                        Deadline = d.Deadline,
                         //IsCompleted = d.IsCompleted,
                         Status = d.Status.ToString(),
                         Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
@@ -519,10 +526,8 @@ namespace EmployeeAPI.Services.DutyServices
                     await _googleSheetHelper.AddDutyDetailAsync(newDetail);
                 }
 
-                // Cập nhật trạng thái hoàn thành của công việc nếu cần
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(dutyId);
 
-                // Lấy lại duty từ sheet (đã có DutyDetail mới)
                 var updatedDuty = await _googleSheetHelper.GetDutyByIdAsync(dutyId);
 
                 return new ResponseModel.DutyResultDto
@@ -533,11 +538,12 @@ namespace EmployeeAPI.Services.DutyServices
                     EndDate = updatedDuty.EndDate,
                     AssignedBy = currentUser.Fullname,
                     CompanyName = (await _context.Companies.FindAsync(updatedDuty.CompanyId))?.Name ?? "",
-                    DutyDetails = updatedDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto //// dòng 539
+                    DutyDetails = updatedDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto 
                     {
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Description = d.Description,
+                        Deadline = d.Deadline,
                         //IsCompleted = d.IsCompleted,
                         Status = d.Status.ToString(),
                         Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
@@ -560,12 +566,10 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
-                // Lấy duty từ Google Sheets
                 var existingDuty = await _googleSheetHelper.GetDutyByIdAsync(dto.Id);
                 if (existingDuty == null)
                     throw new ArgumentException("Không tìm thấy công việc");
 
-                // Phân quyền
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     if (existingDuty.CompanyId != currentUser.CompanyId)
@@ -580,19 +584,15 @@ namespace EmployeeAPI.Services.DutyServices
                 if (dto.StartDate > dto.EndDate)
                     throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
 
-                // Cập nhật thông tin
                 existingDuty.Name = dto.Name;
                 existingDuty.StartDate = dto.StartDate;
                 existingDuty.EndDate = dto.EndDate;
 
-                // Cập nhật lên Google Sheet
                 await _googleSheetHelper.UpdateDutyRowAsync(existingDuty);
 
-                // Lấy lại danh sách duty detail từ Google Sheet
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
                 var details = allDutyDetails.Where(d => d.DutyId == dto.Id).ToList();
 
-                // Load thông tin user cho từng detail
                 var userIds = details.Select(d => d.UserId).Distinct().ToList();
                 var users = await _context.Users.Where(u => userIds.Contains(u.UserId)).ToDictionaryAsync(u => u.UserId, u => new { u.Fullname, u.ImageUrl });
 
@@ -607,7 +607,6 @@ namespace EmployeeAPI.Services.DutyServices
                     Status = d.Status.ToString()
                 }).ToList();
 
-                // Trả về
                 return new ResponseModel.DutyResultDto
                 {
                     Id = existingDuty.Id,
@@ -668,8 +667,8 @@ namespace EmployeeAPI.Services.DutyServices
 
                 existingDutyDetail.UserId = dto.userId;
                 existingDutyDetail.Description = dto.Description;
+                existingDutyDetail.Deadline = dto.Deadline;
 
-                // Ghi lại lên Google Sheets
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
 
                 return new ResponseModel.DutyDetailResultDto
@@ -679,6 +678,7 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = userToAssign.Fullname,
                     UserImageUrl = userToAssign.ImageUrl ?? "",
                     Description = existingDutyDetail.Description,
+                    Deadline = existingDutyDetail.Deadline,
                     //IsCompleted = existingDutyDetail.IsCompleted
                     Status = existingDutyDetail.Status.ToString()
                 };

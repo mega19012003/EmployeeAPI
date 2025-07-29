@@ -33,6 +33,7 @@ namespace EmployeeAPI.Services.DutyServices
             public string Name { get; set; }
             public string UserImageUrl { get; set; }
             public string Status { get; set; }
+            public DateOnly Deadline { get; set; }
             //public bool IsCompleted { get; set; }
             public string Description { get; set; }
         }
@@ -63,12 +64,14 @@ namespace EmployeeAPI.Services.DutyServices
         {
             public Guid userId { get; set; }
             public string Description { get; set; }
+            public DateOnly Deadline { get; set; }
         }
         public class UpdateDutyDetailDto
         {
             public Guid DutyDetailId { get; set; }
             public Guid userId { get; set; }
             public string Description { get; set; }
+            public DateOnly Deadline { get; set; }
         }
 
         //public class MarkAsCompleted 

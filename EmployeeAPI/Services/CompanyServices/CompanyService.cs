@@ -205,7 +205,7 @@ namespace EmployeeAPI.Services.CompanyServices
                 if (!string.IsNullOrEmpty(dto.Address)) existingCompany.Address = dto.Address;
                 //if (!string.IsNullOrEmpty(dto.LogoUrl)) existingCompany.LogoUrl = dto.LogoUrl;
                 if (!string.IsNullOrEmpty(dto.Name)) existingCompany.Name = dto.Name;
-                if (dto.IsActive) existingCompany.IsActive = dto.IsActive;
+                if (dto.IsActive.HasValue) existingCompany.IsActive = dto.IsActive.Value;
 
                 if ( dto.LogoUrl != null )
                 {
