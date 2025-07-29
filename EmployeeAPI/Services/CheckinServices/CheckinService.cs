@@ -499,7 +499,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 }
 
                 if (normalWorkedHours < 0) normalWorkedHours = 0;
-                checkin.TotalTime = normalWorkedHours;
+                checkin.TotalTime = Math.Round(normalWorkedHours, 2);
                 checkin.CheckoutIP = ip;
 
                 await _checkinRepository.UpdateAsync(checkin);
@@ -623,7 +623,7 @@ namespace EmployeeAPI.Services.CheckinServices
 
                     if (totalWorkedHours < 0) totalWorkedHours = 0;
 
-                    existing.TotalTime = totalWorkedHours;
+                    existing.TotalTime = Math.Round(totalWorkedHours, 2);
 
                     bool isLate = checkinTime.TimeOfDay > schedule.StartTimeMorning.AddMinutes(schedule.LogAllowtime).ToTimeSpan();
                     bool leaveEarly = checkoutTime.TimeOfDay < schedule.EndTimeAfternoon.ToTimeSpan();
