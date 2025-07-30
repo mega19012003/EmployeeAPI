@@ -93,7 +93,6 @@ public class GoogleSheetHelper
 
         await appendRequest.ExecuteAsync();
     }
-
     public async Task AppendDutyDetailsAsync(List<DutyDetail> dutyDetails)
     {
         var range = "Detail!A2:G"; // Giả sử hàng 1 là header
@@ -239,7 +238,6 @@ public class GoogleSheetHelper
 
         return result;
     }
-
     public async Task<List<DutyDetail>> GetAllDutyDetailsAsync()
     {
         var range = $"Detail!A2:G"; 
@@ -368,7 +366,6 @@ public class GoogleSheetHelper
             }
         }
     }
-
     public async Task UpdateDutyRowAsync(DutyResultDto duty)
     {
         var range = "Duty!A2:H"; 
@@ -417,7 +414,6 @@ public class GoogleSheetHelper
 
         throw new Exception("Không tìm thấy Duty để cập nhật trong Google Sheet.");
     }
-
     public async Task UpdateDutyDetailRowAsync(DutyDetail dutyDetail)
     {
         var range = "Detail!A2:G";

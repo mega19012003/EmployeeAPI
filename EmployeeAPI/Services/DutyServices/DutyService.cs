@@ -341,15 +341,23 @@ namespace EmployeeAPI.Services.DutyServices
 
                 // Đọc dữ liệu DutyDetail từ Google Sheet để kiểm tra conflict
                 var allDetailRows = await _googleSheetHelper.ReadSheetAsync("Detail");
-                //var conflict = allDetailRows
-                //    .Where(r =>
-                //        Guid.TryParse(r[2]?.ToString(), out var uid) &&
-                //        userIdsToAssign.Contains(uid) &&
-                //        bool.TryParse(r[5]?.ToString(), out var isDeleted) && !isDeleted &&
-                //        bool.TryParse(r[4]?.ToString(), out var isCompleted) && !isCompleted
-                //    )
-                //    .Select(r => Guid.Parse(r[2].ToString()))
-                //    .FirstOrDefault();
+                var unfinishedConflicts = allDetailRows
+                .Where(r =>
+                    Guid.TryParse(r[1]?.ToString(), out var dutyIdFromSheet) &&
+                    Guid.TryParse(r[2]?.ToString(), out var uid) &&  
+                    userIdsToAssign.Contains(uid) &&
+                    Enum.TryParse<Enums.DutyStatus>(r[5]?.ToString(), out var status) &&
+                    status != Enums.DutyStatus.Completed &&
+                    bool.TryParse(r[6]?.ToString(), out var isDeleted) && !isDeleted
+                )
+                .Select(r => Guid.Parse(r[2].ToString()))
+                .Distinct()
+                .ToList();
+
+                if (unfinishedConflicts.Any())
+                {
+                    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang có công việc khác chưa hoàn thành.");
+                }
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new ArgumentException("Không tìm thấy người dùng hoặc người dùng đã bị vô hiệu hóa");
@@ -403,17 +411,31 @@ namespace EmployeeAPI.Services.DutyServices
                     IsDeleted = false
                 };
 
-                var dutyDetails = dto.DutyDetails.Select(d => new DutyDetail
+                var dutyDetails = new List<DutyDetail>();
+                foreach (var detailDto in dto.DutyDetails)
                 {
-                    DutyDetailId = Guid.NewGuid(),
-                    DutyId = duty.Id,
-                    UserId = d.userId,
-                    Description = d.Description,
-                    Deadline = d.Deadline,
-                    IsDeleted = false,
-                    //IsCompleted = false
-                    Status = Enums.DutyStatus.NotStarted
-                }).ToList();
+                    if (detailDto.Deadline != null)
+                    {
+                        if (detailDto.Deadline < duty.StartDate)
+                            throw new ArgumentException("Deadline không được trước ngày bắt đầu của công việc.");
+
+                        if (detailDto.Deadline > duty.EndDate)
+                            throw new ArgumentException("Deadline không được sau ngày kết thúc của công việc.");
+                    }
+
+                    var newDetail = new DutyDetail
+                    {
+                        DutyDetailId = Guid.NewGuid(),
+                        UserId = detailDto.userId,
+                        DutyId = duty.Id,
+                        Description = detailDto.Description,
+                        Deadline = detailDto.Deadline,
+                        Status = Enums.DutyStatus.NotStarted,
+                        IsDeleted = false
+                    };
+
+                    await _googleSheetHelper.AddDutyDetailAsync(newDetail);
+                }
 
                 duty.DutyDetails = dutyDetails;
 
@@ -474,11 +496,21 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new ArgumentException("Không tìm thấy người dùng hợp lệ");
 
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
-                //var conflict = allDutyDetails
-                //    .FirstOrDefault(dd =>
-                //        userIdsToAssign.Contains(dd.UserId) &&
-                //        !dd.IsDeleted &&
-                //        !dd.IsCompleted);
+                var unfinishedConflicts = allDutyDetails
+                .Where(d =>
+                    userIdsToAssign.Contains(d.UserId) &&
+                    !d.IsDeleted &&
+                    d.Status != Enums.DutyStatus.Completed &&
+                    d.DutyId != dutyId 
+                )
+                .Select(d => d.UserId)
+                .Distinct()
+                .ToList();
+
+                if (unfinishedConflicts.Any())
+                {
+                    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang tham gia công việc khác chưa hoàn thành.");
+                }
 
                 if (currentUserRoles.Contains("Administrator"))
                 {
@@ -647,36 +679,56 @@ namespace EmployeeAPI.Services.DutyServices
 
                 User userToAssign = null;
 
+                var isAdmin = currentUserRoles.Contains("Admin");
+                var isManager = currentUserRoles.Contains("Manager");
+                var isEmployee = currentUserRoles.Contains("Employee");
+
+                if (isAdmin)
+                {
+                    if (dto.Status.HasValue)
+                        throw new UnauthorizedAccessException("Admin không được phép thay đổi trạng thái công việc chi tiết.");
+                }
+                else if (isManager)
+                {
+                    if (relatedDuty.AssignedById != currentUserId)
+                        throw new UnauthorizedAccessException("Manager chỉ được sửa công việc do họ tạo.");
+
+                    if (dto.Status.HasValue)
+                        throw new UnauthorizedAccessException("Manager không được phép thay đổi trạng thái công việc chi tiết.");
+                }
+                else if (isEmployee)
+                {
+                    if (!dto.Status.HasValue || existingDutyDetail.UserId != currentUserId)
+                        throw new UnauthorizedAccessException("Nhân viên chỉ được thay đổi trạng thái công việc của chính mình.");
+                }
+                else
+                {
+                    throw new UnauthorizedAccessException("Vai trò không hợp lệ.");
+                }
+
                 if (dto.userId.HasValue)
                 {
-                    userToAssign = await _context.Users.FirstOrDefaultAsync(u =>
-                        u.UserId == dto.userId.Value &&
-                        (!u.IsDeleted || u.IsActive));
+                    if (!isAdmin && !isManager)
+                        throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được gán người thực hiện.");
+
+                    userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
 
                     if (userToAssign == null)
                         throw new ArgumentException("Không tìm thấy người dùng");
 
                     if (userToAssign.Role != RoleType.Employee)
-                        throw new ArgumentException("Chỉ nhân viên được phép gán vào 1 công việc");
+                        throw new ArgumentException("Chỉ nhân viên được phép gán vào công việc");
 
-                    if (currentUserRoles.Contains("Admin"))
-                    {
-                        if (userToAssign.CompanyId != currentUser.CompanyId)
-                            throw new UnauthorizedAccessException("Admin chỉ được chọn nhân viên cùng công ty để thực hiện công việc");
-                    }
-                    else if (currentUserRoles.Contains("Manager"))
-                    {
-                        if (relatedDuty.AssignedById != currentUserId)
-                            throw new UnauthorizedAccessException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
+                    if (isAdmin && userToAssign.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ được gán nhân viên cùng công ty");
 
-                        if (userToAssign.DepartmentId != currentUser.DepartmentId)
-                            throw new UnauthorizedAccessException("Manager chỉ được chọn nhân viên cùng phòng ban để thực hiện công việc");
-                    }
+                    if (isManager && userToAssign.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
 
                     existingDutyDetail.UserId = dto.userId.Value;
                 }
 
-                if (dto.Status.HasValue)
+                if (dto.Status.HasValue && isEmployee)
                 {
                     if (relatedDuty.Status != DutyStatus.InProgress)
                         throw new InvalidOperationException("Chỉ được thay đổi trạng thái chi tiết khi công việc chính đang thực hiện");
@@ -691,10 +743,19 @@ namespace EmployeeAPI.Services.DutyServices
                     existingDutyDetail.Description = dto.Description;
 
                 if (dto.Deadline.HasValue)
+                {
+                    if (dto.Deadline.Value < relatedDuty.StartDate)
+                        throw new ArgumentException("Deadline không được trước ngày bắt đầu của công việc.");
+
+                    if (dto.Deadline.Value > relatedDuty.EndDate)
+                        throw new ArgumentException("Deadline không được sau ngày kết thúc của công việc.");
+
                     existingDutyDetail.Deadline = dto.Deadline.Value;
+                }
 
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
+
                 var userToShow = userToAssign ?? await _context.Users.FirstOrDefaultAsync(u => u.UserId == existingDutyDetail.UserId);
 
                 return new ResponseModel.DutyDetailResultDto
@@ -710,7 +771,7 @@ namespace EmployeeAPI.Services.DutyServices
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "An error occurred while updating the duty detail in Google Sheets. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
+                _logger.LogError(ex, "Lỗi khi cập nhật duty detail: {Message}", ex.Message);
                 throw;
             }
         }
