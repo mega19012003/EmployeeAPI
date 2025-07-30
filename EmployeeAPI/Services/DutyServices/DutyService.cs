@@ -736,6 +736,9 @@ namespace EmployeeAPI.Services.DutyServices
                     if (existingDutyDetail.UserId != currentUserId)
                         throw new UnauthorizedAccessException("Chỉ người được gán công việc mới được phép thay đổi trạng thái");
 
+                    if (existingDutyDetail.Status == Enums.DutyStatus.Completed)
+                        throw new InvalidOperationException("Công việc chi tiết đã hoàn thành, không được sửa lại.");
+
                     existingDutyDetail.Status = dto.Status.Value;
                 }
 

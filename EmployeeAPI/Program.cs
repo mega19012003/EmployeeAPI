@@ -1,15 +1,14 @@
-﻿using System.Reflection;
-using System.Text;
-using EmployeeAPI.Attributes;
+﻿using EmployeeAPI.Attributes;
 using EmployeeAPI.Middlewares;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.AllowedIPs;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Checkins;
-using EmployeeAPI.Repositories.LogStatusConfigs;
+using EmployeeAPI.Repositories.Companies;
 using EmployeeAPI.Repositories.Departments;
 //using EmployeeAPI.Repositories.Duties;
 using EmployeeAPI.Repositories.Holidays;
+using EmployeeAPI.Repositories.LogStatusConfigs;
 using EmployeeAPI.Repositories.Payrolls;
 using EmployeeAPI.Repositories.Positions;
 using EmployeeAPI.Repositories.ScheduleTimes;
@@ -17,11 +16,14 @@ using EmployeeAPI.Repositories.Users;
 using EmployeeAPI.Services.AllowedIpServices;
 using EmployeeAPI.Services.AuthServices;
 using EmployeeAPI.Services.CheckinServices;
-using EmployeeAPI.Services.LogStatusConfigServices;
+using EmployeeAPI.Services.CompanyServices;
+using EmployeeAPI.Services.Dashboards;
 using EmployeeAPI.Services.DepartmentServices;
 using EmployeeAPI.Services.DutyServices;
+using EmployeeAPI.Services.EmailServices;
 using EmployeeAPI.Services.HolidayServices;
 using EmployeeAPI.Services.ImageServices;
+using EmployeeAPI.Services.LogStatusConfigServices;
 using EmployeeAPI.Services.PayrollServices;
 using EmployeeAPI.Services.PositionServices;
 using EmployeeAPI.Services.ScheduleTimeServices;
@@ -32,9 +34,8 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using EmployeeAPI.Services.Dashboards;
-using EmployeeAPI.Repositories.Companies;
-using EmployeeAPI.Services.CompanyServices;
+using System.Reflection;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 var CustomCors = "_customCors";
@@ -64,6 +65,7 @@ builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"))
 var jwtSetting = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
 builder.Services.AddHttpContextAccessor();
 
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
 builder.Services.Configure<GoogleSheetSettings>(builder.Configuration.GetSection("GoogleSheets"));
 builder.Services.AddScoped<GoogleSheetHelper>();
 
@@ -96,7 +98,7 @@ builder.Services.AddScoped<IHolidayService, HolidayService>();
 builder.Services.AddScoped<ICloudImageService, CloudImageService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<ICompanyService, CompanyService>();
-
+builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddSwaggerGen(c =>
 {
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";

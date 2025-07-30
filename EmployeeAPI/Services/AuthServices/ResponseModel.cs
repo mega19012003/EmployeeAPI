@@ -13,6 +13,7 @@ namespace EmployeeAPI.Services.AuthServices
             public Guid userId { get; set; }
             public String Username { get; set; }
             public string Fullname { get; set; }
+            public string Email { get; set; }
             //public string Password { get; set; }
             public string RoleName { get; set; }
         }
@@ -38,6 +39,7 @@ namespace EmployeeAPI.Services.AuthServices
         {
             [Required]
             public Guid UserId { get; set; }
+            public string Email { get; set; }
         }
         public class RegisterDto
         {
@@ -46,6 +48,7 @@ namespace EmployeeAPI.Services.AuthServices
             [Required]
             public string Fullname { get; set; }
             public string Password { get; set; }
+            public string Email { get; set; }
             [Required]
             public RoleType Role { get; set; }
         }

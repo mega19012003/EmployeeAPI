@@ -1,19 +1,20 @@
-﻿using System;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Security.Cryptography;
-using System.Text;
-using EmployeeAPI.Base;
+﻿using EmployeeAPI.Base;
 using EmployeeAPI.Enums;
+using EmployeeAPI.Helpers;
 using EmployeeAPI.Models;
 using EmployeeAPI.Repositories.Auth;
 using EmployeeAPI.Repositories.Departments;
 using EmployeeAPI.Repositories.Positions;
-using EmployeeAPI.Helpers;
+using EmployeeAPI.Services.EmailServices;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using System;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace EmployeeAPI.Services.AuthServices
 {
@@ -23,8 +24,10 @@ namespace EmployeeAPI.Services.AuthServices
         private readonly IConfiguration _configuration;
         private readonly AppDbContext _context;
         private readonly ILogger<AuthService> _logger;
-        public AuthService(IAuthRepository repository, IConfiguration configuration, AppDbContext context, ILogger<AuthService> logger)
+        private readonly IEmailService _emailService;
+        public AuthService(IAuthRepository repository, IConfiguration configuration, AppDbContext context, ILogger<AuthService> logger, IEmailService emailService)
         {
+            _emailService = emailService;
             _repository = repository;
             _configuration = configuration;
             _context = context;
@@ -82,6 +85,7 @@ namespace EmployeeAPI.Services.AuthServices
                     Username = dto.Username,
                     Password = HashPassword.Hash(dto.Password),
                     Fullname = dto.Fullname,
+                    Email = dto.Email,
                     Role = dto.Role,
                     PhoneNumber = "",
                     Address = "",
@@ -117,6 +121,7 @@ namespace EmployeeAPI.Services.AuthServices
                     Username = entity.Username,
                     Fullname = entity.Fullname,
                     RoleName = entity.Role.ToString(),
+                    Email = entity.Email
                 };
             }
             catch (Exception ex)
@@ -221,42 +226,54 @@ namespace EmployeeAPI.Services.AuthServices
                     throw new ArgumentException("Không tìm thấy người dùng hiện tại");
 
                 var user = await _repository.GetByIdAsync(userId);
+                if (user == null)
+                    throw new ArgumentException("Không tìm thấy người dùng cần reset");
 
+                // Phân quyền
                 if (currentUser.Role == RoleType.SystemAdmin)
                 {
                     if (user.Role != RoleType.Administrator && user.Role != RoleType.SystemAdmin)
-                        throw new ArgumentException("Quản trị hệ thống chỉ được phép reset password cho admin của công ty hoặc quản trị hệ thống khác");
+                        throw new ArgumentException("Quản trị hệ thống chỉ được phép reset password cho admin hoặc quản trị hệ thống khác");
                 }
                 else if (currentUser.Role == RoleType.Administrator)
                 {
-                    if (currentUser.CompanyId == null)
-                        throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ SystemAdmin để cập nhật công ty.");
-                    if (user.CompanyId != currentUser.CompanyId)
-                        throw new UnauthorizedAccessException("Admin chỉ được phép reset password cho nhân viên cùng công ty.");
+                    if (currentUser.CompanyId == null || user.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ được reset cho user trong công ty mình");
                 }
                 else if (currentUser.Role == RoleType.Manager)
                 {
-                    if (currentUser.DepartmentId == null)
-                        throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
-                    if (user.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager chỉ có thể reset password cho user cùng phòng ban.");
+                    if (currentUser.DepartmentId == null || user.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager chỉ được reset cho user trong phòng ban mình");
                 }
 
+                // Tạo password mới
+                string newPassword = PasswordGenerator.Generate();
+                user.Password = HashPassword.Hash(newPassword);
                 user.IsResetPassword = true;
-                user.Password = HashPassword.Hash(user.Username);
-                
+
                 await _repository.UpdateUserAsync(user);
                 await transaction.CommitAsync();
 
-                return $"Reset password thành công. Password mới là username";
+                // Gửi email nếu có email
+                if (!string.IsNullOrWhiteSpace(user.Email))
+                {
+                    await _emailService.SendEmailAsync(
+                        toEmail: user.Email,
+                        subject: "Đặt lại mật khẩu",
+                        body: $"Mật khẩu mới của bạn là: <b>{newPassword}</b><br/>Vui lòng đăng nhập và thay đổi mật khẩu ngay."
+                    );
+                }
+
+                return "Reset password thành công. Mật khẩu mới đã được gửi qua email.";
             }
             catch (Exception ex)
             {
                 await transaction.RollbackAsync();
-                _logger.LogError(ex, "Error occurred while resetting password");
+                _logger.LogError(ex, "Lỗi khi reset mật khẩu");
                 throw;
             }
         }
+
 
         private string GenerateRefreshToken()
         {
@@ -341,33 +358,33 @@ namespace EmployeeAPI.Services.AuthServices
                 && password.Any(char.IsDigit) 
                 && password.Any(ch => "!@#$%^&*()_-+=<>?".Contains(ch)); 
         }
-        //public static class PasswordGenerator
-        //{
-        //    private static readonly Random _random = new Random();
-        //    private const string Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-        //    private const string Lower = "abcdefghijklmnopqrstuvwxyz";
-        //    private const string Digits = "0123456789";
-        //    private const string Symbols = "!@#$%^&*()_-+=<>?";
+        public static class PasswordGenerator
+        {
+            private static readonly Random _random = new Random();
+            private const string Upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+            private const string Lower = "abcdefghijklmnopqrstuvwxyz";
+            private const string Digits = "0123456789";
+            private const string Symbols = "!@#$%^&*()_-+=<>?";
 
-        //    public static string Generate(int length = 8)
-        //    {
-        //        if (length < 8) throw new ArgumentException("Password too short");
+            public static string Generate(int length = 8)
+            {
+                if (length < 8) throw new ArgumentException("Password too short");
 
-        //        var chars = new List<char>
-        //        {
-        //            Upper[_random.Next(Upper.Length)],
-        //            Lower[_random.Next(Lower.Length)],
-        //            Digits[_random.Next(Digits.Length)],
-        //            Symbols[_random.Next(Symbols.Length)]
-        //        };
+                var chars = new List<char>
+                {
+                    Upper[_random.Next(Upper.Length)],
+                    Lower[_random.Next(Lower.Length)],
+                    Digits[_random.Next(Digits.Length)],
+                    Symbols[_random.Next(Symbols.Length)]
+                };
 
-        //        string all = Upper + Lower + Digits + Symbols;
-        //        while (chars.Count < length)
-        //            chars.Add(all[_random.Next(all.Length)]);
+                string all = Upper + Lower + Digits + Symbols;
+                while (chars.Count < length)
+                    chars.Add(all[_random.Next(all.Length)]);
 
-        //        return new string(chars.OrderBy(x => _random.Next()).ToArray());
-        //    }
-        //}
+                return new string(chars.OrderBy(x => _random.Next()).ToArray());
+            }
+        }
         public async Task<ResponseModel.AuthDto> GetLoginUserAsync(ResponseModel.GetUserLogin dto)
         {
             var result = await _repository.GetLoginUserAsync(dto.UserName);
@@ -377,6 +394,7 @@ namespace EmployeeAPI.Services.AuthServices
                 Username = result.Username,
                 Fullname = result.Fullname,
                 RoleName = result.Role.ToString(),
+                Email = result.Email
             };
         }
     }

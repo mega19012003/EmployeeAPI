@@ -15,6 +15,8 @@ namespace EmployeeAPI.Models
         public string Username { get; set; }
         public string Password { get; set; }
         //public bool isResetPass { get; set; }
+        [EmailAddress(ErrorMessage = "Email không hợp lệ")]
+        public string Email { get; set; }
         [MaxLength(100, ErrorMessage = "Họ tên không được dài quá 100 ký tự")]
         public string Fullname { get; set; }
         public RoleType Role { get; set; }
