@@ -8,6 +8,8 @@ namespace EmployeeAPI.Models
         public Guid Id { get; set; }
         public string Name { get; set; }
         public bool IsDeleted { get; set; } = false;
+        //public DateTime CreatedDate { get; set; }
+        //public DateTime? UpdatedDate { get; set; }
         [JsonIgnore]
         public ICollection<User> Users { get; set; } = new List<User>();
         public Department Department { get; set; }

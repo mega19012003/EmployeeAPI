@@ -69,14 +69,14 @@ namespace EmployeeAPI.Controllers
         // </summary>
         [Authorize(Roles = "Administrator,Manager")]
         [HttpPost("calculate")]
-        public async Task<IActionResult> CalculatePayroll(Guid userId)
+        public async Task<IActionResult> CalculatePayroll(Guid userId, int Month, int Year)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (!Guid.TryParse(currentUserIdStr, out var currentUserId))
                 return StatusCode(500, new { Message = "Internal server error", Detail = "Invalid user ID", StatusCode = 500 });
 
             var currentRoles = User.FindAll(ClaimTypes.Role).Select(r => r.Value).ToList();
-            var pagedResult = await _payrollService.CalculatePayrollAsync(userId, currentUserId, currentRoles);
+            var pagedResult = await _payrollService.CalculatePayrollAsync(userId, Month, Year, currentUserId, currentRoles);
             return Ok(ApiResponse<ResponseModel.PayrollResultDto>.ReturnResult("Calculate payroll success", pagedResult, 200));
         }
 

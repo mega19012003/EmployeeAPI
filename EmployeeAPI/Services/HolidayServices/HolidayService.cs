@@ -56,6 +56,7 @@ namespace EmployeeAPI.Services.HolidayServices
 
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
+                    .OrderBy(f => f.startDate)
                     .Take(pageSize.Value)
                     .Select(f => new ResponseModel.HolidayResultDto
                     {

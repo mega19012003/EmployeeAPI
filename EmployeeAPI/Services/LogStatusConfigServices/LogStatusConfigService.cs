@@ -58,6 +58,7 @@ namespace EmployeeAPI.Services.LogStatusConfigServices
 
                 var items = await query
                     .Include(p => p.Company)
+                    .OrderBy(f => f.enumId)
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
                     .Select(f => new ResponseModel.LogStatusDto

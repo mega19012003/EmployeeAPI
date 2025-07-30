@@ -76,6 +76,10 @@ namespace EmployeeAPI.Services.AuthServices
                 else if (!IsStrongPassword(dto.Password))
                     throw new ArgumentException("Password phải có ít nhất có 8 ký tự, gồm uppercase, lowercase, số và ký tự đặc biệt");
 
+                var existingEmail = await _repository.GetUserByEmailAsync(dto.Email);
+                if (existingEmail != null)
+                    throw new ArgumentException("Email đã tồn tại. Vui lòng sử gụn email khác");
+
                 var departmentId = Guid.Empty;
                 var companyId = Guid.Empty;
                 
@@ -97,12 +101,9 @@ namespace EmployeeAPI.Services.AuthServices
                 };
 
                 if (currentUser.Role == RoleType.Administrator && currentUser.CompanyId != null)
-                    //companyId = currentUser.CompanyId.Value;
                     entity.CompanyId = currentUser.CompanyId;
                 else if (currentUser.Role == RoleType.Manager && currentUser.DepartmentId != null && currentUser.CompanyId != null)
                 {
-                    //companyId = currentUser.DepartmentId.Value;
-                    //departmentId = currentUser.DepartmentId.Value;
                     entity.DepartmentId = currentUser.DepartmentId;
                     entity.CompanyId = currentUser.CompanyId;
                 }

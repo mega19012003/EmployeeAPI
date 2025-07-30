@@ -101,13 +101,13 @@ namespace EmployeeAPI.Services.PayrollServices
             //    Day = null;
 
             if (Month.HasValue)
-                query = query.Where(c => c.CreatedDate.Month == Month.Value);
+                query = query.Where(c => c.PayrollMonth == Month.Value);
 
             //if (Day.HasValue)
             //    query = query.Where(c => c.CreatedDate.Day == Day.Value);
 
             if (Year.HasValue)
-                query = query.Where(c => c.CreatedDate.Year == Year.Value);
+                query = query.Where(c => c.PayrollYear == Year.Value);
             ////////////////////
 
             if (!string.IsNullOrEmpty(name))
@@ -228,7 +228,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 throw;
             }
         }
-        public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, Guid currentUserId, IList<string> currentUserRoles)
+        public async Task<ResponseModel.PayrollResultDto> CalculatePayrollAsync(Guid staffId, int Month, int Year, Guid currentUserId, IList<string> currentUserRoles)
         {
             var staff = await _userRepository.GetActiveUserIdAsync(staffId);
             if (staff == null)
@@ -250,14 +250,19 @@ namespace EmployeeAPI.Services.PayrollServices
                     throw new UnauthorizedAccessException("Manager chỉ có thể tạo bảng lương của user cùng phòng ban");
             }
 
-            int month = DateTime.Now.Month;
-            int year = DateTime.Now.Year;
 
-            // Lấy payroll hiện tại (nếu có)
+            int month = Month;
+            int year = Year;
+
+            if (month < 1 || month > 12)
+                throw new ArgumentException("Tháng không hợp lệ");
+
+            if (year < 2000 || year > DateTime.Now.Year + 1)
+                throw new ArgumentException("Năm không hợp lệ");
+
             var existingPayroll = await _context.Payrolls
-                .FirstOrDefaultAsync(p => p.UserId == staffId && p.CreatedDate.Month == month && p.CreatedDate.Year == year);
+                .FirstOrDefaultAsync(p => p.UserId == staffId && p.PayrollMonth == month && p.PayrollYear == year);
 
-            // Lấy dữ liệu checkin
             var checkinsInMonth = await _context.Checkins
                 .Where(c => c.UserId == staffId
                     && c.CheckinTime.Year == year
@@ -316,7 +321,9 @@ namespace EmployeeAPI.Services.PayrollServices
                     Salary = totalSalary,
                     DaysWorked = totalDayWorked,
                     CreatedDate = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time")),
-                    Note = $"Tạo chấm công cho tháng {month}/{year}"
+                    Note = $"Tạo chấm công cho tháng {month}/{year}",
+                    PayrollMonth = month,
+                    PayrollYear = year,
                 };
                 await _payrollRepository.CreatePayrollAsync(existingPayroll);
             }
@@ -397,8 +404,8 @@ namespace EmployeeAPI.Services.PayrollServices
                     ImageUrl = u.ImageUrl,
                     Payrolls = u.Payrolls
                     .Where(p => !p.IsDeleted &&
-                    (!month.HasValue || p.CreatedDate.Month == month.Value) &&
-                    (!year.HasValue || p.CreatedDate.Year == year.Value) /*&&
+                    (!month.HasValue || p.PayrollMonth == month.Value) &&
+                    (!year.HasValue || p.PayrollYear == year.Value) /*&&
                     (!day.HasValue || p.CreatedDate.Day == day.Value)*/)
                     .OrderByDescending(p => p.CreatedDate)
                     .Select(p => new ResponseModel.PayrollResultDto

@@ -9,7 +9,8 @@ namespace EmployeeAPI.Models
         public DateOnly startDate { get; set; }
         public DateOnly endDate { get; set; }
         public bool IsDeleted { get; set; } = false;
-
+        //public DateTime CreatedDate { get; set; }
+        //public DateTime? UpdatedDate { get; set; }
         public Guid CompanyId { get; set; }
         public Company Company { get; set; }
     }

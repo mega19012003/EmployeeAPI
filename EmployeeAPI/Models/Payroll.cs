@@ -10,7 +10,9 @@ namespace EmployeeAPI.Models
         public Guid UserId { get; set; }
         public User Users { get; set; }
         public double Salary { get; set; }
-        public DateTime CreatedDate { get; set; } 
+        public DateTime CreatedDate { get; set; }
+        public int PayrollMonth { get; set; }
+        public int PayrollYear { get; set; }
         public string Note { get; set; }
         public bool IsDeleted { get; set; } = false;
         public int DaysWorked { get; set; } 

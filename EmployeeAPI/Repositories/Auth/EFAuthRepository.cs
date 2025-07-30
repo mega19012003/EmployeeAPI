@@ -44,6 +44,10 @@ namespace EmployeeAPI.Repositories.Auth
         {
             return await _context.Users.FirstOrDefaultAsync(u => u.Username == username);
         }
+        public async Task<User> GetUserByEmailAsync(string email)
+        {
+            return await _context.Users.FirstOrDefaultAsync(u => u.Email == email);
+        }
 
         public async Task<User> GetByIdAsync(Guid id)
         {

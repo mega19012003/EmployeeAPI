@@ -9,6 +9,9 @@ namespace EmployeeAPI.Models
     {
         public Guid Id { get; set; }
         public string Name { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public DateTime? UpdatedDate { get; set; }
+        public string? Note { get; set; }
         public DateOnly StartDate { get; set; }
         public DateOnly EndDate { get; set; }
 

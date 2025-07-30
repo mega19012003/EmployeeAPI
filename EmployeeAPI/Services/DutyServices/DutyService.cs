@@ -6,6 +6,7 @@ using EmployeeAPI.Repositories.Users;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using System.ComponentModel.Design;
+using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Security.Claims;
 using static EmployeeAPI.Services.DutyServices.ResponseModel;
@@ -34,24 +35,24 @@ namespace EmployeeAPI.Services.DutyServices
             pageIndex ??= 1;
             pageSize ??= 10;
 
-            //var dutyRows = await _googleSheetHelper.ReadSheetAsync("Duty!A2:H");
+            //var dutyRows = await _googleSheetHelper.ReadSheetAsync("Duty!A2:K");
             //var detailRows = await _googleSheetHelper.ReadSheetAsync("Detail!A2:F");
 
             var dutyRows = await _cache.GetOrCreateAsync("CachedDutyRows", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
-                return await _googleSheetHelper.ReadSheetAsync("Duty!A2:H");
+                return await _googleSheetHelper.ReadSheetAsync("Duty!A2:K");
             });
 
             var detailRows = await _cache.GetOrCreateAsync("CachedDetailRows", async entry =>
             {
                 entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
-                return await _googleSheetHelper.ReadSheetAsync("Detail!A2:G");
+                return await _googleSheetHelper.ReadSheetAsync("Detail!A2:L");
             });
 
             var users = await _context.Users.ToListAsync();
             var companies = await _context.Companies.ToListAsync();
-            var currentUser = await _context.Users.FindAsync(currentUserId);
+            var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
 
             var duties = dutyRows
                 .Where(row => !string.IsNullOrWhiteSpace(row[0]?.ToString()))
@@ -65,25 +66,32 @@ namespace EmployeeAPI.Services.DutyServices
                     //IsCompleted = bool.Parse(row[5].ToString()),
                     Status = row[5].ToString(),
                     IsDeleted = bool.Parse(row[6].ToString()),
-                    CompanyId = string.IsNullOrEmpty(row[7].ToString()) ? (Guid?)null : Guid.Parse(row[7].ToString())
+                    CompanyId = string.IsNullOrEmpty(row[7].ToString()) ? (Guid?)null : Guid.Parse(row[7].ToString()),
+                    CreatedDate = DateTime.Parse(row[8].ToString()),
+                    UpdatedDate = string.IsNullOrEmpty(row[9].ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString()),
+                    Note = row[10]?.ToString()
                 })
                 .Where(d => !d.IsDeleted)
                 .ToList();
 
             var dutyDetails = detailRows
                 .Where(row => !string.IsNullOrWhiteSpace(row[0]?.ToString()))
-                .Select(row => new // dòng 75
+                .Select(row => new
                 {
                     DutyDetailId = Guid.Parse(row[0].ToString()),
                     DutyId = Guid.Parse(row[1].ToString()),
                     UserId = Guid.Parse(row[2].ToString()),
                     Deadline = DateOnly.Parse(row[3].ToString()),
-                    Description = row[4].ToString(),
-                    //IsCompleted = bool.Parse(row[4].ToString()),
-                    Status = row[5].ToString(),
-                    IsDeleted = bool.TryParse(row[6]?.ToString(), out var deleted) && deleted
+                    Title = row.ElementAtOrDefault(4)?.ToString() ?? "",
+                    Description = row.ElementAtOrDefault(5)?.ToString() ?? "",
+                    Status = row.ElementAtOrDefault(6)?.ToString(),
+                    IsDeleted = bool.TryParse(row.ElementAtOrDefault(7)?.ToString(), out var deleted) && deleted,
+                    CreatedDate = DateTime.TryParse(row.ElementAtOrDefault(8)?.ToString(), out var created) ? created : DateTime.MinValue,
+                    UpdatedDate = DateTime.TryParse(row.ElementAtOrDefault(9)?.ToString(), out var updated) ? updated : DateTime.MinValue,
+                    CompletedDate = DateTime.TryParse(row.ElementAtOrDefault(10)?.ToString(), out var completed) ? completed : DateTime.MinValue,
+                    Note = row.ElementAtOrDefault(11)?.ToString() ?? ""
                 })
-                .Where(dd => !dd.IsDeleted) // ❗ Lọc bỏ detail bị xóa
+                .Where(dd => !dd.IsDeleted)
                 .ToList();
 
             // Join Duty + DutyDetail
@@ -97,6 +105,9 @@ namespace EmployeeAPI.Services.DutyServices
                     d.EndDate,
                     d.Status,
                     d.CompanyId,
+                    d.CreatedDate,
+                    d.UpdatedDate,
+                    d.Note,
                     DutyDetails = dutyDetails
                         .Where(dd => dd.DutyId == d.Id)
                         .ToList()
@@ -150,6 +161,9 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = d.Name,
                     StartDate = d.StartDate,
                     EndDate = d.EndDate,
+                    CreatedDate = d.CreatedDate,
+                    UpdatedDate = d.UpdatedDate,
+                    Note = d.Note,
                     //IsCompleted = d.IsCompleted,
                     Status = d.Status,
                     AssignedBy = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.Fullname ?? "",
@@ -159,10 +173,15 @@ namespace EmployeeAPI.Services.DutyServices
                     {
                         DutyDetailId = dd.DutyDetailId,
                         UserId = dd.UserId,
+                        Title = dd.Title,
                         Description = dd.Description,
                         Deadline = dd.Deadline,
                         Name = users.FirstOrDefault(u => u.UserId == dd.UserId)?.Fullname ?? "",
                         UserImageUrl = users.FirstOrDefault(u => u.UserId == dd.UserId)?.ImageUrl ?? "",
+                        CreatedDate = dd.CreatedDate,
+                        UpdatedDate = dd.UpdatedDate,
+                        CompletedDate = dd.CompletedDate,
+                        Note = dd.Note,
                         //IsCompleted = dd.IsCompleted
                         Status = dd.Status
                     }).ToList()
@@ -262,6 +281,10 @@ namespace EmployeeAPI.Services.DutyServices
                 //var isCompleted = bool.TryParse(row[4]?.ToString(), out var comp) && comp;
                 var status = row[5]?.ToString() ?? "";
                 var isDeleted = bool.TryParse(row[6]?.ToString(), out var del) && del;
+                var createdDate = DateTime.TryParse(row[7]?.ToString(), out var created) ? created : DateTime.MinValue;
+                var updatedDate = DateTime.TryParse(row[8]?.ToString(), out var updated) ? updated : (DateTime?)null;
+                var completedDate = DateTime.TryParse(row[9]?.ToString(), out var completed) ? completed : (DateTime?)null;
+                var note = row[10]?.ToString() ?? "";
 
                 if (isDeleted)
                     throw new ArgumentException("Công việc chi tiết này đã bị xóa");
@@ -317,10 +340,13 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = user?.Fullname ?? "",
                     UserImageUrl = user?.ImageUrl ?? "",
                     //IsCompleted = isCompleted
-                    Status = status
+                    Status = status,
+                    CreatedDate = createdDate,
+                    UpdatedDate = updatedDate,
+                    CompletedDate = completedDate,
+                    Note = note
                 };
             }
-
             throw new ArgumentException("Không tìm thấy công việc chi tiết này");
         }
 
@@ -408,7 +434,10 @@ namespace EmployeeAPI.Services.DutyServices
                     CompanyId = (Guid)currentUser.CompanyId!,
                     //IsCompleted = false,
                     Status = Enums.DutyStatus.InProgress,
-                    IsDeleted = false
+                    IsDeleted = false,
+                    CreatedDate = DateTime.UtcNow,
+                    UpdatedDate = null,
+                    Note = null
                 };
 
                 var dutyDetails = new List<DutyDetail>();
@@ -431,7 +460,11 @@ namespace EmployeeAPI.Services.DutyServices
                         Description = detailDto.Description,
                         Deadline = detailDto.Deadline,
                         Status = Enums.DutyStatus.NotStarted,
-                        IsDeleted = false
+                        IsDeleted = false,
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = null,
+                        CompletedDate = null,
+                        Note = null
                     };
 
                     await _googleSheetHelper.AddDutyDetailAsync(newDetail);
@@ -449,6 +482,9 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = duty.Name,
                     StartDate = duty.StartDate,
                     EndDate = duty.EndDate,
+                    CreatedDate = duty.CreatedDate,
+                    UpdatedDate = duty.UpdatedDate,
+                    Note = duty.Note,
                     //IsCompleted = duty.IsCompleted,
                     Status = duty.Status.ToString(),
                     AssignedById = currentUser.UserId,
@@ -462,6 +498,10 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = d.UserId,
                         Description = d.Description,
                         Deadline = d.Deadline,
+                        CreatedDate = d.CreatedDate,
+                        UpdatedDate = d.UpdatedDate,
+                        CompletedDate = d.CompletedDate,
+                        Note = d.Note,
                         //IsCompleted = d.IsCompleted,
                         Status = d.Status.ToString(),
                         Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
@@ -552,7 +592,12 @@ namespace EmployeeAPI.Services.DutyServices
                         Description = detailDto.Description,
                         // IsCompleted = false,
                         Status = Enums.DutyStatus.NotStarted,
-                        IsDeleted = false
+                        IsDeleted = false,
+                        
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedDate = null,
+                        CompletedDate = null,
+                        Note = null,
                     };
 
                     await _googleSheetHelper.AddDutyDetailAsync(newDetail);
@@ -568,6 +613,9 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = updatedDuty.Name,
                     StartDate = updatedDuty.StartDate,
                     EndDate = updatedDuty.EndDate,
+                    CreatedDate = updatedDuty.CreatedDate,
+                    UpdatedDate = updatedDuty.UpdatedDate,
+                    Note = updatedDuty.Note,
                     AssignedBy = currentUser.Fullname,
                     CompanyName = (await _context.Companies.FindAsync(updatedDuty.CompanyId))?.Name ?? "",
                     DutyDetails = updatedDuty.DutyDetails.Select(d => new ResponseModel.DutyDetailResultDto 
@@ -576,6 +624,10 @@ namespace EmployeeAPI.Services.DutyServices
                         UserId = d.UserId,
                         Description = d.Description,
                         Deadline = d.Deadline,
+                        CreatedDate = d.CreatedDate,
+                        UpdatedDate = d.UpdatedDate,
+                        CompletedDate = d.CompletedDate,
+                        Note = d.Note,
                         //IsCompleted = d.IsCompleted,
                         Status = d.Status.ToString(),
                         Name = assignedUsers.FirstOrDefault(u => u.UserId == d.UserId)?.Fullname ?? "",
@@ -617,9 +669,19 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
 
                 if (!string.IsNullOrEmpty(dto.Name)) existingDuty.Name = dto.Name;
-                if (dto.StartDate.HasValue) existingDuty.StartDate = dto.StartDate.Value;
-                if (dto.EndDate.HasValue) existingDuty.EndDate = dto.EndDate.Value;
-                if (dto.Status.HasValue) existingDuty.Status = dto.Status.Value.ToString();
+                if (dto.StartDate.HasValue)
+                {
+                    if(dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                        throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
+                    existingDuty.StartDate = dto.StartDate.Value;
+                }
+                if (dto.EndDate.HasValue)
+                {
+                    if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                        throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
+                        existingDuty.EndDate = dto.EndDate.Value;
+                    }
+                //if (dto.Status.HasValue) existingDuty.Status = dto.Status.Value.ToString();
 
                 await _googleSheetHelper.UpdateDutyRowAsync(existingDuty);
 
