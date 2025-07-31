@@ -97,9 +97,9 @@ public class GoogleSheetHelper
             detail.Status.ToString(),
             detail.IsDeleted.ToString(),
             detail.CreatedDate.ToString("yyyy-MM-dd HH:mm:ss"),
-            detail.UpdatedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "",
-            detail.CompletedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? "",
-            detail.Note ?? ""
+            detail.UpdatedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? null,
+            detail.CompletedDate?.ToString("yyyy-MM-dd HH:mm:ss") ?? null,
+            detail.Note ?? null
         }).ToList<IList<object>>();
 
         var valueRange = new ValueRange
@@ -131,8 +131,8 @@ public class GoogleSheetHelper
         var isDeleted = bool.TryParse(row[6]?.ToString(), out var del) && del;
         var companyId = Guid.TryParse(row[7]?.ToString(), out var compId) ? compId : Guid.Empty;
         var createdDate = DateTime.Parse(row[8]?.ToString() ?? DateTime.MinValue.ToString());
-        var updatedDate = DateTime.TryParse(row[9]?.ToString(), out var upd) ? upd : (DateTime?)null;
-        var note = row[10]?.ToString();
+        var updatedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString());
+        var note = row.ElementAtOrDefault(10)?.ToString();
 
         // Lọc các DutyDetail theo DutyId
         var dutyDetails = detailRows
@@ -147,9 +147,9 @@ public class GoogleSheetHelper
                 //IsCompleted = bool.TryParse(r[4]?.ToString(), out var comp2) && comp2
                 Status = r[6]?.ToString(),
                 CreatedDate = DateTime.Parse(r[8]?.ToString() ?? DateTime.MinValue.ToString()),
-                UpdatedDate = DateTime.TryParse(r[9]?.ToString(), out var upd2) ? upd2 : (DateTime?)null,
-                CompletedDate = DateTime.TryParse(r[10]?.ToString(), out var compDate) ? compDate : (DateTime?)null,
-                Note = r[11]?.ToString()
+                UpdatedDate = string.IsNullOrWhiteSpace(r.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(r[9].ToString()),
+                CompletedDate = string.IsNullOrWhiteSpace(r.ElementAtOrDefault(10)?.ToString()) ? (DateTime?)null : DateTime.Parse(r[10].ToString()),
+                Note = r.ElementAtOrDefault(11)?.ToString()
             })
             .ToList();
 
@@ -210,10 +210,9 @@ public class GoogleSheetHelper
                 //IsCompleted = bool.TryParse(r[4]?.ToString(), out var comp2) && comp2,
                 Status = r[6]?.ToString(),
                 CreatedDate = DateTime.Parse(r[8]?.ToString() ?? DateTime.MinValue.ToString()),
-                UpdatedDate = DateTime.TryParse(r[9]?.ToString(), out var upd2) ? upd2 : (DateTime?)null,
-                CompletedDate = DateTime.TryParse(r[10]?.ToString(), out var compDate) ? compDate : (DateTime?)null,
-                Note = r[11]?.ToString(),
-                //Name = r[2]?.ToString() 
+                UpdatedDate = string.IsNullOrWhiteSpace(r.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(r[9].ToString()),
+                CompletedDate = string.IsNullOrWhiteSpace(r.ElementAtOrDefault(10)?.ToString()) ? (DateTime?)null : DateTime.Parse(r[10].ToString()),
+                Note = r.ElementAtOrDefault(11)?.ToString()
             }).ToList();
     }
     public async Task<List<Duty>> GetAllDutiesAsync()
@@ -378,7 +377,7 @@ public class GoogleSheetHelper
             var row = response.Values[i];
             if (row.Count > 0 && Guid.TryParse(row[0]?.ToString(), out var rowId) && rowId == dutyId)
             {
-                var updateRange = $"Duty!K{(i + 2)}";
+                var updateRange = $"Duty!F{(i + 2)}";
                 var valueRange = new ValueRange
                 {
                     //Values = new List<IList<object>> { new List<object> { isCompleted.ToString() } }
@@ -440,7 +439,6 @@ public class GoogleSheetHelper
                 return;
             }
         }
-
         throw new Exception("Không tìm thấy Duty để cập nhật trong Google Sheet.");
     }
     public async Task UpdateDutyDetailRowAsync(DutyDetail dutyDetail)

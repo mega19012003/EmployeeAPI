@@ -65,12 +65,14 @@ namespace EmployeeAPI.Services.DutyServices
             public string? Name { get; set; }
             public DateOnly? StartDate { get; set; }
             public DateOnly? EndDate { get; set; }
+            public string Note { get; set; }
             //public bool IsCompleted { get; set; }
         }
 
         public class CreateDutyDetailDto
         {
             public Guid userId { get; set; }
+            public string Title { get; set; }
             public string Description { get; set; }
             public DateOnly Deadline { get; set; }
         }
@@ -78,9 +80,11 @@ namespace EmployeeAPI.Services.DutyServices
         {
             public Guid DutyDetailId { get; set; }
             public Guid? userId { get; set; }
+            public string? Title { get; set; }
             public string? Description { get; set; }
             public DateOnly? Deadline { get; set; }
             public DutyStatus? Status { get; set; }
+            public string Note { get; set; }
         }
 
         //public class MarkAsCompleted 

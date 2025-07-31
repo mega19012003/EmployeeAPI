@@ -68,8 +68,8 @@ namespace EmployeeAPI.Services.DutyServices
                     IsDeleted = bool.Parse(row[6].ToString()),
                     CompanyId = string.IsNullOrEmpty(row[7].ToString()) ? (Guid?)null : Guid.Parse(row[7].ToString()),
                     CreatedDate = DateTime.Parse(row[8].ToString()),
-                    UpdatedDate = string.IsNullOrEmpty(row[9].ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString()),
-                    Note = row[10]?.ToString()
+                    UpdatedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString()),
+                    Note = row.ElementAtOrDefault(10)?.ToString()
                 })
                 .Where(d => !d.IsDeleted)
                 .ToList();
@@ -86,10 +86,10 @@ namespace EmployeeAPI.Services.DutyServices
                     Description = row.ElementAtOrDefault(5)?.ToString() ?? "",
                     Status = row.ElementAtOrDefault(6)?.ToString(),
                     IsDeleted = bool.TryParse(row.ElementAtOrDefault(7)?.ToString(), out var deleted) && deleted,
-                    CreatedDate = DateTime.TryParse(row.ElementAtOrDefault(8)?.ToString(), out var created) ? created : DateTime.MinValue,
-                    UpdatedDate = DateTime.TryParse(row.ElementAtOrDefault(9)?.ToString(), out var updated) ? updated : DateTime.MinValue,
-                    CompletedDate = DateTime.TryParse(row.ElementAtOrDefault(10)?.ToString(), out var completed) ? completed : DateTime.MinValue,
-                    Note = row.ElementAtOrDefault(11)?.ToString() ?? ""
+                    CreatedDate = DateTime.Parse(row[8].ToString()),
+                    UpdatedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString()),
+                    CompletedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(10)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[10].ToString()),
+                    Note = row.ElementAtOrDefault(11)?.ToString()
                 })
                 .Where(dd => !dd.IsDeleted)
                 .ToList();
@@ -162,8 +162,8 @@ namespace EmployeeAPI.Services.DutyServices
                     StartDate = d.StartDate,
                     EndDate = d.EndDate,
                     CreatedDate = d.CreatedDate,
-                    UpdatedDate = d.UpdatedDate,
-                    Note = d.Note,
+                    UpdatedDate = d.UpdatedDate ?? null,
+                    Note = d.Note ?? null,
                     //IsCompleted = d.IsCompleted,
                     Status = d.Status,
                     AssignedBy = users.FirstOrDefault(u => u.UserId == d.AssignedById)?.Fullname ?? "",
@@ -179,9 +179,9 @@ namespace EmployeeAPI.Services.DutyServices
                         Name = users.FirstOrDefault(u => u.UserId == dd.UserId)?.Fullname ?? "",
                         UserImageUrl = users.FirstOrDefault(u => u.UserId == dd.UserId)?.ImageUrl ?? "",
                         CreatedDate = dd.CreatedDate,
-                        UpdatedDate = dd.UpdatedDate,
-                        CompletedDate = dd.CompletedDate,
-                        Note = dd.Note,
+                        UpdatedDate = dd.UpdatedDate ?? null,
+                        CompletedDate = dd.CompletedDate ?? null,
+                        Note = dd.Note ?? "",
                         //IsCompleted = dd.IsCompleted
                         Status = dd.Status
                     }).ToList()
@@ -242,6 +242,9 @@ namespace EmployeeAPI.Services.DutyServices
                 AssignedBy = (await _context.Users.FindAsync(duty.AssignedById))?.Fullname,
                 AssignImageUrl = assignedUser?.ImageUrl,
                 CompanyName = (await _context.Companies.FindAsync(duty.CompanyId))?.Name,
+                Note = duty.Note ?? null,
+                CreatedDate = duty.CreatedDate,
+                UpdatedDate = duty.UpdatedDate ?? null,
                 DutyDetails = new List<ResponseModel.DutyDetailResultDto>()
             };
 
@@ -252,12 +255,17 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     DutyDetailId = detail.DutyDetailId,
                     UserId = detail.UserId,
+                    Title = detail.Title,
                     Description = detail.Description,
                     Deadline = detail.Deadline,
                     Name = user?.Fullname,
                     UserImageUrl = user?.ImageUrl,
                     //IsCompleted = detail.IsCompleted
-                    Status = detail.Status
+                    Status = detail.Status,
+                    CreatedDate = detail.CreatedDate,
+                    UpdatedDate = detail.UpdatedDate,
+                    CompletedDate = detail.CompletedDate,
+                    Note = detail.Note,
                 });
             }
 
@@ -277,14 +285,15 @@ namespace EmployeeAPI.Services.DutyServices
                 var dutyId = Guid.TryParse(row[1]?.ToString(), out var parsedDutyId) ? parsedDutyId : Guid.Empty;
                 var userId = Guid.TryParse(row[2]?.ToString(), out var uId) ? uId : Guid.Empty;
                 var deadline = DateOnly.TryParse(row[3]?.ToString(), out var parsedDeadline) ? parsedDeadline : DateOnly.MinValue;
-                var description = row[4]?.ToString() ?? "";
+                var title = row[4]?.ToString() ?? "";
+                var description = row[5]?.ToString() ?? "";
                 //var isCompleted = bool.TryParse(row[4]?.ToString(), out var comp) && comp;
-                var status = row[5]?.ToString() ?? "";
-                var isDeleted = bool.TryParse(row[6]?.ToString(), out var del) && del;
-                var createdDate = DateTime.TryParse(row[7]?.ToString(), out var created) ? created : DateTime.MinValue;
-                var updatedDate = DateTime.TryParse(row[8]?.ToString(), out var updated) ? updated : (DateTime?)null;
-                var completedDate = DateTime.TryParse(row[9]?.ToString(), out var completed) ? completed : (DateTime?)null;
-                var note = row[10]?.ToString() ?? "";
+                var status = row[6]?.ToString() ?? "";
+                var isDeleted = bool.TryParse(row[7]?.ToString(), out var del) && del;
+                var createdDate = DateTime.TryParse(row[8]?.ToString(), out var created) ? created : DateTime.MinValue;
+                var updatedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString());
+                var completedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[10].ToString());
+                var note = row.ElementAtOrDefault(11)?.ToString();
 
                 if (isDeleted)
                     throw new ArgumentException("Công việc chi tiết này đã bị xóa");
@@ -335,6 +344,7 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     DutyDetailId = dutyDetailId,
                     UserId = userId,
+                    Title = title,
                     Description = description,
                     Deadline = deadline,
                     Name = user?.Fullname ?? "",
@@ -354,13 +364,14 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
                 var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
 
                 var userIdsToAssign = dto.DutyDetails.Select(d => d.userId).ToList();
 
-                // Lấy thông tin người dùng được gán nhiệm vụ
                 var assignedUsers = await _context.Users
                     .Where(u => userIdsToAssign.Contains(u.UserId))
                     .ToListAsync();
@@ -370,11 +381,9 @@ namespace EmployeeAPI.Services.DutyServices
                 var unfinishedConflicts = allDetailRows
                 .Where(r =>
                     Guid.TryParse(r[1]?.ToString(), out var dutyIdFromSheet) &&
-                    Guid.TryParse(r[2]?.ToString(), out var uid) &&  
-                    userIdsToAssign.Contains(uid) &&
-                    Enum.TryParse<Enums.DutyStatus>(r[5]?.ToString(), out var status) &&
-                    status != Enums.DutyStatus.Completed &&
-                    bool.TryParse(r[6]?.ToString(), out var isDeleted) && !isDeleted
+                    Guid.TryParse(r[2]?.ToString(), out var uid) &&  userIdsToAssign.Contains(uid) &&
+                    Enum.TryParse<Enums.DutyStatus>(r[6]?.ToString(), out var status) && status != Enums.DutyStatus.Completed &&
+                    bool.TryParse(r[7]?.ToString(), out var isDeleted) && !isDeleted
                 )
                 .Select(r => Guid.Parse(r[2].ToString()))
                 .Distinct()
@@ -399,8 +408,6 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Any(u => u.CompanyId != currentUser.CompanyId))
                         throw new ArgumentException("Admin chỉ được chọn nhân viên cùng công ty để thực hiện công việc");
 
-                    //if (conflict != Guid.Empty)
-                    //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
                 }
 
                 if (currentUserRoles.Contains("Manager"))
@@ -414,8 +421,6 @@ namespace EmployeeAPI.Services.DutyServices
                     if (assignedUsers.Any(u => u.DepartmentId != currentUser.DepartmentId))
                         throw new ArgumentException("Manager chỉ được chọn nhân viên cùng phòng ban để thực hiện công việc");
 
-                    //if (conflict != Guid.Empty)
-                    //    throw new InvalidOperationException("Một hoặc nhiều nhân viên đang được gán cho công việc khác chưa hoàn thành");
                 }
 
                 if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
@@ -433,9 +438,9 @@ namespace EmployeeAPI.Services.DutyServices
                     AssignedById = currentUserId,
                     CompanyId = (Guid)currentUser.CompanyId!,
                     //IsCompleted = false,
-                    Status = Enums.DutyStatus.InProgress,
+                    Status = Enums.DutyStatus.NotStarted,
                     IsDeleted = false,
-                    CreatedDate = DateTime.UtcNow,
+                    CreatedDate = vnNow,
                     UpdatedDate = null,
                     Note = null
                 };
@@ -457,17 +462,18 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyDetailId = Guid.NewGuid(),
                         UserId = detailDto.userId,
                         DutyId = duty.Id,
+                        Title = detailDto.Title,
                         Description = detailDto.Description,
                         Deadline = detailDto.Deadline,
                         Status = Enums.DutyStatus.NotStarted,
                         IsDeleted = false,
-                        CreatedDate = DateTime.UtcNow,
+                        CreatedDate = vnNow,
                         UpdatedDate = null,
                         CompletedDate = null,
                         Note = null
                     };
-
-                    await _googleSheetHelper.AddDutyDetailAsync(newDetail);
+                    dutyDetails.Add(newDetail);
+                    //await _googleSheetHelper.AddDutyDetailAsync(newDetail);
                 }
 
                 duty.DutyDetails = dutyDetails;
@@ -497,6 +503,7 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyDetailId = d.DutyDetailId,
                         UserId = d.UserId,
                         Description = d.Description,
+                        Title = d.Title,
                         Deadline = d.Deadline,
                         CreatedDate = d.CreatedDate,
                         UpdatedDate = d.UpdatedDate,
@@ -519,6 +526,8 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
@@ -534,6 +543,7 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (assignedUsers.Any(u => u.IsDeleted || !u.IsActive))
                     throw new ArgumentException("Không tìm thấy người dùng hợp lệ");
+
 
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
                 var unfinishedConflicts = allDutyDetails
@@ -584,6 +594,10 @@ namespace EmployeeAPI.Services.DutyServices
                 // Thêm DutyDetail vào Google Sheets
                 foreach (var detailDto in dto.DutyDetails)
                 {
+                    if (detailDto.Deadline < duty.StartDate || detailDto.Deadline > duty.EndDate)
+                    {
+                        throw new ArgumentException("Deadline không được nằm ngoài khoảng thời gian của công việc.");
+                    }
                     var newDetail = new DutyDetail
                     {
                         DutyDetailId = Guid.NewGuid(),
@@ -594,15 +608,13 @@ namespace EmployeeAPI.Services.DutyServices
                         Status = Enums.DutyStatus.NotStarted,
                         IsDeleted = false,
                         
-                        CreatedDate = DateTime.UtcNow,
+                        CreatedDate = vnNow,
                         UpdatedDate = null,
                         CompletedDate = null,
                         Note = null,
                     };
-
                     await _googleSheetHelper.AddDutyDetailAsync(newDetail);
                 }
-
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(dutyId);
 
                 var updatedDuty = await _googleSheetHelper.GetDutyByIdAsync(dutyId);
@@ -646,6 +658,8 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
@@ -680,7 +694,11 @@ namespace EmployeeAPI.Services.DutyServices
                     if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
                         throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
                         existingDuty.EndDate = dto.EndDate.Value;
-                    }
+                }
+
+                existingDuty.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";
+                existingDuty.UpdatedDate = vnNow;
+
                 //if (dto.Status.HasValue) existingDuty.Status = dto.Status.Value.ToString();
 
                 await _googleSheetHelper.UpdateDutyRowAsync(existingDuty);
@@ -698,6 +716,9 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = users.GetValueOrDefault(d.UserId)?.Fullname ?? "",
                     UserImageUrl = users.GetValueOrDefault(d.UserId)?.ImageUrl ?? "",
                     Description = d.Description,
+                    Deadline = d.Deadline,
+                    CreatedDate = d.CreatedDate,
+                    UpdatedDate = d.UpdatedDate,
                     //IsCompleted = d.IsCompleted
                     Status = d.Status.ToString()
                 }).ToList();
@@ -708,6 +729,9 @@ namespace EmployeeAPI.Services.DutyServices
                     Name = existingDuty.Name,
                     StartDate = existingDuty.StartDate,
                     EndDate = existingDuty.EndDate,
+                    CreatedDate = existingDuty.CreatedDate,
+                    UpdatedDate = existingDuty.UpdatedDate,
+                    Note = existingDuty.Note,
                     //IsCompleted = existingDuty.IsCompleted,
                     Status = existingDuty.Status.ToString(),
                     AssignedBy = (await _context.Users.FindAsync(existingDuty.AssignedById))?.Fullname ?? "",
@@ -725,6 +749,8 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
                 var currentUser = await _context.Users.FindAsync(currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
@@ -745,78 +771,70 @@ namespace EmployeeAPI.Services.DutyServices
                 var isManager = currentUserRoles.Contains("Manager");
                 var isEmployee = currentUserRoles.Contains("Employee");
 
-                if (isAdmin)
+                if (isAdmin || isManager)
                 {
-                    if (dto.Status.HasValue)
-                        throw new UnauthorizedAccessException("Admin không được phép thay đổi trạng thái công việc chi tiết.");
+                    if (dto.userId.HasValue)
+                    {
+                        if (!isAdmin && !isManager)
+                            throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được gán người thực hiện.");
+
+                        userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
+
+                        if (userToAssign == null)
+                            throw new ArgumentException("Không tìm thấy người dùng");
+
+                        if (userToAssign.Role != RoleType.Employee)
+                            throw new ArgumentException("Chỉ nhân viên được phép gán vào công việc");
+
+                        if (isAdmin && userToAssign.CompanyId != currentUser.CompanyId)
+                            throw new UnauthorizedAccessException("Admin chỉ được gán nhân viên cùng công ty");
+
+                        if (isManager && userToAssign.DepartmentId != currentUser.DepartmentId)
+                            throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
+
+                        existingDutyDetail.UserId = dto.userId.Value;
+                    }
+
+                    //if (dto.Status.HasValue && isEmployee)
+                    //{
+                    //    if (relatedDuty.Status != DutyStatus.InProgress)
+                    //        throw new InvalidOperationException("Chỉ được thay đổi trạng thái chi tiết khi công việc chính đang thực hiện");
+
+                    //    if (existingDutyDetail.UserId != currentUserId)
+                    //        throw new UnauthorizedAccessException("Chỉ người được gán công việc mới được phép thay đổi trạng thái");
+
+                    //    if (existingDutyDetail.Status == Enums.DutyStatus.Completed)
+                    //        throw new InvalidOperationException("Công việc chi tiết đã hoàn thành, không được sửa lại.");
+
+                    //    existingDutyDetail.Status = dto.Status.Value;
+                    //}
+
+                    if (!string.IsNullOrWhiteSpace(dto.Title)) existingDutyDetail.Title = dto.Title;
+                    if (!string.IsNullOrWhiteSpace(dto.Description)) existingDutyDetail.Description = dto.Description;
+
+                    if (dto.Deadline.HasValue)
+                    {
+                        if (dto.Deadline.Value < relatedDuty.StartDate)
+                            throw new ArgumentException("Deadline không được trước ngày bắt đầu của công việc.");
+
+                        if (dto.Deadline.Value > relatedDuty.EndDate)
+                            throw new ArgumentException("Deadline không được sau ngày kết thúc của công việc.");
+
+                        existingDutyDetail.Deadline = dto.Deadline.Value;
+                    }
                 }
-                else if (isManager)
+
+                if (dto.Status.HasValue)
                 {
-                    if (relatedDuty.AssignedById != currentUserId)
-                        throw new UnauthorizedAccessException("Manager chỉ được sửa công việc do họ tạo.");
-
-                    if (dto.Status.HasValue)
-                        throw new UnauthorizedAccessException("Manager không được phép thay đổi trạng thái công việc chi tiết.");
-                }
-                else if (isEmployee)
-                {
-                    if (!dto.Status.HasValue || existingDutyDetail.UserId != currentUserId)
-                        throw new UnauthorizedAccessException("Nhân viên chỉ được thay đổi trạng thái công việc của chính mình.");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("Vai trò không hợp lệ.");
-                }
-
-                if (dto.userId.HasValue)
-                {
-                    if (!isAdmin && !isManager)
-                        throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được gán người thực hiện.");
-
-                    userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
-
-                    if (userToAssign == null)
-                        throw new ArgumentException("Không tìm thấy người dùng");
-
-                    if (userToAssign.Role != RoleType.Employee)
-                        throw new ArgumentException("Chỉ nhân viên được phép gán vào công việc");
-
-                    if (isAdmin && userToAssign.CompanyId != currentUser.CompanyId)
-                        throw new UnauthorizedAccessException("Admin chỉ được gán nhân viên cùng công ty");
-
-                    if (isManager && userToAssign.DepartmentId != currentUser.DepartmentId)
-                        throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
-
-                    existingDutyDetail.UserId = dto.userId.Value;
-                }
-
-                if (dto.Status.HasValue && isEmployee)
-                {
-                    if (relatedDuty.Status != DutyStatus.InProgress)
-                        throw new InvalidOperationException("Chỉ được thay đổi trạng thái chi tiết khi công việc chính đang thực hiện");
-
+                    if (relatedDuty.Status == Enums.DutyStatus.NotStarted)
+                        throw new ArgumentException("Không thể cập nhật trạng thái khi công việc chính chưa bắt đầu");
                     if (existingDutyDetail.UserId != currentUserId)
-                        throw new UnauthorizedAccessException("Chỉ người được gán công việc mới được phép thay đổi trạng thái");
-
-                    if (existingDutyDetail.Status == Enums.DutyStatus.Completed)
-                        throw new InvalidOperationException("Công việc chi tiết đã hoàn thành, không được sửa lại.");
-
+                        throw new ArgumentException("không thể cập nhật trãng thái công việc của người khác");
                     existingDutyDetail.Status = dto.Status.Value;
                 }
 
-                if (!string.IsNullOrWhiteSpace(dto.Description))
-                    existingDutyDetail.Description = dto.Description;
-
-                if (dto.Deadline.HasValue)
-                {
-                    if (dto.Deadline.Value < relatedDuty.StartDate)
-                        throw new ArgumentException("Deadline không được trước ngày bắt đầu của công việc.");
-
-                    if (dto.Deadline.Value > relatedDuty.EndDate)
-                        throw new ArgumentException("Deadline không được sau ngày kết thúc của công việc.");
-
-                    existingDutyDetail.Deadline = dto.Deadline.Value;
-                }
+                existingDutyDetail.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";
+                existingDutyDetail.UpdatedDate = vnNow;
 
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
@@ -829,9 +847,14 @@ namespace EmployeeAPI.Services.DutyServices
                     UserId = existingDutyDetail.UserId,
                     Name = userToShow?.Fullname ?? "",
                     UserImageUrl = userToShow?.ImageUrl ?? "",
+                    Title = existingDutyDetail.Title,
                     Description = existingDutyDetail.Description,
                     Deadline = existingDutyDetail.Deadline,
-                    Status = existingDutyDetail.Status.ToString()
+                    Status = existingDutyDetail.Status.ToString(),
+                    CreatedDate = existingDutyDetail.CreatedDate,
+                    UpdatedDate = existingDutyDetail.UpdatedDate,
+                    CompletedDate = existingDutyDetail.CompletedDate,
+                    Note = existingDutyDetail.Note
                 };
             }
             catch (Exception ex)
@@ -914,6 +937,8 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
@@ -938,17 +963,23 @@ namespace EmployeeAPI.Services.DutyServices
 
                 // Đánh dấu Duty là đã xóa mềm
                 duty.IsDeleted = true;
+                duty.UpdatedDate = vnNow;
+                duty.Note = "Đã xóa mềm bởi " + currentUser.Fullname;
+
                 await _googleSheetHelper.UpdateDutyRowAsync(new DutyResultDto
                 {
                     Id = duty.Id,
                     Name = duty.Name,
                     StartDate = duty.StartDate,
                     EndDate = duty.EndDate,
+                    CreatedDate = duty.CreatedDate,
+                    UpdatedDate = duty.UpdatedDate,
                     AssignedBy = duty.AssignedById.ToString(),
                     CompanyId = duty.CompanyId ?? Guid.Empty,
                     //IsCompleted = duty.IsCompleted,
                     Status = duty.Status.ToString(),
-                    IsDeleted = duty.IsDeleted
+                    IsDeleted = duty.IsDeleted,
+                    Note = duty.Note
                 });
 
                 // Xóa mềm các DutyDetail liên quan
@@ -961,7 +992,7 @@ namespace EmployeeAPI.Services.DutyServices
                     await _googleSheetHelper.UpdateDutyDetailRowAsync(detail);
                 }
 
-                return "Xóa mềm công việc \"" + duty.Name + "\" thành công";
+                return "Xóa mềm công việc " + duty.Name;
             }
             catch (Exception ex)
             {
@@ -973,6 +1004,8 @@ namespace EmployeeAPI.Services.DutyServices
         {
             try
             {
+                var vnTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vnNow = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, vnTimeZone);
                 var currentUser = await _context.Users.FirstOrDefaultAsync(u => u.UserId == currentUserId);
                 if (currentUser == null)
                     throw new ArgumentException("Không thể tìm thấy user hiện tại");
@@ -1010,14 +1043,15 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được phép xóa chi tiết công việc");
                 }
 
-                // Đánh dấu là đã xóa mềm
                 dutyDetail.IsDeleted = true;
+                dutyDetail.UpdatedDate = vnNow;
+                dutyDetail.Note = "Đã xóa mềm bởi " + currentUser.Fullname;
+
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(dutyDetail);
 
-                // Cập nhật trạng thái hoàn thành của Duty nếu cần
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(duty.Id);
 
-                return "Đã xóa mềm chi tiết công việc " + dutyDetail.DutyDetailId;
+                return "Đã xóa mềm chi tiết công việc " + dutyDetail.Title;
             }
             catch (Exception ex)
             {

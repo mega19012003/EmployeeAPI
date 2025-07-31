@@ -165,7 +165,7 @@ namespace EmployeeAPI.Controllers
 
             var result = await _dutyService.UpdateDutyDetailAsync(dto, currentUserId, currentUserRoles);
 
-            return Ok(ApiResponse<ResponseModel.DutyDetailResultDto>.ReturnResult("Update duty success", result, 200));
+            return Ok(ApiResponse<ResponseModel.DutyDetailResultDto>.ReturnResult("Update Detail success", result, 200));
         }
 
         //// <summary>
