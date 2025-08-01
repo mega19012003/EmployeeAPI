@@ -15,7 +15,7 @@ namespace EmployeeAPI.Models
         public User Users { get; set; }
         public string Title { get; set; }
         public DateOnly Deadline { get; set; }
-        public DutyStatus Status { get; set; } = DutyStatus.NotStarted;
+        public DutyStatus Status { get; set; } = DutyStatus.Pending;
         public bool IsDeleted { get; set; } = false;
         public DateTime CreatedDate { get; set; }
         public DateTime? UpdatedDate { get; set; }

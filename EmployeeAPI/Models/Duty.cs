@@ -18,7 +18,7 @@ namespace EmployeeAPI.Models
         public Guid AssignedById { get; set; } 
         public User AssignedBy { get; set; }
 
-        public DutyStatus Status { get; set; } = DutyStatus.NotStarted;
+        public DutyStatus Status { get; set; } = DutyStatus.Pending;
         public bool IsDeleted { get; set; } = false;
         public ICollection<DutyDetail> DutyDetails { get; set; } = new List<DutyDetail>();
 

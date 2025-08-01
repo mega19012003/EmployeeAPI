@@ -127,7 +127,7 @@ public class GoogleSheetHelper
         var startDate = DateOnly.Parse(row[3]?.ToString());
         var endDate = DateOnly.Parse(row[4]?.ToString());
         //var isCompleted = bool.TryParse(row[5]?.ToString(), out var comp) && comp;
-        var status = Enum.TryParse<DutyStatus>(row[5]?.ToString(), out var dutyStatus) ? dutyStatus : DutyStatus.NotStarted;
+        var status = Enum.TryParse<DutyStatus>(row[5]?.ToString(), out var dutyStatus) ? dutyStatus : DutyStatus.Pending;
         var isDeleted = bool.TryParse(row[6]?.ToString(), out var del) && del;
         var companyId = Guid.TryParse(row[7]?.ToString(), out var compId) ? compId : Guid.Empty;
         var createdDate = DateTime.Parse(row[8]?.ToString() ?? DateTime.MinValue.ToString());
@@ -238,7 +238,7 @@ public class GoogleSheetHelper
                     StartDate = DateOnly.Parse(row.ElementAtOrDefault(3)?.ToString() ?? DateOnly.MinValue.ToString()),
                     EndDate = DateOnly.Parse(row.ElementAtOrDefault(4)?.ToString() ?? DateOnly.MinValue.ToString()),
                     //IsCompleted = bool.TryParse(row.ElementAtOrDefault(5)?.ToString(), out var completed) && completed,
-                    Status = Enum.TryParse<DutyStatus>(row.ElementAtOrDefault(5)?.ToString() ?? "", out var status) ? status : DutyStatus.NotStarted,
+                    Status = Enum.TryParse<DutyStatus>(row.ElementAtOrDefault(5)?.ToString() ?? "", out var status) ? status : DutyStatus.Pending,
                     IsDeleted = bool.TryParse(row.ElementAtOrDefault(6)?.ToString(), out var isDeleted) && isDeleted,
                     CompanyId = Guid.Parse(row.ElementAtOrDefault(7)?.ToString() ?? ""),
                     CreatedDate = DateTime.Parse(row.ElementAtOrDefault(8)?.ToString() ?? DateTime.MinValue.ToString()),
@@ -279,7 +279,7 @@ public class GoogleSheetHelper
                     Title = row.ElementAtOrDefault(4)?.ToString() ?? "",
                     Description = row.ElementAtOrDefault(5)?.ToString() ?? "",
                     //IsCompleted = bool.TryParse(row.ElementAtOrDefault(4)?.ToString(), out var completed) && completed,
-                    Status = Enum.TryParse<DutyStatus>(row.ElementAtOrDefault(6)?.ToString() ?? "", out var status) ? status : DutyStatus.NotStarted,
+                    Status = Enum.TryParse<DutyStatus>(row.ElementAtOrDefault(6)?.ToString() ?? "", out var status) ? status : DutyStatus.Pending,
                     IsDeleted = bool.TryParse(row.ElementAtOrDefault(7)?.ToString(), out var deleted) && deleted,
                     CreatedDate = DateTime.Parse(row.ElementAtOrDefault(8)?.ToString() ?? DateTime.MinValue.ToString()),
                     UpdatedDate = DateTime.TryParse(row.ElementAtOrDefault(9)?.ToString(), out var updated) ? updated : (DateTime?)null,
@@ -363,7 +363,21 @@ public class GoogleSheetHelper
         var dutyDetails = allDetails.Where(d => d.DutyId == dutyId && !d.IsDeleted).ToList();
 
         //bool isCompleted = dutyDetails.Count > 0 && dutyDetails.All(d => d.IsCompleted);
-        string status = dutyDetails.Count > 0 && dutyDetails.All(d => d.Status == DutyStatus.Completed) ? DutyStatus.Completed.ToString() : DutyStatus.InProgress.ToString();
+        //string status = dutyDetails.Count > 0 && dutyDetails.All(d => d.Status == DutyStatus.Completed) ? DutyStatus.Completed.ToString() : DutyStatus.InProgress.ToString();
+        string status;
+
+        if (dutyDetails.Count > 0 && dutyDetails.All(d => d.Status == DutyStatus.Completed))
+        {
+            status = DutyStatus.Completed.ToString();
+        }
+        else if (dutyDetails.Any(d => d.Status != DutyStatus.Pending))
+        {
+            status = DutyStatus.InProgress.ToString();
+        }
+        else
+        {
+            status = DutyStatus.Pending.ToString(); 
+        }
 
         var range = $"Duty!A2:K"; 
         var request = _sheetsService.Spreadsheets.Values.Get(_settings.SpreadsheetId, range);

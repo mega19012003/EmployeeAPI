@@ -438,7 +438,7 @@ namespace EmployeeAPI.Services.DutyServices
                     AssignedById = currentUserId,
                     CompanyId = (Guid)currentUser.CompanyId!,
                     //IsCompleted = false,
-                    Status = Enums.DutyStatus.NotStarted,
+                    Status = Enums.DutyStatus.Pending,
                     IsDeleted = false,
                     CreatedDate = vnNow,
                     UpdatedDate = null,
@@ -465,7 +465,7 @@ namespace EmployeeAPI.Services.DutyServices
                         Title = detailDto.Title,
                         Description = detailDto.Description,
                         Deadline = detailDto.Deadline,
-                        Status = Enums.DutyStatus.NotStarted,
+                        Status = Enums.DutyStatus.Pending,
                         IsDeleted = false,
                         CreatedDate = vnNow,
                         UpdatedDate = null,
@@ -562,6 +562,9 @@ namespace EmployeeAPI.Services.DutyServices
                     throw new InvalidOperationException("Một hoặc nhiều nhân viên đang tham gia công việc khác chưa hoàn thành.");
                 }
 
+                if(duty.Status == Enums.DutyStatus.Completed.ToString())
+                    throw new InvalidOperationException("Không thể thêm chi tiết vào công việc đã hoàn thành");
+
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     if (duty.CompanyId != currentUser.CompanyId)
@@ -605,7 +608,7 @@ namespace EmployeeAPI.Services.DutyServices
                         DutyId = dutyId,
                         Description = detailDto.Description,
                         // IsCompleted = false,
-                        Status = Enums.DutyStatus.NotStarted,
+                        Status = Enums.DutyStatus.Pending,
                         IsDeleted = false,
                         
                         CreatedDate = vnNow,
@@ -668,6 +671,9 @@ namespace EmployeeAPI.Services.DutyServices
                 if (existingDuty == null)
                     throw new ArgumentException("Không tìm thấy công việc");
 
+                if (existingDuty.IsDeleted )
+                    throw new ArgumentException("Công việc đã bị xóa");
+
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     if (existingDuty.CompanyId != currentUser.CompanyId)
@@ -679,22 +685,58 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new ArgumentException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
                 }
 
+                //////////////
                 if (dto.StartDate.HasValue && dto.EndDate.HasValue && dto.StartDate > dto.EndDate)
                     throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
 
-                if (!string.IsNullOrEmpty(dto.Name)) existingDuty.Name = dto.Name;
-                if (dto.StartDate.HasValue)
+                if (existingDuty.Status == Enums.DutyStatus.Pending.ToString())
                 {
-                    if(dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                        throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
-                    existingDuty.StartDate = dto.StartDate.Value;
-                }
-                if (dto.EndDate.HasValue)
-                {
-                    if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                        throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
+                    if (!string.IsNullOrEmpty(dto.Name)) existingDuty.Name = dto.Name;
+
+                    if (dto.StartDate.HasValue)
+                    {
+                        if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                            throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
+                        existingDuty.StartDate = dto.StartDate.Value;
+                    }
+
+                    if (dto.EndDate.HasValue)
+                    {
+                        if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                            throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
                         existingDuty.EndDate = dto.EndDate.Value;
+                    }
                 }
+                else if (existingDuty.Status == Enums.DutyStatus.InProgress.ToString())
+                {
+                    if (dto.Name != existingDuty.Name || dto.StartDate != existingDuty.StartDate)
+                        throw new ArgumentException("Không thể chỉnh sửa tên hoặc ngày bắt đầu khi công việc đang thực hiện");
+
+                    if (dto.EndDate.HasValue)
+                    {
+                        if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                            throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
+                        existingDuty.EndDate = dto.EndDate.Value;
+                    }
+                }
+                ///////////////
+
+                //if (dto.StartDate.HasValue && dto.EndDate.HasValue && dto.StartDate > dto.EndDate)
+                //    throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
+
+                //if (!string.IsNullOrEmpty(dto.Name)) existingDuty.Name = dto.Name;
+                //if (dto.StartDate.HasValue)
+                //{
+                //    if(dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                //        throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
+                //    existingDuty.StartDate = dto.StartDate.Value;
+                //}
+                //if (dto.EndDate.HasValue)
+                //{
+                //    if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
+                //        throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
+                //        existingDuty.EndDate = dto.EndDate.Value;
+                //}
 
                 existingDuty.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";
                 existingDuty.UpdatedDate = vnNow;
@@ -765,71 +807,65 @@ namespace EmployeeAPI.Services.DutyServices
                 if (relatedDuty == null)
                     throw new ArgumentException("Không tìm thấy công việc liên kết với chi tiết này");
 
+                if (relatedDuty.IsDeleted)
+                    throw new ArgumentException("Công việc chính đã bị xóa. Không thể cập nhật được chi tiết công việc");
+                if (existingDutyDetail.Status == Enums.DutyStatus.Completed)
+                    throw new ArgumentException("Công việc chi tiết đã hoàn thành, không thể cập nhật");
+
                 User userToAssign = null;
 
                 var isAdmin = currentUserRoles.Contains("Admin");
                 var isManager = currentUserRoles.Contains("Manager");
                 var isEmployee = currentUserRoles.Contains("Employee");
 
-                if (isAdmin || isManager)
+                if ((isAdmin || isManager) && dto.userId.HasValue)
                 {
-                    if (dto.userId.HasValue)
-                    {
-                        if (!isAdmin && !isManager)
-                            throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được gán người thực hiện.");
+                    if (existingDutyDetail.Status != Enums.DutyStatus.Pending && !isAdmin)
+                        throw new InvalidOperationException("Chỉ được gán người khi công việc ở trạng thái Pending");
 
-                        userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
+                    userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
+                    if (userToAssign == null)
+                        throw new ArgumentException("Không tìm thấy người dùng");
+                    if (userToAssign.Role != RoleType.Employee)
+                        throw new ArgumentException("Chỉ nhân viên được phép gán vào công việc");
 
-                        if (userToAssign == null)
-                            throw new ArgumentException("Không tìm thấy người dùng");
+                    if (isAdmin && userToAssign.CompanyId != currentUser.CompanyId)
+                        throw new UnauthorizedAccessException("Admin chỉ được gán nhân viên cùng công ty");
+                    if (isManager && userToAssign.DepartmentId != currentUser.DepartmentId)
+                        throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
 
-                        if (userToAssign.Role != RoleType.Employee)
-                            throw new ArgumentException("Chỉ nhân viên được phép gán vào công việc");
+                    existingDutyDetail.UserId = dto.userId.Value;
+                }
 
-                        if (isAdmin && userToAssign.CompanyId != currentUser.CompanyId)
-                            throw new UnauthorizedAccessException("Admin chỉ được gán nhân viên cùng công ty");
-
-                        if (isManager && userToAssign.DepartmentId != currentUser.DepartmentId)
-                            throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
-
-                        existingDutyDetail.UserId = dto.userId.Value;
-                    }
-
-                    //if (dto.Status.HasValue && isEmployee)
-                    //{
-                    //    if (relatedDuty.Status != DutyStatus.InProgress)
-                    //        throw new InvalidOperationException("Chỉ được thay đổi trạng thái chi tiết khi công việc chính đang thực hiện");
-
-                    //    if (existingDutyDetail.UserId != currentUserId)
-                    //        throw new UnauthorizedAccessException("Chỉ người được gán công việc mới được phép thay đổi trạng thái");
-
-                    //    if (existingDutyDetail.Status == Enums.DutyStatus.Completed)
-                    //        throw new InvalidOperationException("Công việc chi tiết đã hoàn thành, không được sửa lại.");
-
-                    //    existingDutyDetail.Status = dto.Status.Value;
-                    //}
-
+                if (isAdmin || (isManager && (existingDutyDetail.Status == Enums.DutyStatus.Pending || existingDutyDetail.Status == Enums.DutyStatus.InProgress)))
+                {
                     if (!string.IsNullOrWhiteSpace(dto.Title)) existingDutyDetail.Title = dto.Title;
                     if (!string.IsNullOrWhiteSpace(dto.Description)) existingDutyDetail.Description = dto.Description;
-
                     if (dto.Deadline.HasValue)
                     {
                         if (dto.Deadline.Value < relatedDuty.StartDate)
-                            throw new ArgumentException("Deadline không được trước ngày bắt đầu của công việc.");
-
+                            throw new ArgumentException("Deadline không được trước ngày bắt đầu");
                         if (dto.Deadline.Value > relatedDuty.EndDate)
-                            throw new ArgumentException("Deadline không được sau ngày kết thúc của công việc.");
-
+                            throw new ArgumentException("Deadline không được sau ngày kết thúc");
                         existingDutyDetail.Deadline = dto.Deadline.Value;
                     }
                 }
 
                 if (dto.Status.HasValue)
                 {
-                    if (relatedDuty.Status == Enums.DutyStatus.NotStarted)
-                        throw new ArgumentException("Không thể cập nhật trạng thái khi công việc chính chưa bắt đầu");
-                    if (existingDutyDetail.UserId != currentUserId)
-                        throw new ArgumentException("không thể cập nhật trãng thái công việc của người khác");
+                    if (existingDutyDetail.Status == Enums.DutyStatus.Completed && !isAdmin)
+                        throw new InvalidOperationException("Không thể cập nhật trạng thái khi công việc đã hoàn thành");
+
+                    if (isEmployee)
+                    {
+                        if (existingDutyDetail.Status != Enums.DutyStatus.InProgress)
+                            throw new InvalidOperationException("Nhân viên chỉ được cập nhật trạng thái khi đang thực hiện");
+                        var oldStatus = (int)existingDutyDetail.Status;
+                        var newStatus = (int)dto.Status.Value;
+                        if (newStatus < oldStatus || newStatus > (int)Enums.DutyStatus.Completed)
+                            throw new InvalidOperationException("Không được nhảy cóc hoặc lùi trạng thái");
+                    }
+
                     existingDutyDetail.Status = dto.Status.Value;
                 }
 
@@ -864,74 +900,6 @@ namespace EmployeeAPI.Services.DutyServices
             }
         }
 
-        //public async Task<string> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
-        //{
-        //    try
-        //    {
-        //        var allDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
-        //        var existingDutyDetail = allDetails.FirstOrDefault(d => d.DutyDetailId == dutyDetailId && !d.IsDeleted);
-        //        if (existingDutyDetail == null)
-        //            throw new ArgumentException("Không tìm thấy chi tiết công việc");
-
-        //        //if (existingDutyDetail.IsCompleted)
-        //        if(existingDutyDetail.Status == Enums.DutyStatus.Completed)
-        //            throw new ArgumentException("Công việc đã được đánh dấu hoàn thành trước đó");
-
-        //        var allDuties = await _googleSheetHelper.GetAllDutiesAsync();
-        //        var relatedDuty = allDuties.FirstOrDefault(d => d.Id == existingDutyDetail.DutyId && !d.IsDeleted);
-        //        if (relatedDuty == null)
-        //            throw new ArgumentException("Không tìm thấy công việc liên kết với chi tiết này");
-
-        //        existingDutyDetail.Duty = relatedDuty;
-
-        //        var now = DateTime.UtcNow;
-
-        //        if (existingDutyDetail.Duty.EndDate < DateOnly.FromDateTime(now))
-        //            throw new ArgumentException("Bạn đã quá trễ để hoàn thành công việc");
-
-        //        var isEmployee = currentUserRoles.Contains("Employee");
-        //        var isManager = currentUserRoles.Contains("Manager");
-        //        var isAdmin = currentUserRoles.Contains("Administrator");
-
-        //        if (isEmployee && existingDutyDetail.UserId != currentUserId)
-        //            throw new UnauthorizedAccessException("Bạn chỉ có thể hoàn thành công việc của bản thân");
-
-        //        if (isManager || isAdmin)
-        //        {
-
-        //            var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
-
-        //            if (isManager)
-        //            {
-        //                if (existingDutyDetail.Duty.AssignedById != currentUserId)
-        //                    throw new UnauthorizedAccessException("Manager chỉ được chỉnh sửa công việc do họ tạo");
-
-        //                var assignedUser = await _userRepository.GetUserInfoAsync(existingDutyDetail.UserId);
-        //                if (assignedUser.DepartmentId != currentUser.DepartmentId)
-        //                    throw new UnauthorizedAccessException("Manager chỉ được thao tác với người cùng phòng ban");
-        //            }
-
-        //            if (isAdmin)
-        //            {
-        //                var assignedUser = await _userRepository.GetUserInfoAsync(existingDutyDetail.UserId);
-        //                if (assignedUser.CompanyId != currentUser.CompanyId)
-        //                    throw new UnauthorizedAccessException("Admin chỉ thao tác với người cùng công ty");
-        //            }
-        //        }
-
-        //        //existingDutyDetail.IsCompleted = true;
-        //        existingDutyDetail.Status = Enums.DutyStatus.Completed;
-        //        await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
-        //        await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
-
-        //        return "Đã hoàn thành công việc: " + existingDutyDetail.Description;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Lỗi khi đánh dấu hoàn thành: {Message}", ex.Message);
-        //        throw;
-        //    }
-        //}
 
         public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
@@ -959,6 +927,9 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa công việc do mình tạo ra");
+
+                    if (duty.Status == DutyStatus.InProgress || duty.Status == DutyStatus.Completed)
+                        throw new InvalidOperationException("Manager không thể xóa công việc đã bắt đầu hoặc đã hoàn thành");
                 }
 
                 // Đánh dấu Duty là đã xóa mềm
@@ -1037,10 +1008,9 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa chi tiết công việc do mình tạo ra");
-                }
-                else
-                {
-                    throw new UnauthorizedAccessException("Chỉ Admin hoặc Manager được phép xóa chi tiết công việc");
+
+                    if (duty.Status == DutyStatus.InProgress || duty.Status == DutyStatus.Completed)
+                        throw new InvalidOperationException("Manager không thể xóa chi tiết của công việc đã bắt đầu hoặc đã hoàn thành");
                 }
 
                 dutyDetail.IsDeleted = true;
@@ -1059,6 +1029,74 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
+        //public async Task<string> MarkDutyDetailAsCompletedAsync(Guid dutyDetailId, Guid currentUserId, IList<string> currentUserRoles)
+        //{
+        //    try
+        //    {
+        //        var allDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
+        //        var existingDutyDetail = allDetails.FirstOrDefault(d => d.DutyDetailId == dutyDetailId && !d.IsDeleted);
+        //        if (existingDutyDetail == null)
+        //            throw new ArgumentException("Không tìm thấy chi tiết công việc");
+
+        //        //if (existingDutyDetail.IsCompleted)
+        //        if(existingDutyDetail.Status == Enums.DutyStatus.Completed)
+        //            throw new ArgumentException("Công việc đã được đánh dấu hoàn thành trước đó");
+
+        //        var allDuties = await _googleSheetHelper.GetAllDutiesAsync();
+        //        var relatedDuty = allDuties.FirstOrDefault(d => d.Id == existingDutyDetail.DutyId && !d.IsDeleted);
+        //        if (relatedDuty == null)
+        //            throw new ArgumentException("Không tìm thấy công việc liên kết với chi tiết này");
+
+        //        existingDutyDetail.Duty = relatedDuty;
+
+        //        var now = DateTime.UtcNow;
+
+        //        if (existingDutyDetail.Duty.EndDate < DateOnly.FromDateTime(now))
+        //            throw new ArgumentException("Bạn đã quá trễ để hoàn thành công việc");
+
+        //        var isEmployee = currentUserRoles.Contains("Employee");
+        //        var isManager = currentUserRoles.Contains("Manager");
+        //        var isAdmin = currentUserRoles.Contains("Administrator");
+
+        //        if (isEmployee && existingDutyDetail.UserId != currentUserId)
+        //            throw new UnauthorizedAccessException("Bạn chỉ có thể hoàn thành công việc của bản thân");
+
+        //        if (isManager || isAdmin)
+        //        {
+
+        //            var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
+
+        //            if (isManager)
+        //            {
+        //                if (existingDutyDetail.Duty.AssignedById != currentUserId)
+        //                    throw new UnauthorizedAccessException("Manager chỉ được chỉnh sửa công việc do họ tạo");
+
+        //                var assignedUser = await _userRepository.GetUserInfoAsync(existingDutyDetail.UserId);
+        //                if (assignedUser.DepartmentId != currentUser.DepartmentId)
+        //                    throw new UnauthorizedAccessException("Manager chỉ được thao tác với người cùng phòng ban");
+        //            }
+
+        //            if (isAdmin)
+        //            {
+        //                var assignedUser = await _userRepository.GetUserInfoAsync(existingDutyDetail.UserId);
+        //                if (assignedUser.CompanyId != currentUser.CompanyId)
+        //                    throw new UnauthorizedAccessException("Admin chỉ thao tác với người cùng công ty");
+        //            }
+        //        }
+
+        //        //existingDutyDetail.IsCompleted = true;
+        //        existingDutyDetail.Status = Enums.DutyStatus.Completed;
+        //        await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
+        //        await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
+
+        //        return "Đã hoàn thành công việc: " + existingDutyDetail.Description;
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        _logger.LogError(ex, "Lỗi khi đánh dấu hoàn thành: {Message}", ex.Message);
+        //        throw;
+        //    }
+        //}
 
     }
 }

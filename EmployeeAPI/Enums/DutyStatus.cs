@@ -2,7 +2,7 @@
 {
     public enum DutyStatus
     {
-        NotStarted = 0,
+        Pending = 0,
         InProgress = 1,
         Completed = 2,
     }
