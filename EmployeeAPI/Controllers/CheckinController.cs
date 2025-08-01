@@ -108,7 +108,7 @@ namespace EmployeeAPI.Controllers
         /// Cập nhật checkout cho user
         // </summary>
         [Authorize]
-        [HttpPut("Chekout")]
+        [HttpPut("Checkout")]
         public async Task<IActionResult> Chekout([FromForm] ResponseModel.CreateCheckoutDto dto)
         {
             var currentUserIdStr = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
