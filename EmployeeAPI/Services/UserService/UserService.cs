@@ -258,7 +258,7 @@ namespace EmployeeAPI.Services.UserService
                 }
 
                 existingUser.IsDeleted = true;
-                existingUser.IsActive = false;
+                //existingUser.IsActive = false;
 
                 await _userRepository.UpdateAsync(existingUser);
                 await _context.SaveChangesAsync();
