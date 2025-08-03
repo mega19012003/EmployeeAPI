@@ -181,7 +181,8 @@ namespace EmployeeAPI.Services.CompanyServices
                     Name = newCompany.Name,
                     Address = newCompany.Address,
                     LogoUrl = newCompany.LogoUrl,
-                    CompanyId = newCompany.Id
+                    CompanyId = newCompany.Id,
+                    IsActive = newCompany.IsActive,
                 };
             }
             catch (Exception ex)

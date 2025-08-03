@@ -30,7 +30,7 @@ namespace EmployeeAPI.Services.DutyServices
             _cache = cache;
         }
 
-        public async Task<PagedResult<DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, int? Day, int? Month, int? Year, int? pageIndex, int? pageSize)
+        public async Task<PagedResult<DutyResultDto>> GetAllAsync(Guid currentUserId, IList<string> currentUserRoles, string? name, Guid? companyId, int? Day, int? Month, int? Year, string? filterStatus, int? pageIndex, int? pageSize)
         {
             pageIndex ??= 1;
             pageSize ??= 10;
@@ -112,6 +112,19 @@ namespace EmployeeAPI.Services.DutyServices
                         .Where(dd => dd.DutyId == d.Id)
                         .ToList()
                 }).ToList();
+
+            var validStatuses = new[] { "Pending", "InProgress", "Completed" };
+
+            if (!string.IsNullOrWhiteSpace(filterStatus))
+            {
+                var trimmedStatus = filterStatus.Trim();
+                if (validStatuses.Contains(trimmedStatus, StringComparer.OrdinalIgnoreCase))
+                {
+                    grouped = grouped
+                        .Where(d => string.Equals(d.Status, trimmedStatus, StringComparison.OrdinalIgnoreCase))
+                        .ToList();
+                }
+            }
 
             if (currentUserRoles.Contains("SystemAdmin"))
             {

@@ -51,6 +51,7 @@ namespace EmployeeAPI.Services.ScheduleTimeServices
                 var items = await query
                     .Skip((pageIndex.Value - 1) * pageSize.Value)
                     .Take(pageSize.Value)
+                    .Where(p => !p.Company.IsDeleted && p.Company.IsActive)
                     .Select(c => new ResponseModel.ScheduleDto
                     {
                         id = c.id,
