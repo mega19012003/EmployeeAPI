@@ -194,6 +194,7 @@ namespace EmployeeAPI.Controllers
                 userEntity.Username,
                 userEntity.Fullname,
                 Role = userEntity.Role.ToString(),
+                userEntity.Email,
                 userEntity.PhoneNumber,
                 userEntity.Address,
                 userEntity.PositionId,
