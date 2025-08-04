@@ -326,9 +326,6 @@ namespace EmployeeAPI.Services.PayrollServices
         {
             pageIndex ??= 1;
             pageSize ??= 10;
-            var now = DateTime.Now;
-            year ??= now.Year;
-            month ??= now.Month;
 
             var query = _userRepository.GetAll().Where(p => p.Role == RoleType.Manager || p.Role == RoleType.Employee);
 
