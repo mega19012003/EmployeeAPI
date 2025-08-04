@@ -549,6 +549,7 @@ namespace EmployeeAPI.Services.CheckinServices
             using var transaction = await _context.Database.BeginTransactionAsync();
             try
             {
+                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
                 var existing = await _checkinRepository.GetByIdAsync(dto.CheckinId);
                 if (existing == null)
                     throw new ArgumentException("Không tìm thấy bản ghi checkin này");
@@ -566,13 +567,13 @@ namespace EmployeeAPI.Services.CheckinServices
                     existing.CheckoutTime = dto.CheckoutTime.Value;
                 }
                 if(!string.IsNullOrWhiteSpace(dto.UpdateNote))
-                    existing.Note = dto.UpdateNote;
+                    existing.Note = dto.UpdateNote + " (Được cập nhật bởi " + currentUser.Fullname + ")";
 
                 var employee = await _userRepository.GetActiveUserIdAsync(existing.UserId);
                 //if (employee == null)
                 //    throw new ArgumentException("Không tìm thấy người dùng");
 
-                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
+             
 
                 if(currentUserRoles.Contains("Administrator"))
                 {
