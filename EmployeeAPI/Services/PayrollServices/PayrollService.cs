@@ -356,15 +356,12 @@ namespace EmployeeAPI.Services.PayrollServices
                 query = query.Where(u => u.Fullname.ToLower().Contains(nameLower));
             }
 
+            if (companyId.HasValue)
+                query = query.Where(u => u.CompanyId == companyId);
             if (departmentId.HasValue)
-            {
-                query = query.Where(u => u.DepartmentId == departmentId.Value);
-            }
-
+                query = query.Where(u => u.DepartmentId == departmentId);
             if (positionId.HasValue)
-            {
-                query = query.Where(u => u.PositionId == positionId.Value);
-            }
+                query = query.Where(u => u.PositionId == positionId);
 
             var totalCount = await query.CountAsync();
 
