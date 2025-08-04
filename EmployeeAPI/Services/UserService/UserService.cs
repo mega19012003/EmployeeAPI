@@ -336,21 +336,21 @@ namespace EmployeeAPI.Services.UserService
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsWithDutiesCachedAsync();
 
                 // Lọc công việc hoàn thành theo tháng/năm
-                //var completedDutyDetails = allDutyDetails.Where(d => d.IsCompleted && d.Duty != null && d.Duty.StartDate.Year == Year);
+                var completedDutyDetails = allDutyDetails.Where(d => d.Status == Enums.DutyStatus.Completed && d.Duty != null && d.CompletedDate.Value.Year == Year);
 
-                //if (Month.HasValue)
-                //{
-                //    completedDutyDetails = completedDutyDetails.Where(d => d.Duty != null && d.Duty.StartDate.Month == Month.Value);
-                //}
+                if (Month.HasValue)
+                {
+                    completedDutyDetails = completedDutyDetails.Where(d => d.CompletedDate.HasValue && d.CompletedDate.Value.Month == Month.Value);
+                }
 
-                //var completedGrouped = completedDutyDetails
-                //    .GroupBy(d => d.UserId)
-                //    .ToDictionary(g => g.Key, g => g.Count());
+                var completedGrouped = completedDutyDetails
+                    .GroupBy(d => d.UserId)
+                    .ToDictionary(g => g.Key, g => g.Count());
 
-                //var inProgressGrouped = allDutyDetails
-                //    .Where(d => !d.IsCompleted)
-                //    .GroupBy(d => d.UserId)
-                //    .ToDictionary(g => g.Key, g => g.Count());
+                var inProgressGrouped = allDutyDetails
+                    .Where(d => d.Status != DutyStatus.Completed)
+                    .GroupBy(d => d.UserId)
+                    .ToDictionary(g => g.Key, g => g.Count());
 
                 var totalCount = users.Count;
 
@@ -374,8 +374,8 @@ namespace EmployeeAPI.Services.UserService
                         CompanyId = f.CompanyId,
                         IsActive = f.IsActive,
                         ImageUrl = f.ImageUrl,
-                        //CompletedDuties = completedGrouped.TryGetValue(f.UserId, out var completed) ? completed : 0,
-                        //InProgressDuties = inProgressGrouped.TryGetValue(f.UserId, out var inProgress) ? inProgress : 0
+                        CompletedDuties = completedGrouped.TryGetValue(f.UserId, out var completed) ? completed : 0,
+                        InProgressDuties = inProgressGrouped.TryGetValue(f.UserId, out var inProgress) ? inProgress : 0
                     })
                     .ToList();
 
