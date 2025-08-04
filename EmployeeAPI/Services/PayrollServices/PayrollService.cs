@@ -241,7 +241,7 @@ namespace EmployeeAPI.Services.PayrollServices
                 throw new ArgumentException("Năm không hợp lệ");
 
             var existingPayroll = await _context.Payrolls
-                .FirstOrDefaultAsync(p => p.UserId == staffId && p.PayrollMonth == month && p.PayrollYear == year);
+                .FirstOrDefaultAsync(p => p.UserId == staffId && p.PayrollMonth == month && p.PayrollYear == year && !p.IsDeleted);
 
             var checkinsInMonth = await _context.Checkins
                 .Where(c => c.UserId == staffId
