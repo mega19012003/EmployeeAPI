@@ -59,7 +59,7 @@ namespace EmployeeAPI.Services.UserService
                 {
                     throw new Exception("Bạn không thể tự vô hiệu hóa chính mình.");
                 }
-                if (!string.IsNullOrEmpty(dto.Email))
+                if (!string.IsNullOrEmpty(dto.Email) && dto.Email != existingUser.Email)
                 {
                     var emailExists = await _authRepository.GetUserByEmailAsync(dto.Email);
                     if (emailExists != null)
