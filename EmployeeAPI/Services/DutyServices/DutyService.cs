@@ -623,7 +623,7 @@ namespace EmployeeAPI.Services.DutyServices
                         // IsCompleted = false,
                         Status = Enums.DutyStatus.Pending,
                         IsDeleted = false,
-                        
+                        Title = detailDto.Title,
                         CreatedDate = vnNow,
                         UpdatedDate = null,
                         CompletedDate = null,
