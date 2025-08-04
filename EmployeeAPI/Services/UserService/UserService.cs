@@ -123,37 +123,32 @@ namespace EmployeeAPI.Services.UserService
 
                     if (dto.DepartmentId.HasValue)
                     {
-                        if (dto.PositionId.HasValue)
-                        {
-                            var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
-                            if (department == null)
-                                throw new ArgumentException("Không tìm thấy phòng ban");
+                        var department = await _departmentRepository.GetByIdAsync(dto.DepartmentId.Value);
+                        if (department == null)
+                            throw new ArgumentException("Không tìm thấy phòng ban");
 
-                            bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
-                            if (!isValidPosition)
-                                throw new ArgumentException("Phòng ban không có trong chức vụ này");
-
-                            existingUser.PositionId = dto.PositionId;
-                            existingUser.DepartmentId = dto.DepartmentId;////////////////////////////////
-                        }
+                        existingUser.DepartmentId = dto.DepartmentId.Value;
                     }
-                    else if (dto.PositionId.HasValue)
-                    {
-                        if (!existingUser.DepartmentId.HasValue)
-                            throw new ArgumentException("User chưa có phòng ban");
 
-                        var department = await _departmentRepository.GetByIdAsync(existingUser.DepartmentId.Value);
+                    if (dto.PositionId.HasValue)
+                    {
+                        Guid? checkDeptId = dto.DepartmentId ?? existingUser.DepartmentId;
+
+                        if (!checkDeptId.HasValue)
+                            throw new ArgumentException("Chưa có phòng ban để kiểm tra chức vụ");
+
+                        var department = await _departmentRepository.GetByIdAsync(checkDeptId.Value);
                         if (department == null)
                             throw new ArgumentException("Không tìm thấy phòng ban");
 
                         bool isValidPosition = department.Positions.Any(p => p.Id == dto.PositionId.Value);
                         if (!isValidPosition)
-                            throw new ArgumentException("Chức vụ này không thuộc phòng ban");
+                            throw new ArgumentException("Chức vụ không thuộc phòng ban");
 
                         existingUser.PositionId = dto.PositionId;
                     }
                 }
-                else if (isManager) // sửa dc tt cơ bản và positionId
+                else if (isManager) 
                 {
                     if (dto.IsActive.HasValue) existingUser.IsActive = dto.IsActive.Value;
 
