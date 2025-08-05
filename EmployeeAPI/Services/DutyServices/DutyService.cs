@@ -305,7 +305,7 @@ namespace EmployeeAPI.Services.DutyServices
                 var isDeleted = bool.TryParse(row[7]?.ToString(), out var del) && del;
                 var createdDate = DateTime.TryParse(row[8]?.ToString(), out var created) ? created : DateTime.MinValue;
                 var updatedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[9].ToString());
-                var completedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(9)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[10].ToString());
+                var completedDate = string.IsNullOrWhiteSpace(row.ElementAtOrDefault(10)?.ToString()) ? (DateTime?)null : DateTime.Parse(row[10].ToString());
                 var note = row.ElementAtOrDefault(11)?.ToString();
 
                 if (isDeleted)
