@@ -871,12 +871,17 @@ namespace EmployeeAPI.Services.DutyServices
 
                     if (isEmployee)
                     {
-                        if (existingDutyDetail.Status != Enums.DutyStatus.InProgress)
-                            throw new InvalidOperationException("Nhân viên chỉ được cập nhật trạng thái khi đang thực hiện");
                         var oldStatus = (int)existingDutyDetail.Status;
                         var newStatus = (int)dto.Status.Value;
+
                         if (newStatus < oldStatus || newStatus > (int)Enums.DutyStatus.Completed)
                             throw new InvalidOperationException("Không được nhảy cóc hoặc lùi trạng thái");
+
+                        if (oldStatus == (int)Enums.DutyStatus.Pending && newStatus != (int)Enums.DutyStatus.InProgress)
+                            throw new InvalidOperationException("Từ Pending chỉ được chuyển sang InProgress");
+
+                        if (oldStatus == (int)Enums.DutyStatus.InProgress && newStatus != (int)Enums.DutyStatus.Completed)
+                            throw new InvalidOperationException("Từ InProgress chỉ được chuyển sang Completed");
                     }
 
                     existingDutyDetail.Status = dto.Status.Value;

@@ -573,8 +573,6 @@ namespace EmployeeAPI.Services.CheckinServices
                 //if (employee == null)
                 //    throw new ArgumentException("Không tìm thấy người dùng");
 
-             
-
                 if(currentUserRoles.Contains("Administrator"))
                 {
                     if (currentUser.CompanyId == null)
