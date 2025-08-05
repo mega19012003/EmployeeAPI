@@ -331,7 +331,7 @@ namespace EmployeeAPI.Services.UserService
                 var allDutyDetails = await _googleSheetHelper.GetAllDutyDetailsWithDutiesCachedAsync();
 
                 // Lọc công việc hoàn thành theo tháng/năm
-                var completedDutyDetails = allDutyDetails.Where(d => d.Status == Enums.DutyStatus.Completed && d.Duty != null && d.CompletedDate.Value.Year == Year);
+                var completedDutyDetails = allDutyDetails.Where(d => d.Status == Enums.DutyStatus.Completed && d.Duty != null && d.CompletedDate.HasValue && d.CompletedDate.Value.Year == Year);
 
                 if (Month.HasValue)
                 {
