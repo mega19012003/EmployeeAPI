@@ -40,13 +40,13 @@ namespace EmployeeAPI.Services.DutyServices
 
             var dutyRows = await _cache.GetOrCreateAsync("CachedDutyRows", async entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30); // Cache 1 phút
                 return await _googleSheetHelper.ReadSheetAsync("Duty!A2:K");
             });
 
             var detailRows = await _cache.GetOrCreateAsync("CachedDetailRows", async entry =>
             {
-                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(1); // Cache 1 phút
+                entry.AbsoluteExpirationRelativeToNow = TimeSpan.FromSeconds(30); // Cache 1 phút
                 return await _googleSheetHelper.ReadSheetAsync("Detail!A2:L");
             });
 
