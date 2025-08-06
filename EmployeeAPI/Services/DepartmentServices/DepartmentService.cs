@@ -220,6 +220,11 @@ namespace EmployeeAPI.Services.DepartmentServices
                         throw new ArgumentException("Chỉ được phép xóa phòng ban có trong công ty");
                 }
 
+                if (await _repository.HasUsersUsingDepartmentAsync(id))
+                {
+                    throw new InvalidOperationException("Không thể xóa phòng ban này vì vẫn còn người dùng đang sử dụng.");
+                }
+
                 result.isDeleted = true;
                 await _repository.SoftDeleteAsync(result.Id);
                 await _context.SaveChangesAsync();
@@ -234,139 +239,5 @@ namespace EmployeeAPI.Services.DepartmentServices
                 throw;
             }
         }
-
-        //public async Task<PagedResult<ResponseModel.UserFilterDto>> GetStaffByDepartmentAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles)
-        //{
-        //    try
-        //    {
-        //        pageIndex ??= 1;
-        //        pageSize ??= 10;
-
-        //        var currentUser = await _userRepository.GetUserInfoAsync(currentUserId);
-        //        if (currentUser == null)
-        //            throw new ArgumentException("Không thể tìm thấy user này");
-
-        //        var isAdmin = currentUserRoles.Contains("Administrator");
-        //        var isManager = currentUserRoles.Contains("Manager");
-        //        Guid? filterDepartmentId;
-
-        //        if (isAdmin)
-        //        {
-        //            filterDepartmentId = departmentId;
-
-        //            var dept = await _repository.GetByIdAsync(departmentId.Value);
-        //            if (dept == null)
-        //               throw new ArgumentException("Không thể tìm thấy phòng ban này");
-
-        //        }
-        //        else if (isManager)
-        //        {
-        //            if (!currentUser.DepartmentId.HasValue)
-        //                throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-
-        //            filterDepartmentId = currentUser.DepartmentId;
-        //        }
-        //        else
-        //        {
-        //            throw new UnauthorizedAccessException("Access denied");
-        //        }
-
-        //        var query = _context.Departments
-        //            .Include(d => d.Users)
-        //            .Where(d => !d.isDeleted && d.Id == filterDepartmentId);
-                
-        //        var allStaffs = query
-        //            .SelectMany(d => d.Users
-        //            .Where(s => s.IsActive && !s.IsDeleted));
-
-        //        var totalCount = await allStaffs.CountAsync();
-
-        //        var items = await allStaffs
-        //            .Skip((pageIndex.Value - 1) * pageSize.Value)
-        //            .Take(pageSize.Value)
-        //            .Select(st => new ResponseModel.UserFilterDto
-        //            {
-        //                UserId = st.UserId,
-        //                Name = st.Fullname,
-        //                SalaryPerHour = st.SalaryPerHour,
-        //                ImageUrl = st.ImageUrl,
-        //                Department = st.Department.Name,
-        //            })
-        //            .ToListAsync();
-
-        //        return new PagedResult<ResponseModel.UserFilterDto>
-        //        {
-        //            TotalCount = totalCount,
-        //            PageIndex = pageIndex.Value,
-        //            PageSize = pageSize.Value,
-        //            Items = items
-        //        };
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        _logger.LogError(ex, "Error occurred while retrieving User by department. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-        //        throw;
-        //    }
-        //}
-
-        //public async Task<PagedResult<ResponseModel.PositionByDepartmentDto>> GetListPositionAsync(Guid? departmentId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRoles)
-        //{
-        //    pageIndex ??= 1;
-        //    pageSize ??= 10;
-
-        //    var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-        //    if (currentUser == null)
-        //        throw new ArgumentException("Không thể tìm thấy user hiện tại");
-
-        //    var isAdmin = currentUserRoles.Contains("Administrator");
-        //    var isManager = currentUserRoles.Contains("Manager");
-        //    Guid? filterDepartmentId;
-
-        //    if (isAdmin)
-        //    {
-        //        filterDepartmentId = departmentId;
-
-        //        var dept = await _repository.GetByIdAsync(departmentId.Value);
-        //        if (dept == null)
-        //            throw new ArgumentException("Không thể tìm thấy phòng ban này");
-
-        //    }
-        //    else if (isManager)
-        //    {
-        //        if (!currentUser.DepartmentId.HasValue)
-        //            throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban");
-
-        //        filterDepartmentId = currentUser.DepartmentId;
-        //    }
-        //    else
-        //    {
-        //        throw new UnauthorizedAccessException("Access Denied");
-        //    }
-
-        //    var query = await _repository.GetPositionsByDepartmentAsync(filterDepartmentId);
-        //    var lstPosition = query.SelectMany(d => d.Positions).ToList();
-
-        //    var totalCount = query.Count();
-
-        //    var items = lstPosition
-        //        .Skip((pageIndex.Value - 1) * pageSize.Value)
-        //        .Take(pageSize.Value)
-        //        .Select(p => new ResponseModel.PositionByDepartmentDto 
-        //        {
-        //            PositionId = p.Id,
-        //            PositionName = p.Name,
-        //            DepartmentName = p.Department.Name,
-        //        })
-        //        .ToList();
-
-        //    return new PagedResult<ResponseModel.PositionByDepartmentDto >
-        //    {
-        //        TotalCount = totalCount,
-        //        PageIndex = pageIndex.Value,
-        //        PageSize = pageSize.Value,
-        //        Items = items
-        //    };
-        //}
-
     }
 }

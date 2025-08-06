@@ -249,6 +249,12 @@ namespace EmployeeAPI.Services.CompanyServices
                 {
                     throw new ArgumentException("Không tìm thấy công ty");
                 }
+
+                if (await _companyRepository.HasUsersUsingCompanyAsync(companyId))
+                {
+                    throw new InvalidOperationException("Không thể xóa công ty này vì vẫn còn người dùng đang sử dụng.");
+                }
+
                 company.IsDeleted = true;
                 await _companyRepository.UpdateCompanyAsync(company);
                 await Transaction.CommitAsync();

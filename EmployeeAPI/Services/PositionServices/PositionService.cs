@@ -292,6 +292,11 @@ namespace EmployeeAPI.Services.PositionServices
                         throw new ArgumentException("Admin chỉ có thể xóa chức vụ của cùng công ty");
                 }
 
+                if (await _positionRepository.HasUsersUsingPositionAsync(id))
+                {
+                    throw new InvalidOperationException("Không thể xóa chức vụ này vì vẫn còn người dùng đang sử dụng.");
+                }
+
                 result.IsDeleted = true;
                 await _positionRepository.UpdateAsync(result);
                 await _context.SaveChangesAsync();
@@ -306,63 +311,5 @@ namespace EmployeeAPI.Services.PositionServices
                 throw;
             }
         }
-
-    //    public async Task<PagedResult<UserFilterDto>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex, Guid currentUserId, IList<string> currentUserRole)
-    //    {
-    //        try
-    //        {
-    //            pageIndex ??= 1;
-    //            pageSize ??= 10;
-    //            Guid? departmentId = null;
-    //            var query = await _positionRepository.GetStaffByPositionAsync(positionId, pageSize, pageIndex);
-                
-    //            var isManager = currentUserRole.Contains("Manager");
-    //            if (isManager)
-    //            {
-    //                var currentUser = await _userRepository.GetActiveUserIdAsync(currentUserId);
-    //                if (currentUser == null)
-    //                    throw new ArgumentException("Không tìm thấy người dùng hiện tại");
-    //                else if (currentUser?.DepartmentId == null)
-    //                    throw new ArgumentException("Manager chưa có phòng ban. Vui lòng liên hệ Admin để cập nhật phòng ban.");
-    //                departmentId = currentUser.DepartmentId;
-    //            }
-
-    //            var result = await _positionRepository.GetByIdAsync(positionId);
-    //            if (result == null)
-    //                throw new ArgumentException("Không tìm thấy chức vụ");
-
-    //            var allUsers = query
-    //                .SelectMany(d => d.Users
-    //                .Where(s => !s.IsDeleted && (!departmentId.HasValue || s.DepartmentId == departmentId.Value)));
-
-    //            var totalCount = allUsers.Count();
-
-    //            var items = allUsers
-    //                .Skip((pageIndex.Value - 1) * pageSize.Value)
-    //                .Take(pageSize.Value)
-    //                .Select(st => new UserFilterDto
-    //                {
-    //                    UserId = st.UserId,
-    //                    Name = st.Fullname,
-    //                    Position = st.Position.Name,
-    //                    SalaryPerHour = st.SalaryPerHour,
-    //                    ImageUrl = st.ImageUrl,
-    //                })
-    //                .ToList();
-
-    //            return new PagedResult<UserFilterDto>
-    //            {
-    //                TotalCount = totalCount,
-    //                PageIndex = pageIndex.Value,
-    //                PageSize = pageSize.Value,
-    //                Items = items
-    //            };
-    //        }
-    //        catch (Exception ex)
-    //        {
-    //            _logger.LogError("An error occurred while retrieving User by position. Message: {Message}, StackTrace: {StackTrace}", ex.Message, ex.StackTrace);
-    //            throw;
-    //        }
-    //    }
     }
 }

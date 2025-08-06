@@ -38,7 +38,7 @@ namespace EmployeeAPI.Repositories.Positions
                 .Include(p => p.Users.Where(s => s.IsActive || !s.IsDeleted))
                 .FirstOrDefaultAsync(p => p.Name.ToLower().Equals(name.ToLower()));
         }
-        
+
         public async Task<IEnumerable<Position>> GetStaffByPositionAsync(Guid positionId, int? pageSize, int? pageIndex)
         {
             return await _context.Positions
@@ -49,5 +49,9 @@ namespace EmployeeAPI.Repositories.Positions
                 .ToListAsync();
         }
 
+        public async Task<bool> HasUsersUsingPositionAsync(Guid positionId)
+        {
+            return await _context.Users.AnyAsync(u => u.PositionId == positionId && u.IsDeleted != true);
+        }
     }
 }

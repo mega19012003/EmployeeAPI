@@ -9,5 +9,6 @@ namespace EmployeeAPI.Repositories.Companies
         Task<IEnumerable<Company>> GetAllCompaniesAsync();
         Task<Company> AddCompanyAsync(Company company);
         Task<Company> UpdateCompanyAsync(Company company);
+        Task<bool> HasUsersUsingCompanyAsync(Guid departmentId);
     }
 }

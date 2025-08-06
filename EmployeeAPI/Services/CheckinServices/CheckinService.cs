@@ -400,8 +400,10 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (checkin == null)
                     throw new ArgumentException("Không tìm thấy bản ghi checkin hôm nay");
 
-                if(DeviceInfo != checkin.DeviceInfo && checkin.DeviceInfo != null)
+                if (currentUserId == targetUserId && !string.IsNullOrWhiteSpace(checkin.DeviceInfo) && DeviceInfo != checkin.DeviceInfo)
+                {
                     throw new ArgumentException("Thiết bị hiện tại không khớp với thiết bị lúc checkin");
+                }
 
                 if (checkin.CheckoutTime != DateTime.MinValue)
                     throw new ArgumentException("Đã checkout rồi");

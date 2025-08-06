@@ -61,5 +61,10 @@ namespace EmployeeAPI.Repositories.Departments
         {
             return await _context.Departments.Where(p => !p.isDeleted && p.Id == id).Include(p => p.Positions.Where(p => !p.IsDeleted)).AsNoTracking().ToListAsync();
         }
+
+        public async Task<bool> HasUsersUsingDepartmentAsync(Guid departmentId)
+        {
+            return await _context.Users.AnyAsync(u => u.DepartmentId == departmentId && u.IsDeleted != true);
+        }
     }
 }

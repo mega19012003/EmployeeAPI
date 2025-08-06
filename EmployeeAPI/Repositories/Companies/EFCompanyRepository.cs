@@ -44,5 +44,10 @@ namespace EmployeeAPI.Repositories.Companies
         //        await _context.SaveChangesAsync();
         //    }
         //}
+
+        public async Task<bool> HasUsersUsingCompanyAsync(Guid companyId)
+        {
+            return await _context.Users.AnyAsync(u => u.CompanyId == companyId && u.IsDeleted != true);
+        }
     }
 }

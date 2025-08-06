@@ -252,6 +252,17 @@ namespace EmployeeAPI.Services.UserService
                         throw new ArgumentException("Manager không thể xóa user khác phòng ban");
                 }
 
+                var duties = await _googleSheetHelper.GetAllDutiesAsync();
+                var dutyDetails = await _googleSheetHelper.GetAllDutyDetailsAsync();
+
+                var hasDuty = duties.Any(d => d.AssignedById == currentUserId && !d.IsDeleted && d.Status != DutyStatus.Completed);
+                if (hasDuty)
+                    throw new ArgumentException("Không thể xóa user đang được giao công việc.");
+
+                var hasDutyDetail = dutyDetails.Any(dd => dd.UserId == currentUserId && !dd.IsDeleted && dd.Status != DutyStatus.Completed);
+                if (hasDutyDetail)
+                    throw new ArgumentException("Không thể xóa user đang tham gia công việc.");
+
                 existingUser.IsDeleted = true;
                 //existingUser.IsActive = false;
 

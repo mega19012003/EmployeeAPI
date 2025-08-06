@@ -12,5 +12,6 @@ namespace EmployeeAPI.Repositories.Departments
         Task<IEnumerable<Department>> GetDepartmentByName(string name);
         Task<IEnumerable<Department>> GetStaffByDepartmentAsync();
         Task<IEnumerable<Department>> GetPositionsByDepartmentAsync(Guid? id);
+        Task<bool> HasUsersUsingDepartmentAsync(Guid departmentId);
     }
 }
