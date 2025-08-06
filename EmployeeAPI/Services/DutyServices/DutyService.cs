@@ -836,7 +836,7 @@ namespace EmployeeAPI.Services.DutyServices
                 if ((isAdmin || isManager) && dto.userId.HasValue)
                 {
                     if (existingDutyDetail.Status != Enums.DutyStatus.Pending && !isAdmin)
-                        throw new InvalidOperationException("Chỉ được gán người khi công việc ở trạng thái Pending");
+                        throw new InvalidOperationException("Chỉ được phép update nếu là Pending");
 
                     userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
                     if (userToAssign == null)
@@ -885,7 +885,21 @@ namespace EmployeeAPI.Services.DutyServices
                     if (existingDutyDetail.Status == Enums.DutyStatus.Completed && !isAdmin)
                         throw new InvalidOperationException("Không thể cập nhật trạng thái khi công việc đã hoàn thành");
 
-                    if (isEmployee)
+                    if (existingDutyDetail.Status == Enums.DutyStatus.Cancelled && !isAdmin)
+                        throw new InvalidOperationException("Chi tiết công việc đã bị hủy, không thể cập nhật trạng thái");
+
+                    if (isManager)
+                    {
+                        if (existingDutyDetail.Status == Enums.DutyStatus.InProgress && dto.Status.Value == Enums.DutyStatus.Cancelled)
+                        {
+                            existingDutyDetail.Status = Enums.DutyStatus.Cancelled;
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException("Manager chỉ được phép chuyển từ InProgress sang Cancelled");
+                        }
+                    }
+                    else if (isEmployee)
                     {
                         var oldStatus = (int)existingDutyDetail.Status;
                         var newStatus = (int)dto.Status.Value;
@@ -898,9 +912,14 @@ namespace EmployeeAPI.Services.DutyServices
 
                         if (oldStatus == (int)Enums.DutyStatus.InProgress && newStatus != (int)Enums.DutyStatus.Completed)
                             throw new InvalidOperationException("Từ InProgress chỉ được chuyển sang Completed");
+
+                        existingDutyDetail.Status = dto.Status.Value;
+                    }
+                    else if (isAdmin)
+                    {
+                        existingDutyDetail.Status = dto.Status.Value;
                     }
 
-                    existingDutyDetail.Status = dto.Status.Value;
                 }
 
                 existingDutyDetail.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";

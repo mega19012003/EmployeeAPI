@@ -364,19 +364,21 @@ public class GoogleSheetHelper
 
         //bool isCompleted = dutyDetails.Count > 0 && dutyDetails.All(d => d.IsCompleted);
         //string status = dutyDetails.Count > 0 && dutyDetails.All(d => d.Status == DutyStatus.Completed) ? DutyStatus.Completed.ToString() : DutyStatus.InProgress.ToString();
+        var activeDetails = dutyDetails.Where(d => d.Status != DutyStatus.Cancelled).ToList();
+
         string status;
 
-        if (dutyDetails.Count > 0 && dutyDetails.All(d => d.Status == DutyStatus.Completed))
+        if (activeDetails.Count > 0 && activeDetails.All(d => d.Status == DutyStatus.Completed))
         {
             status = DutyStatus.Completed.ToString();
         }
-        else if (dutyDetails.Any(d => d.Status != DutyStatus.Pending))
+        else if (activeDetails.Any(d => d.Status != DutyStatus.Pending))
         {
             status = DutyStatus.InProgress.ToString();
         }
         else
         {
-            status = DutyStatus.Pending.ToString(); 
+            status = DutyStatus.Pending.ToString();
         }
 
         var range = $"Duty!A2:K"; 
