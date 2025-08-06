@@ -218,6 +218,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 if (string.IsNullOrWhiteSpace(ip))
                     throw new ArgumentException("Không tìm thấy IP");
 
+                string finalNote = (Note ?? string.Empty).Trim();
                 if (targetUserId == currentUserId)
                 {
                     if (string.IsNullOrWhiteSpace(DeviceInfo))
@@ -227,9 +228,11 @@ namespace EmployeeAPI.Services.CheckinServices
                 {
                     if ((isAdmin || isManager) && string.IsNullOrWhiteSpace(Note))
                         throw new ArgumentException("Khi checkin hộ, Admin hoặc Manager phải nhập lý do.");
-
+                   
                     if (isEmployee)
                         throw new ArgumentException("Employee không thể checkin cho user khác");
+
+                    finalNote += $" (Được cập nhật bởi {currentUser.Fullname})";
                 }
 
                 if (!isSystemAdmin && currentUser.CompanyId == null)
@@ -317,7 +320,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinIP = ip,
                     CheckoutIP = null,
                     TotalTime = 0,
-                    Note = Note ?? string.Empty,
+                    Note = finalNote ?? string.Empty,
                 };
 
                 await _checkinRepository.CreateAsync(checkin);
@@ -337,7 +340,7 @@ namespace EmployeeAPI.Services.CheckinServices
                     CheckinIP = checkin.CheckinIP,
                     CheckoutIP = checkin.CheckoutIP ?? null,
                     TotalTime = checkin.TotalTime,
-                    Note = Note
+                    Note = checkin.Note
                 };
             }
             catch (Exception ex)
@@ -366,6 +369,7 @@ namespace EmployeeAPI.Services.CheckinServices
                 else if (string.IsNullOrWhiteSpace(ip))
                     throw new ArgumentException("Không tìm thấy ip");
 
+
                 if (isAdmin && currentUser.CompanyId == null)
                     throw new ArgumentException("Admin chưa có công ty. Vui lòng liên hệ System Admin để cập nhật công ty");
                 else if (isManager && currentUser.DepartmentId == null)
@@ -390,6 +394,24 @@ namespace EmployeeAPI.Services.CheckinServices
 
                 var checkin = await _context.Checkins
                     .FirstOrDefaultAsync(c => c.UserId == targetUserId && c.CheckinTime >= startOfDay && c.CheckinTime <= endOfDay && !c.IsDeleted);
+
+
+                string finalNote = (Note ?? string.Empty).Trim();
+                if (targetUserId == currentUserId)
+                {
+                    if (string.IsNullOrWhiteSpace(DeviceInfo))
+                        throw new ArgumentException("Không tìm thấy thiết bị");
+                }
+                else
+                {
+                    if ((isAdmin || isManager) && string.IsNullOrWhiteSpace(Note))
+                        throw new ArgumentException("Khi checkin hộ, Admin hoặc Manager phải nhập lý do.");
+
+                    if (isEmployee)
+                        throw new ArgumentException("Employee không thể checkin cho user khác");
+
+                    finalNote += $" (Được cập nhật bởi {currentUser.Fullname})";
+                }
 
                 if ((isAdmin || isManager) && string.IsNullOrWhiteSpace(Note) && string.IsNullOrWhiteSpace(checkin.Note) && targetUser.UserId != currentUserId)
                     throw new ArgumentException("Khi checkout hộ, Admin hoặc Manager phải nhập lý do.");
