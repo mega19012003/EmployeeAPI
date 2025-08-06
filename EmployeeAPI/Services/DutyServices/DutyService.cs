@@ -829,7 +829,7 @@ namespace EmployeeAPI.Services.DutyServices
                 var isManager = currentUserRoles.Contains("Manager");
                 var isEmployee = currentUserRoles.Contains("Employee");
 
-                if ((isAdmin || isManager) && dto.userId.HasValue)
+                if ((isAdmin || isManager) && dto.userId.HasValue && dto.userId.Value != existingDutyDetail.UserId)
                 {
                     if (existingDutyDetail.Status != Enums.DutyStatus.Pending && !isAdmin)
                         throw new InvalidOperationException("Chỉ được phép gán user nếu chi tiết đang ở trạng thái Pending");
