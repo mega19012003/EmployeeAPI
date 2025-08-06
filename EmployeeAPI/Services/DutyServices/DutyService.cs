@@ -824,10 +824,6 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (relatedDuty.IsDeleted)
                     throw new ArgumentException("Công việc chính đã bị xóa. Không thể cập nhật được chi tiết công việc");
-                if (existingDutyDetail.Status == Enums.DutyStatus.Completed)
-                    throw new ArgumentException("Công việc chi tiết đã hoàn thành, không thể cập nhật");
-
-                User userToAssign = null;
 
                 var isAdmin = currentUserRoles.Contains("Admin");
                 var isManager = currentUserRoles.Contains("Manager");
@@ -836,9 +832,9 @@ namespace EmployeeAPI.Services.DutyServices
                 if ((isAdmin || isManager) && dto.userId.HasValue)
                 {
                     if (existingDutyDetail.Status != Enums.DutyStatus.Pending && !isAdmin)
-                        throw new InvalidOperationException("Chỉ được phép update nếu là Pending");
+                        throw new InvalidOperationException("Chỉ được phép gán user nếu chi tiết đang ở trạng thái Pending");
 
-                    userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
+                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
                     if (userToAssign == null)
                         throw new ArgumentException("Không tìm thấy người dùng");
                     if (userToAssign.Role != RoleType.Employee)
@@ -850,20 +846,19 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
 
                     var conflictingDetails = allDutyDetails
-                    .Where(d =>
-                        d.UserId == dto.userId.Value &&
-                        !d.IsDeleted &&
-                        d.Status != Enums.DutyStatus.Completed &&
-                        d.DutyDetailId != existingDutyDetail.DutyDetailId
-                    )
-                    .ToList();
+                        .Where(d => d.UserId == dto.userId.Value && !d.IsDeleted && d.Status != Enums.DutyStatus.Completed && d.DutyDetailId != existingDutyDetail.DutyDetailId)
+                        .ToList();
 
                     if (conflictingDetails.Any())
-                    {
                         throw new InvalidOperationException("Nhân viên này đang có công việc khác chưa hoàn thành.");
-                    }
 
                     existingDutyDetail.UserId = dto.userId.Value;
+                }
+
+                if (existingDutyDetail.Status == Enums.DutyStatus.Completed || existingDutyDetail.Status == Enums.DutyStatus.Cancelled)
+                {
+                    if (!isAdmin)
+                        throw new InvalidOperationException("Không thể chỉnh sửa khi công việc đã hoàn thành hoặc bị hủy");
                 }
 
                 if (isAdmin || (isManager && (existingDutyDetail.Status == Enums.DutyStatus.Pending || existingDutyDetail.Status == Enums.DutyStatus.InProgress)))
@@ -880,24 +875,23 @@ namespace EmployeeAPI.Services.DutyServices
                     }
                 }
 
+                if (!string.IsNullOrWhiteSpace(dto.Note))
+                {
+                    existingDutyDetail.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";
+                }
+
                 if (dto.Status.HasValue)
                 {
-                    if (existingDutyDetail.Status == Enums.DutyStatus.Completed && !isAdmin)
-                        throw new InvalidOperationException("Không thể cập nhật trạng thái khi công việc đã hoàn thành");
-
-                    if (existingDutyDetail.Status == Enums.DutyStatus.Cancelled && !isAdmin)
-                        throw new InvalidOperationException("Chi tiết công việc đã bị hủy, không thể cập nhật trạng thái");
-
-                    if (isManager)
+                    if (isAdmin)
+                    {
+                        existingDutyDetail.Status = dto.Status.Value;
+                    }
+                    else if (isManager)
                     {
                         if (existingDutyDetail.Status == Enums.DutyStatus.InProgress && dto.Status.Value == Enums.DutyStatus.Cancelled)
-                        {
                             existingDutyDetail.Status = Enums.DutyStatus.Cancelled;
-                        }
                         else
-                        {
-                            throw new InvalidOperationException("Manager chỉ được phép chuyển từ InProgress sang Cancelled");
-                        }
+                            throw new InvalidOperationException("Manager chỉ được chuyển trạng thái từ InProgress sang Cancelled");
                     }
                     else if (isEmployee)
                     {
@@ -915,20 +909,14 @@ namespace EmployeeAPI.Services.DutyServices
 
                         existingDutyDetail.Status = dto.Status.Value;
                     }
-                    else if (isAdmin)
-                    {
-                        existingDutyDetail.Status = dto.Status.Value;
-                    }
-
                 }
 
-                existingDutyDetail.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";
                 existingDutyDetail.UpdatedDate = vnNow;
 
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
 
-                var userToShow = userToAssign ?? await _context.Users.FirstOrDefaultAsync(u => u.UserId == existingDutyDetail.UserId);
+                var userToShow = await _context.Users.FirstOrDefaultAsync(u => u.UserId == existingDutyDetail.UserId);
 
                 return new ResponseModel.DutyDetailResultDto
                 {
@@ -952,6 +940,7 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
+
 
 
         public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
