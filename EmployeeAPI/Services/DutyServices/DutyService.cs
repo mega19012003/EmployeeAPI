@@ -849,6 +849,20 @@ namespace EmployeeAPI.Services.DutyServices
                     if (isManager && userToAssign.DepartmentId != currentUser.DepartmentId)
                         throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
 
+                    var conflictingDetails = allDutyDetails
+                    .Where(d =>
+                        d.UserId == dto.userId.Value &&
+                        !d.IsDeleted &&
+                        d.Status != Enums.DutyStatus.Completed &&
+                        d.DutyDetailId != existingDutyDetail.DutyDetailId
+                    )
+                    .ToList();
+
+                    if (conflictingDetails.Any())
+                    {
+                        throw new InvalidOperationException("Nhân viên này đang có công việc khác chưa hoàn thành.");
+                    }
+
                     existingDutyDetail.UserId = dto.userId.Value;
                 }
 
