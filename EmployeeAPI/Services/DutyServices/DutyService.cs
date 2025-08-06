@@ -888,10 +888,13 @@ namespace EmployeeAPI.Services.DutyServices
                     }
                     else if (isManager)
                     {
-                        if (existingDutyDetail.Status == Enums.DutyStatus.InProgress && dto.Status.Value == Enums.DutyStatus.Cancelled)
-                            existingDutyDetail.Status = Enums.DutyStatus.Cancelled;
-                        else
-                            throw new InvalidOperationException("Manager chỉ được chuyển trạng thái từ InProgress sang Cancelled");
+                        if (dto.Status.Value != existingDutyDetail.Status)
+                        {
+                            if (existingDutyDetail.Status == Enums.DutyStatus.InProgress && dto.Status.Value == Enums.DutyStatus.Cancelled)
+                                existingDutyDetail.Status = Enums.DutyStatus.Cancelled;
+                            else
+                                throw new InvalidOperationException("Manager chỉ được chuyển trạng thái từ InProgress sang Cancelled");
+                        }
                     }
                     else if (isEmployee)
                     {
