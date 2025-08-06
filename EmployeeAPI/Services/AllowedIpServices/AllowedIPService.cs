@@ -164,9 +164,9 @@ namespace EmployeeAPI.Services.AllowedIpServices
             return "Đã xóa IP " + result.IPAddress;
         }
 
-        public async Task<bool> IsIPAllowedAsync(string ip)
+        public async Task<bool> IsIPAllowedAsync(string ip, Guid companyId)
         {
-            var allowedIps = await _allowedIPRepository.GetAllAsync();
+            var allowedIps = await _allowedIPRepository.GetByCompanyIdAsync(companyId);
 
             foreach (var allowed in allowedIps)
             {

@@ -31,6 +31,11 @@ namespace EmployeeAPI.Repositories.AllowedIPs
             return await _context.AllowedIPs.FindAsync(id);
         }
 
+        public async Task<List<AllowedIP>> GetByCompanyIdAsync(Guid companyId)
+        {
+            return await _context.AllowedIPs.Where(ip => ip.CompanyId == companyId).ToListAsync();
+        }
+
         public async Task AddAsync(AllowedIP entity)
         {
             await _context.AllowedIPs.AddAsync(entity);

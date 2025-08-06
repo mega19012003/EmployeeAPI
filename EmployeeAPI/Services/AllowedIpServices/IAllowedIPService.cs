@@ -10,6 +10,6 @@ namespace EmployeeAPI.Services.AllowedIpServices
         Task<ResponseModel.IPDto> GetByIdAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
         Task<ResponseModel.IPDto> AddAsync(string ip, Guid currentUserId, IList<string> currentUserRoles);
         Task<string> DeleteAsync(Guid id, Guid currentUserId, IList<string> currentUserRoles);
-        Task<bool> IsIPAllowedAsync(string ip);
+        Task<bool> IsIPAllowedAsync(string ip, Guid companyId);
     }
 }
