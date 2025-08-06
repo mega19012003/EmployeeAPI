@@ -261,7 +261,7 @@ namespace EmployeeAPI.Services.AuthServices
                     await _emailService.SendEmailAsync(
                         toEmail: user.Email,
                         subject: "Đặt lại mật khẩu",
-                        body: $"Mật khẩu mới của bạn là: <b>{newPassword}</b><br/>Vui lòng đăng nhập và thay đổi mật khẩu ngay."
+                        body: $"Mật khẩu mới của bạn là: {newPassword}. Vui lòng đăng nhập và thay đổi mật khẩu ngay."
                     );
                 }
 
