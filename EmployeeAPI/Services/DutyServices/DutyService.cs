@@ -932,8 +932,7 @@ namespace EmployeeAPI.Services.DutyServices
                 }
 
                 existingDutyDetail.UpdatedDate = vnNow;
-                //_logger.LogInformation("existingDutyDetail.UserId: {0}", existingDutyDetail.UserId);
-                //_logger.LogInformation("dto.userId: {0}", dto.userId);
+ 
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
 
