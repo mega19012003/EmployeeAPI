@@ -163,7 +163,8 @@ namespace EmployeeAPI.Controllers
             var httpContext = HttpContext;
             var DeviceInfo = httpContext?.Request?.Form["DeviceInfo"].ToString();
 
-            var user = await _userService.GetByIdAsync(dto.userId.Value, currentUserId, currentUserRoles);
+            var targetUserId = dto.userId ?? currentUserId;
+            var user = await _userService.GetByIdAsync(targetUserId, currentUserId, currentUserRoles);
             if (user == null)
                 return NotFound("User không tồn tại");
 
