@@ -863,7 +863,7 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
 
                     var conflictingDetails = allDutyDetails
-                        .Where(d => d.UserId == dto.userId.Value && !d.IsDeleted && d.Status != Enums.DutyStatus.Completed && d.Status != Enums.DutyStatus.Cancelled && d.DutyDetailId != existingDutyDetail.DutyDetailId)
+                        .Where(d => d.UserId == dto.userId.Value && !d.IsDeleted && d.Status != Enums.DutyStatus.Completed && d.Status != Enums.DutyStatus.Cancelled && d.DutyDetailId != existingDutyDetail.DutyDetailId && d.DutyId == existingDutyDetail.DutyId)
                         .ToList();
 
                     if (conflictingDetails.Any())
