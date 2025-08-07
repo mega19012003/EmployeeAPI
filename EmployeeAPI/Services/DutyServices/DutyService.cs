@@ -395,7 +395,7 @@ namespace EmployeeAPI.Services.DutyServices
                 .Where(r =>
                     Guid.TryParse(r[1]?.ToString(), out var dutyIdFromSheet) &&
                     Guid.TryParse(r[2]?.ToString(), out var uid) &&  userIdsToAssign.Contains(uid) &&
-                    Enum.TryParse<Enums.DutyStatus>(r[6]?.ToString(), out var status) && status != Enums.DutyStatus.Completed &&
+                    Enum.TryParse<Enums.DutyStatus>(r[6]?.ToString(), out var status) && status != Enums.DutyStatus.Completed && status != Enums.DutyStatus.Cancelled &&
                     bool.TryParse(r[7]?.ToString(), out var isDeleted) && !isDeleted
                 )
                 .Select(r => Guid.Parse(r[2].ToString()))
@@ -563,7 +563,7 @@ namespace EmployeeAPI.Services.DutyServices
                 .Where(d =>
                     userIdsToAssign.Contains(d.UserId) &&
                     !d.IsDeleted &&
-                    d.Status != Enums.DutyStatus.Completed &&
+                    d.Status != Enums.DutyStatus.Completed && d.Status != Enums.DutyStatus.Cancelled &&
                     d.DutyId != dutyId 
                 )
                 .Select(d => d.UserId)
@@ -710,8 +710,8 @@ namespace EmployeeAPI.Services.DutyServices
 
                     if (dto.StartDate.HasValue)
                     {
-                        if (dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                            throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
+                        if (dto.StartDate.HasValue && dto.StartDate < DateOnly.FromDateTime(existingDuty.CreatedDate))
+                            throw new ArgumentException("Ngày bắt đầu không được trước ngày tạo công việc");
                         existingDuty.StartDate = dto.StartDate.Value;
                     }
 
@@ -846,7 +846,7 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new UnauthorizedAccessException("Manager chỉ được gán nhân viên cùng phòng ban");
 
                     var conflictingDetails = allDutyDetails
-                        .Where(d => d.UserId == dto.userId.Value && !d.IsDeleted && d.Status != Enums.DutyStatus.Completed && d.DutyDetailId != existingDutyDetail.DutyDetailId)
+                        .Where(d => d.UserId == dto.userId.Value && !d.IsDeleted && d.Status != Enums.DutyStatus.Completed && d.Status != Enums.DutyStatus.Cancelled && d.DutyDetailId != existingDutyDetail.DutyDetailId)
                         .ToList();
 
                     if (conflictingDetails.Any())
@@ -943,8 +943,6 @@ namespace EmployeeAPI.Services.DutyServices
                 throw;
             }
         }
-
-
 
         public async Task<string> SoftDeleteDutyAsync(Guid dutyId, Guid currentUserId, IList<string> currentUserRoles)
         {
