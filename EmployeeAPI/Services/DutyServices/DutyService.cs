@@ -739,8 +739,18 @@ namespace EmployeeAPI.Services.DutyServices
 
                     if (dto.EndDate.HasValue)
                     {
-                        if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                            throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
+                        if (dto.EndDate < existingDuty.StartDate)
+                            throw new ArgumentException("Ngày kết thúc không được trước ngày bắt đầu");
+
+                        // Lấy tất cả các DutyDetail của Duty này
+                        var allDetailsFromSheet = await _googleSheetHelper.GetAllDutyDetailsAsync();
+                        var relatedDetails = allDetailsFromSheet
+                            .Where(d => d.DutyId == existingDuty.Id && !d.IsDeleted)
+                            .ToList();
+
+                        if (relatedDetails.Any(d => dto.EndDate < d.Deadline))
+                            throw new ArgumentException("Ngày kết thúc không được trước deadline của bất kỳ công việc con nào");
+
                         existingDuty.EndDate = dto.EndDate.Value;
                     }
                 }
