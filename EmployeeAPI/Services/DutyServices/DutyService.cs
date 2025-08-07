@@ -841,20 +841,21 @@ namespace EmployeeAPI.Services.DutyServices
                 if (relatedDuty.IsDeleted)
                     throw new ArgumentException("Công việc chính đã bị xóa. Không thể cập nhật được chi tiết công việc");
 
-                var isAdmin = currentUserRoles.Contains("Admin");
+                var isAdmin = currentUserRoles.Contains("Administrator");
                 var isManager = currentUserRoles.Contains("Manager");
                 var isEmployee = currentUserRoles.Contains("Employee");
+                //_logger.LogInformation("DEBUG - isAdmin: {0}, isManager: {1}, dto.userId: {2}, existing: {3}", isAdmin, isManager, dto.userId, existingDutyDetail.UserId);
 
                 if ((isAdmin || isManager) && dto.userId.HasValue && dto.userId.Value != existingDutyDetail.UserId)
                 {
-                    if (existingDutyDetail.Status != Enums.DutyStatus.Pending && !isAdmin)
-                        throw new InvalidOperationException("Chỉ được phép gán user nếu chi tiết đang ở trạng thái Pending");
-
-                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && (!u.IsDeleted || u.IsActive));
+                    var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && !u.IsDeleted && u.IsActive);
                     if (userToAssign == null)
                         throw new ArgumentException("Không tìm thấy người dùng");
                     if (userToAssign.Role != RoleType.Employee)
                         throw new ArgumentException("Chỉ nhân viên được phép gán vào công việc");
+
+                    if (existingDutyDetail.Status != Enums.DutyStatus.Pending && !isAdmin)
+                        throw new InvalidOperationException("Chỉ được phép gán user nếu chi tiết đang ở trạng thái Pending");
 
                     if (isAdmin && userToAssign.CompanyId != currentUser.CompanyId)
                         throw new UnauthorizedAccessException("Admin chỉ được gán nhân viên cùng công ty");
@@ -931,7 +932,8 @@ namespace EmployeeAPI.Services.DutyServices
                 }
 
                 existingDutyDetail.UpdatedDate = vnNow;
-
+                //_logger.LogInformation("existingDutyDetail.UserId: {0}", existingDutyDetail.UserId);
+                //_logger.LogInformation("dto.userId: {0}", dto.userId);
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(existingDutyDetail);
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
 
