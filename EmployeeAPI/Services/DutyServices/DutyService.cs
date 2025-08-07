@@ -717,8 +717,18 @@ namespace EmployeeAPI.Services.DutyServices
 
                     if (dto.EndDate.HasValue)
                     {
-                        if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                            throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
+                        if (dto.EndDate < existingDuty.StartDate)
+                            throw new ArgumentException("Ngày kết thúc không được trước ngày bắt đầu");
+
+                        // Lấy tất cả các DutyDetail của Duty này
+                        var allDetailsFromSheet = await _googleSheetHelper.GetAllDutyDetailsAsync();
+                        var relatedDetails = allDetailsFromSheet
+                            .Where(d => d.DutyId == existingDuty.Id && !d.IsDeleted)
+                            .ToList();
+
+                        if (relatedDetails.Any(d => dto.EndDate < d.Deadline))
+                            throw new ArgumentException("Ngày kết thúc không được trước deadline của bất kỳ công việc con nào");
+
                         existingDuty.EndDate = dto.EndDate.Value;
                     }
                 }
@@ -734,24 +744,6 @@ namespace EmployeeAPI.Services.DutyServices
                         existingDuty.EndDate = dto.EndDate.Value;
                     }
                 }
-                ///////////////
-
-                //if (dto.StartDate.HasValue && dto.EndDate.HasValue && dto.StartDate > dto.EndDate)
-                //    throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
-
-                //if (!string.IsNullOrEmpty(dto.Name)) existingDuty.Name = dto.Name;
-                //if (dto.StartDate.HasValue)
-                //{
-                //    if(dto.StartDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                //        throw new ArgumentException("Ngày bắt đầu không được trước ngày hiện tại");
-                //    existingDuty.StartDate = dto.StartDate.Value;
-                //}
-                //if (dto.EndDate.HasValue)
-                //{
-                //    if (dto.EndDate < DateOnly.FromDateTime(DateTime.UtcNow))
-                //        throw new ArgumentException("Ngày kết thúc không được trước ngày hiện tại");
-                //        existingDuty.EndDate = dto.EndDate.Value;
-                //}
 
                 existingDuty.Note = dto.Note + " (Được cập nhật bởi " + currentUser.Fullname + ")";
                 existingDuty.UpdatedDate = vnNow;
