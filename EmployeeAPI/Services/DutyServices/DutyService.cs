@@ -710,9 +710,23 @@ namespace EmployeeAPI.Services.DutyServices
 
                     if (dto.StartDate.HasValue)
                     {
-                        if (dto.StartDate.HasValue && dto.StartDate < DateOnly.FromDateTime(existingDuty.CreatedDate))
+                        var newStartDate = dto.StartDate.Value;
+
+                        if (newStartDate < DateOnly.FromDateTime(existingDuty.CreatedDate))
                             throw new ArgumentException("Ngày bắt đầu không được trước ngày tạo công việc");
-                        existingDuty.StartDate = dto.StartDate.Value;
+
+                        if (newStartDate > existingDuty.EndDate)
+                            throw new ArgumentException("Ngày bắt đầu không được sau ngày kết thúc công việc");
+
+                        var allDetailsFromSheet = await _googleSheetHelper.GetAllDutyDetailsAsync();
+                        var relatedDetails = allDetailsFromSheet
+                            .Where(d => d.DutyId == existingDuty.Id && !d.IsDeleted)
+                            .ToList();
+
+                        if (relatedDetails.Any(d => newStartDate > d.Deadline))
+                            throw new ArgumentException("Ngày bắt đầu không được sau deadline của bất kỳ công việc con nào");
+
+                        existingDuty.StartDate = newStartDate;
                     }
 
                     if (dto.EndDate.HasValue)
