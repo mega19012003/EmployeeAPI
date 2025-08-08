@@ -635,7 +635,7 @@ namespace EmployeeAPI.Services.DutyServices
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(dutyId);
 
                 var updatedDuty = await _googleSheetHelper.GetDutyByIdAsync(dutyId);
-
+                _cache.Remove("CachedDetailRows");
                 return new ResponseModel.DutyResultDto
                 {
                     Id = updatedDuty.Id,
