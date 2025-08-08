@@ -987,7 +987,10 @@ namespace EmployeeAPI.Services.DutyServices
                 if (currentUserRoles.Contains("Administrator"))
                 {
                     if (currentUser.CompanyId != duty.CompanyId)
-                        throw new UnauthorizedAccessException("Admin chỉ có thể xóa công việc trong công ty của mình");
+                        throw new UnauthorizedAccessException("Admin chỉ được xóa công việc trong công ty của mình");
+
+                    if (duty.Status == DutyStatus.InProgress || duty.Status == DutyStatus.Completed)
+                        throw new InvalidOperationException("Admin không thể xóa công việc đang làm hoặc đã hoàn thành");
                 }
                 else if (currentUserRoles.Contains("Manager"))
                 {
@@ -1069,6 +1072,9 @@ namespace EmployeeAPI.Services.DutyServices
                 {
                     if (currentUser.CompanyId != duty.CompanyId)
                         throw new UnauthorizedAccessException("Admin chỉ được xóa chi tiết công việc trong công ty của mình");
+
+                    if (duty.Status == DutyStatus.InProgress || duty.Status == DutyStatus.Completed)
+                        throw new InvalidOperationException("Admin không thể xóa chi tiết công việc đang làm hoặc đã hoàn thành");
                 }
                 else if (isManager)
                 {
