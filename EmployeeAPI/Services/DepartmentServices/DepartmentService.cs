@@ -222,7 +222,7 @@ namespace EmployeeAPI.Services.DepartmentServices
 
                 if (await _repository.HasUsersUsingDepartmentAsync(id))
                 {
-                    throw new InvalidOperationException("Không thể xóa phòng ban này vì vẫn còn người dùng đang sử dụng.");
+                    throw new InvalidOperationException("Không thể xóa phòng ban " + result.Name + " vì vẫn còn người dùng đang sử dụng.");
                 }
 
                 result.isDeleted = true;

@@ -294,7 +294,7 @@ namespace EmployeeAPI.Services.PositionServices
 
                 if (await _positionRepository.HasUsersUsingPositionAsync(id))
                 {
-                    throw new InvalidOperationException("Không thể xóa chức vụ này vì vẫn còn người dùng đang sử dụng.");
+                    throw new InvalidOperationException("Không thể xóa chức vụ " + result.Name + " vì vẫn còn người dùng đang sử dụng.");
                 }
 
                 result.IsDeleted = true;

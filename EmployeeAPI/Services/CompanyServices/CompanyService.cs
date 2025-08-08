@@ -252,7 +252,7 @@ namespace EmployeeAPI.Services.CompanyServices
 
                 if (await _companyRepository.HasUsersUsingCompanyAsync(companyId))
                 {
-                    throw new InvalidOperationException("Không thể xóa công ty này vì vẫn còn người dùng đang sử dụng.");
+                    throw new InvalidOperationException("Không thể xóa công ty " + company.Name + " vì vẫn còn người dùng đang sử dụng.");
                 }
 
                 company.IsDeleted = true;
