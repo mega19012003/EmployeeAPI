@@ -1031,7 +1031,8 @@ namespace EmployeeAPI.Services.DutyServices
                     detail.IsDeleted = true;
                     await _googleSheetHelper.UpdateDutyDetailRowAsync(detail);
                 }
-
+                _cache.Remove("CachedDutyRows");
+                _cache.Remove("CachedDetailRows");
                 return "Xóa mềm công việc " + duty.Name;
             }
             catch (Exception ex)
@@ -1092,7 +1093,7 @@ namespace EmployeeAPI.Services.DutyServices
                 await _googleSheetHelper.UpdateDutyDetailRowAsync(dutyDetail);
 
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(duty.Id);
-
+                _cache.Remove("CachedDetailRows");
                 return "Đã xóa mềm chi tiết công việc " + dutyDetail.Title;
             }
             catch (Exception ex)
