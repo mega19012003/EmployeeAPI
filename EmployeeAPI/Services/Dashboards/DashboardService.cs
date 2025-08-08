@@ -97,7 +97,7 @@ namespace EmployeeAPI.Services.Dashboards
             var today = DateTime.Today;
 
             // Tổng số check-in hôm nay
-            var checkinsQuery = _context.Checkins.Where(c => c.CheckinTime.Date == today);
+            var checkinsQuery = _context.Checkins.Where(c => c.CheckinTime.Date == today && !c.IsDeleted);
             if (isManager && departmentId.HasValue)
             {
                 checkinsQuery = checkinsQuery.Where(c => c.Users.DepartmentId == departmentId.Value);
