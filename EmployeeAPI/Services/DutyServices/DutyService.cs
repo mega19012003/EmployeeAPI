@@ -700,6 +700,11 @@ namespace EmployeeAPI.Services.DutyServices
                         throw new ArgumentException("Manager chỉ có thể chỉnh sửa công việc do họ tạo ra");
                 }
 
+                if (existingDuty.Status == Enums.DutyStatus.Completed.ToString() || existingDuty.Status == Enums.DutyStatus.Cancelled.ToString())
+                {
+                    throw new InvalidOperationException("Không thể chỉnh sửa khi công việc đã hoàn thành hoặc bị hủy");
+                }
+
                 //////////////
                 if (dto.StartDate.HasValue && dto.EndDate.HasValue && dto.StartDate > dto.EndDate)
                     throw new ArgumentException("Ngày bắt đầu không được để sau ngày kết thúc");
@@ -848,6 +853,7 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if ((isAdmin || isManager) && dto.userId.HasValue && dto.userId.Value != existingDutyDetail.UserId)
                 {
+
                     var userToAssign = await _context.Users.FirstOrDefaultAsync(u => u.UserId == dto.userId.Value && !u.IsDeleted && u.IsActive);
                     if (userToAssign == null)
                         throw new ArgumentException("Không tìm thấy người dùng");
@@ -874,8 +880,8 @@ namespace EmployeeAPI.Services.DutyServices
 
                 if (existingDutyDetail.Status == Enums.DutyStatus.Completed || existingDutyDetail.Status == Enums.DutyStatus.Cancelled)
                 {
-                    if (!isAdmin)
-                        throw new InvalidOperationException("Không thể chỉnh sửa khi công việc đã hoàn thành hoặc bị hủy");
+                    //if(!isAdmin)
+                    throw new InvalidOperationException("Không thể chỉnh sửa khi công việc đã hoàn thành hoặc bị hủy");
                 }
 
                 if (isAdmin || (isManager && (existingDutyDetail.Status == Enums.DutyStatus.Pending || existingDutyDetail.Status == Enums.DutyStatus.InProgress)))
