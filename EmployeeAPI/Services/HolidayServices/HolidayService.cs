@@ -232,7 +232,7 @@ namespace EmployeeAPI.Services.HolidayServices
                 await _holidayRepository.SoftDeleteAsync(result);
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
-                return "Đã xóa ngày lễ" + result.name;
+                return "Đã xóa ngày lễ " + result.name;
             }
             catch (Exception ex)
             {
