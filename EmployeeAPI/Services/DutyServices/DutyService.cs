@@ -1075,7 +1075,7 @@ namespace EmployeeAPI.Services.DutyServices
                     if (currentUser.CompanyId != duty.CompanyId)
                         throw new UnauthorizedAccessException("Admin chỉ được xóa chi tiết công việc trong công ty của mình");
 
-                    if (duty.Status == DutyStatus.InProgress || duty.Status == DutyStatus.Completed)
+                    if (dutyDetail.Status == DutyStatus.InProgress || dutyDetail.Status == DutyStatus.Completed)
                         throw new InvalidOperationException("Admin không thể xóa chi tiết công việc đang làm hoặc đã hoàn thành");
                 }
                 else if (isManager)
@@ -1083,7 +1083,7 @@ namespace EmployeeAPI.Services.DutyServices
                     if (duty.AssignedById != currentUserId)
                         throw new UnauthorizedAccessException("Manager chỉ có thể xóa chi tiết công việc do mình tạo ra");
 
-                    if (duty.Status == DutyStatus.InProgress || duty.Status == DutyStatus.Completed)
+                    if (dutyDetail.Status == DutyStatus.InProgress || dutyDetail.Status == DutyStatus.Completed)
                         throw new InvalidOperationException("Manager không thể xóa chi tiết của công việc đã bắt đầu hoặc đã hoàn thành");
                 }
 
