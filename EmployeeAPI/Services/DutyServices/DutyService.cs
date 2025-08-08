@@ -800,7 +800,8 @@ namespace EmployeeAPI.Services.DutyServices
                     //IsCompleted = d.IsCompleted
                     Status = d.Status.ToString()
                 }).ToList();
-
+                _cache.Remove("CachedDutyRows");
+                _cache.Remove("CachedDetailRows");
                 return new ResponseModel.DutyResultDto
                 {
                     Id = existingDuty.Id,
@@ -943,7 +944,7 @@ namespace EmployeeAPI.Services.DutyServices
                 await _googleSheetHelper.UpdateDutyCompletionStatusAsync(existingDutyDetail.DutyId);
 
                 var userToShow = await _context.Users.FirstOrDefaultAsync(u => u.UserId == existingDutyDetail.UserId);
-
+                _cache.Remove("CachedDetailRows");
                 return new ResponseModel.DutyDetailResultDto
                 {
                     DutyDetailId = existingDutyDetail.DutyDetailId,
